@@ -1,0 +1,76 @@
+#!/bin/bash
+set -e
+
+echo "MIT Map — Environment Doctor"
+echo "================================"
+echo ""
+
+ERRORS=0
+
+# ── Node.js ──────────────────────────────────────────────────────────────────
+check_node() {
+  if ! command -v node &> /dev/null; then
+    echo "ERROR: Node.js not found. Install via nvm or fnm."
+    ERRORS=$((ERRORS + 1))
+    return
+  fi
+  NODE_VERSION=$(node -v | sed 's/v//')
+  REQUIRED="20.0.0"
+  if [ "$(printf '%s\n' "$REQUIRED" "$NODE_VERSION" | sort -V | head -n1)" != "$REQUIRED" ]; then
+    echo "ERROR: Node.js >= 20 required. Found: $NODE_VERSION"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "OK: Node.js $NODE_VERSION"
+  fi
+}
+
+# ── pnpm ─────────────────────────────────────────────────────────────────────
+check_pnpm() {
+  if ! command -v pnpm &> /dev/null; then
+    echo "ERROR: pnpm not found. Install: npm install -g pnpm"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "OK: pnpm $(pnpm -v)"
+  fi
+}
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+check_deps() {
+  if [ ! -d "node_modules" ]; then
+    echo "ERROR: node_modules missing. Run: pnpm install"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "OK: Dependencies installed"
+  fi
+}
+
+# ── Environment file ─────────────────────────────────────────────────────────
+check_env() {
+  if [ ! -f ".env.local" ]; then
+    echo "ERROR: .env.local missing. Run: cp .env.example .env.local"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "OK: .env.local exists"
+    # Check critical vars
+    if ! grep -q "NEXT_PUBLIC_SUPABASE_URL=https://" .env.local 2>/dev/null; then
+      echo "WARN: NEXT_PUBLIC_SUPABASE_URL may not be set (check .env.local)"
+    fi
+    if ! grep -q "NEXT_PUBLIC_SUPABASE_ANON_KEY=ey" .env.local 2>/dev/null; then
+      echo "WARN: NEXT_PUBLIC_SUPABASE_ANON_KEY may not be set (check .env.local)"
+    fi
+  fi
+}
+
+# ── Run checks ───────────────────────────────────────────────────────────────
+check_node
+check_pnpm
+check_deps
+check_env
+
+echo ""
+if [ $ERRORS -eq 0 ]; then
+  echo "All checks passed. Ready to dev!"
+else
+  echo "ERROR: $ERRORS issue(s) found. Fix them and re-run: make doctor"
+  exit 1
+fi

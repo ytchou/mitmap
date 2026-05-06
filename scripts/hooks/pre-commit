@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+
+# ── Guard 1: Block commits directly to main ──────────────────────────────────
+branch=$(git branch --show-current)
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo ""
+  echo "ERROR: Direct commits to main are not allowed."
+  echo ""
+  echo "Create a worktree:"
+  echo "  git worktree add ../mitmap-<branch-name> -b <branch-name>"
+  echo ""
+  exit 1
+fi
+
+# ── Run linting ───────────────────────────────────────────────────────────────
+# pnpm run lint
