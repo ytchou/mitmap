@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 import { createClient } from '@supabase/supabase-js'
 
 /**
@@ -21,8 +21,16 @@ export function createTestClient() {
 /**
  * Wrapper that skips test suites requiring a live Supabase connection
  * when environment variables are not configured.
+ *
+ * Usage: import { describeWithDb } from '@/test/setup'
+ * then use describeWithDb('suite name', () => { ... })
  */
-export const describeWithDb =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-    ? describe
-    : describe.skip
+export function describeWithDb(
+  name: string,
+  fn: () => void
+): ReturnType<typeof import('vitest')['describe']> {
+  const { describe } = require('vitest') as typeof import('vitest')
+  const hasEnv =
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+  return hasEnv ? describe(name, fn) : describe.skip(name, fn)
+}
