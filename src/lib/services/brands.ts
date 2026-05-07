@@ -116,7 +116,9 @@ export async function getBrands(filters?: BrandFilters): Promise<Brand[]> {
     query = query.eq('category', filters.category)
   }
   if (filters?.search) {
-    query = query.ilike('name', `%${filters.search}%`)
+    // Escape LIKE pattern characters so user input is treated as literal text
+    const escaped = filters.search.replace(/[%_\\]/g, '\\$&')
+    query = query.ilike('name', `%${escaped}%`)
   }
 
   const { data, error } = await query
