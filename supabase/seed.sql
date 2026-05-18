@@ -317,3 +317,31 @@ SELECT b.id, t.id
 FROM brands b, taxonomy_tags t
 WHERE b.slug = 'wan-yuan-noodles' AND t.slug = 'food'
 ON CONFLICT DO NOTHING;
+
+-- -----------------------------------------------------------------------------
+-- Part 4: Brand detail enrichment (founder + product_highlights)
+-- -----------------------------------------------------------------------------
+
+UPDATE brands SET
+  founder = '{"name": "林小姐", "title": "Founder & Designer", "avatar_url": null, "quote": "每一個包都承載著對生活的想像"}',
+  product_highlights = '[{"name": "方塊水桶包", "image_url": "https://cdn01.pinkoi.com/product/42bbieHG/0/2/500x0.jpg", "description": "經典方形剪裁搭配柔軟皮革"}, {"name": "迷你托特包", "image_url": "https://cdn01.pinkoi.com/product/42bbieHG/0/2/500x0.jpg", "description": "輕巧實用的日常好夥伴"}]',
+  description = 'BANGSTREE 瀏海樹是來自台灣的包袋品牌，以簡約設計和優質皮革打造日常包款。每一件作品都融入了對生活美學的追求，希望陪伴使用者度過每一天的精彩時刻。',
+  category = 'Accessories',
+  founding_year = 2018,
+  social_links = '{"instagram": "https://www.instagram.com/bangstree_bag/", "official_website": "https://www.pinkoi.com/store/bangstree"}',
+  retail_locations = '[{"name": "Pinkoi Design Store", "address": "台北市大安區", "latitude": 25.0339, "longitude": 121.5434}]'
+WHERE slug = 'bangstree';
+
+UPDATE brands SET
+  founder = '{"name": "陳慢慢", "title": "陶藝師", "avatar_url": null, "quote": "慢下來，才能感受泥土的溫度"}',
+  product_highlights = '[{"name": "手捏花器", "image_url": "https://cdn01.pinkoi.com/product/CUgMM2CB/0/1/500x0.jpg", "description": "每件都是獨一無二的手工花器"}, {"name": "日式茶杯組", "image_url": "https://cdn01.pinkoi.com/product/VC2Q6trS/0/2/500x0.jpg", "description": "溫潤質感的日常茶具"}]',
+  category = 'Home',
+  founding_year = 2019
+WHERE slug = 'slow-white-ceramics';
+
+UPDATE brands SET
+  founder = '{"name": "龔建嘉", "title": "創辦人暨獸醫師", "avatar_url": null, "quote": "讓每一口鮮乳，都喝得到對土地的善意"}',
+  product_highlights = '[{"name": "小農鮮乳", "image_url": "https://cdn01.pinkoi.com/product/42bbieHG/0/2/500x0.jpg", "description": "嚴選在地小農牧場直送鮮乳"}]',
+  category = 'Food & Beverage',
+  founding_year = 2015
+WHERE slug = 'xian-ru-fang';
