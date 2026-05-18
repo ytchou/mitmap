@@ -1,0 +1,12 @@
+export type TagCategory = 'product_type' | 'material' | 'price_range' | 'region'
+
+export type TaxonomyTag = {
+  id: string
+  name: string
+  nameZh: string | null
+  slug: string
+  category: TagCategory
+  isActive: boolean
+  suggestedBy: string | null
+  createdAt: string
+}
