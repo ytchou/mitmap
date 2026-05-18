@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { Brand } from '@/lib/types'
 
 interface BrandFounderProps {
@@ -17,9 +18,11 @@ export function BrandFounder({ brand }: BrandFounderProps) {
       <div className="flex items-start gap-4">
         {/* Avatar */}
         {brand.founder.avatarUrl ? (
-          <img
+          <Image
             src={brand.founder.avatarUrl}
             alt={brand.founder.name}
+            width={40}
+            height={40}
             className="size-10 shrink-0 rounded-full object-cover"
           />
         ) : (
