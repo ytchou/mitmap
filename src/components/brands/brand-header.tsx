@@ -34,9 +34,9 @@ export function BrandHeader({ brand }: BrandHeaderProps) {
 
         {/* Verified badge */}
         {brand.approvedAt && (
-          <span className="flex items-center gap-1 text-primary">
-            <CheckCircle className="size-3.5" />
-            <span className="text-xs font-medium">Verified</span>
+          <span className="flex items-center gap-1 rounded-full bg-[oklch(0.95_0.02_140)] px-2.5 py-1 text-[11px] font-semibold text-[oklch(0.40_0.10_140)]">
+            <CheckCircle className="size-3" />
+            Verified
           </span>
         )}
 

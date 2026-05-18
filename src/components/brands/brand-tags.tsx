@@ -16,7 +16,7 @@ export function BrandTags({ brand }: BrandTagsProps) {
         {brand.tags.map((tag) => (
           <span
             key={tag.id}
-            className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground"
+            className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground"
           >
             {tag.nameZh ?? tag.name}
           </span>
