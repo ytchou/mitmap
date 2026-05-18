@@ -35,6 +35,8 @@ function makeBrand(id: string, tags: TaxonomyTag[]): Brand {
     retailLocations: [],
     productPhotos: [],
     contactEmail: null,
+    founder: null,
+    productHighlights: [],
     tags,
     submittedAt: '2024-01-01T00:00:00Z',
     approvedAt: '2024-01-02T00:00:00Z',
