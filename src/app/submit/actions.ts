@@ -24,7 +24,7 @@ export async function submitBrand(
     }
 
     // Create brand with pending status
-    const brand = await createBrand({
+    await createBrand({
       name: parsed.name,
       slug: '',
       description: parsed.description,
