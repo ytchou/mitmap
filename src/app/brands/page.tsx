@@ -1,10 +1,11 @@
 import { Suspense } from 'react'
+import type { Metadata } from 'next'
 import { getBrands } from '@/lib/services/brands'
 import { getTags } from '@/lib/services/taxonomy'
 import { TaxonomyFilterSidebar } from '@/components/brands/taxonomy-filter-sidebar'
 import { BrandGrid } from '@/components/brands/brand-grid'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Brand Directory — MIT Map',
   description: 'Discover curated Made in Taiwan brands across all categories',
 }
