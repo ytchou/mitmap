@@ -24,6 +24,10 @@ export function submissionToDomain(row: any): BrandSubmission {
     reviewedAt: row.reviewed_at ?? null,
     reviewedBy: row.reviewed_by ?? null,
     pdpaConsentAt: row.pdpa_consent_at ?? null,
+    validationStatus: row.validation_status ?? null,
+    validationErrors: row.validation_errors ?? null,
+    notifiedAt: row.notified_at ?? null,
+    isBrandOwner: row.is_brand_owner ?? false,
   }
 }
 
@@ -40,6 +44,10 @@ export function submissionToInsert(data: Partial<BrandSubmission>): Record<strin
   if (data.status !== undefined) row.status = data.status
   if (data.reviewerNotes !== undefined) row.reviewer_notes = data.reviewerNotes
   if (data.pdpaConsentAt !== undefined) row.pdpa_consent_at = data.pdpaConsentAt
+  if (data.validationStatus !== undefined) row.validation_status = data.validationStatus
+  if (data.validationErrors !== undefined) row.validation_errors = data.validationErrors
+  if (data.notifiedAt !== undefined) row.notified_at = data.notifiedAt
+  if (data.isBrandOwner !== undefined) row.is_brand_owner = data.isBrandOwner
   return row
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

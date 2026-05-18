@@ -1,4 +1,5 @@
 import type { TaxonomyTag } from './taxonomy'
+import type { BrandSortOption } from '@/lib/pagination'
 
 export type BrandStatus = 'pending' | 'approved' | 'rejected' | 'hidden'
 
@@ -22,6 +23,19 @@ export type RetailLocation = {
   longitude: number
 }
 
+export type BrandFounder = {
+  name: string
+  title: string | null
+  avatarUrl: string | null
+  quote: string | null
+}
+
+export type ProductHighlight = {
+  name: string
+  imageUrl: string
+  description: string | null
+}
+
 export type Brand = {
   id: string
   name: string
@@ -37,6 +51,8 @@ export type Brand = {
   retailLocations: RetailLocation[]
   productPhotos: string[]
   contactEmail: string | null
+  founder: BrandFounder | null
+  productHighlights: ProductHighlight[]
   tags: TaxonomyTag[]
   submittedAt: string
   approvedAt: string | null
@@ -48,4 +64,8 @@ export type BrandFilters = {
   status?: BrandStatus
   category?: string
   search?: string
+  tags?: string[]
+  sort?: BrandSortOption
+  limit?: number
+  offset?: number
 }

@@ -1,6 +1,7 @@
 import type { SocialLinks } from './brand'
 
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected'
+export type ValidationStatus = 'valid' | 'incomplete'
 
 export type BrandSubmission = {
   id: string
@@ -18,6 +19,10 @@ export type BrandSubmission = {
   reviewedAt: string | null
   reviewedBy: string | null
   pdpaConsentAt: string | null
+  validationStatus: ValidationStatus | null
+  validationErrors: string[] | null
+  notifiedAt: string | null
+  isBrandOwner: boolean
 }
 
 /** Form-level purchase link (no label field required) */

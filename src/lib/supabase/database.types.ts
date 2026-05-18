@@ -32,6 +32,8 @@ export type Database = {
           retail_locations: Json
           product_photos: Json
           contact_email: string | null
+          founder: Json | null
+          product_highlights: Json | null
           submitted_at: string
           approved_at: string | null
           created_at: string
@@ -52,6 +54,8 @@ export type Database = {
           retail_locations?: Json
           product_photos?: Json
           contact_email?: string | null
+          founder?: Json | null
+          product_highlights?: Json | null
           submitted_at?: string
           approved_at?: string | null
           created_at?: string
@@ -72,6 +76,8 @@ export type Database = {
           retail_locations?: Json
           product_photos?: Json
           contact_email?: string | null
+          founder?: Json | null
+          product_highlights?: Json | null
           submitted_at?: string
           approved_at?: string | null
           created_at?: string
@@ -140,6 +146,10 @@ export type Database = {
           submitted_at: string
           reviewed_at: string | null
           reviewed_by: string | null
+          validation_status: string | null
+          validation_errors: Json | null
+          notified_at: string | null
+          is_brand_owner: boolean
         }
         Insert: {
           id?: string
@@ -156,6 +166,10 @@ export type Database = {
           submitted_at?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          validation_status?: string | null
+          validation_errors?: Json | null
+          notified_at?: string | null
+          is_brand_owner?: boolean
         }
         Update: {
           id?: string
@@ -172,6 +186,10 @@ export type Database = {
           submitted_at?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          validation_status?: string | null
+          validation_errors?: Json | null
+          notified_at?: string | null
+          is_brand_owner?: boolean
         }
       }
     }

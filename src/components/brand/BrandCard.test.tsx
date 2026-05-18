@@ -55,6 +55,8 @@ const baseBrand: Brand = {
   retailLocations: [],
   productPhotos: [],
   contactEmail: null,
+  founder: null,
+  productHighlights: [],
   tags: [],
   submittedAt: "2026-01-01T00:00:00Z",
   approvedAt: "2026-01-02T00:00:00Z",

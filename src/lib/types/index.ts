@@ -1,7 +1,9 @@
 export type {
   Brand,
   BrandFilters,
+  BrandFounder,
   BrandStatus,
+  ProductHighlight,
   PurchaseLink,
   RetailLocation,
   SocialLinks,
@@ -15,4 +17,5 @@ export type {
   FormRetailLocation,
   FormSocialLinks,
   SubmissionStatus,
+  ValidationStatus,
 } from './submission'

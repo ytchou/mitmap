@@ -2,6 +2,7 @@ import type { Brand, BrandFilters, SocialLinks } from '@/lib/types'
 import type { TaxonomyTag } from '@/lib/types'
 import { NotFoundError, ValidationError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
+import { BRAND_SORT_CONFIG } from '@/lib/pagination'
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -72,6 +73,19 @@ export function brandToDomain(row: any): Brand {
     retailLocations: row.retail_locations ?? [],
     productPhotos: row.product_photos ?? [],
     contactEmail: row.contact_email ?? null,
+    founder: row.founder
+      ? {
+          name: row.founder.name,
+          title: row.founder.title ?? null,
+          avatarUrl: row.founder.avatar_url ?? null,
+          quote: row.founder.quote ?? null,
+        }
+      : null,
+    productHighlights: (row.product_highlights ?? []).map((ph: any) => ({
+      name: ph.name,
+      imageUrl: ph.image_url,
+      description: ph.description ?? null,
+    })),
     tags,
     submittedAt: row.submitted_at,
     approvedAt: row.approved_at ?? null,
@@ -95,6 +109,16 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
   if (data.retailLocations !== undefined) row.retail_locations = data.retailLocations
   if (data.productPhotos !== undefined) row.product_photos = data.productPhotos
   if (data.contactEmail !== undefined) row.contact_email = data.contactEmail
+  if (data.founder !== undefined) {
+    row.founder = data.founder
+      ? { name: data.founder.name, title: data.founder.title, avatar_url: data.founder.avatarUrl, quote: data.founder.quote }
+      : null
+  }
+  if (data.productHighlights !== undefined) {
+    row.product_highlights = data.productHighlights.map((ph) => ({
+      name: ph.name, image_url: ph.imageUrl, description: ph.description,
+    }))
+  }
   return row
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -105,9 +129,18 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
 
 const BRAND_SELECT = '*, brand_taxonomy(taxonomy_tags(*))'
 
-export async function getBrands(filters?: BrandFilters): Promise<Brand[]> {
+export async function getBrands(
+  filters?: BrandFilters
+): Promise<{ brands: Brand[]; totalCount: number }> {
   const supabase = createServiceClient()
-  let query = supabase.from('brands').select(BRAND_SELECT)
+
+  // When filtering by tags, use !inner join so only matching brands are returned
+  const select =
+    filters?.tags && filters.tags.length > 0
+      ? '*, brand_taxonomy!inner(taxonomy_tags!inner(*))'
+      : BRAND_SELECT
+
+  let query = supabase.from('brands').select(select, { count: 'exact' })
 
   if (filters?.status) {
     query = query.eq('status', filters.status)
@@ -116,15 +149,28 @@ export async function getBrands(filters?: BrandFilters): Promise<Brand[]> {
     query = query.eq('category', filters.category)
   }
   if (filters?.search) {
-    // Escape LIKE pattern characters so user input is treated as literal text
     const escaped = filters.search.replace(/[%_\\]/g, '\\$&')
     query = query.ilike('name', `%${escaped}%`)
   }
+  if (filters?.tags && filters.tags.length > 0) {
+    query = query.in('brand_taxonomy.taxonomy_tags.slug', filters.tags)
+  }
 
-  const { data, error } = await query
+  // Sorting
+  const sortKey = filters?.sort ?? 'name'
+  const sortConfig = BRAND_SORT_CONFIG[sortKey]
+  query = query.order(sortConfig.column, { ascending: sortConfig.ascending })
+
+  // Pagination
+  if (filters?.limit !== undefined) {
+    const offset = filters.offset ?? 0
+    query = query.range(offset, offset + filters.limit - 1)
+  }
+
+  const { data, error, count } = await query
 
   if (error) throw error
-  return (data ?? []).map(brandToDomain)
+  return { brands: (data ?? []).map(brandToDomain), totalCount: count ?? 0 }
 }
 
 export async function getBrandBySlug(slug: string): Promise<Brand> {
@@ -181,4 +227,33 @@ export async function updateBrand(id: string, data: Partial<Brand>): Promise<Bra
 
 export async function hideBrand(id: string): Promise<Brand> {
   return updateBrand(id, { status: 'hidden' })
+}
+
+export async function getRelatedBrands(
+  category: string,
+  excludeSlug: string,
+  limit = 4,
+): Promise<Brand[]> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('brands')
+    .select(BRAND_SELECT)
+    .eq('status', 'approved')
+    .eq('category', category)
+    .neq('slug', excludeSlug)
+    .limit(limit)
+
+  if (error) throw error
+  return (data ?? []).map(brandToDomain)
+}
+
+export async function getAllBrandSlugs(): Promise<string[]> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('brands')
+    .select('slug')
+    .eq('status', 'approved')
+
+  if (error) throw error
+  return (data ?? []).map((row) => row.slug)
 }
