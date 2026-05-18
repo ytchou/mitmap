@@ -60,7 +60,7 @@ export function Pagination({
       {currentPage > 1 ? (
         <Link
           href={buildPageUrl(basePath, currentPage - 1, searchParams)}
-          className="inline-flex h-9 items-center justify-center rounded-lg px-3 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-muted"
+          className="inline-flex h-9 items-center justify-center rounded-lg px-3 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring/20"
           aria-label="Previous page"
         >
           &lsaquo; Prev
@@ -102,7 +102,7 @@ export function Pagination({
           <Link
             key={page}
             href={buildPageUrl(basePath, page, searchParams)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[13px] font-medium text-foreground/70 transition-colors hover:bg-muted"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[13px] font-medium text-foreground/70 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring/20"
           >
             {page}
           </Link>
@@ -113,7 +113,7 @@ export function Pagination({
       {currentPage < totalPages ? (
         <Link
           href={buildPageUrl(basePath, currentPage + 1, searchParams)}
-          className="inline-flex h-9 items-center justify-center rounded-lg px-3 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-muted"
+          className="inline-flex h-9 items-center justify-center rounded-lg px-3 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring/20"
           aria-label="Next page"
         >
           Next &rsaquo;
