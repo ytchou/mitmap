@@ -66,6 +66,7 @@ export async function submitBrand(
         officialWebsite: parsed.socialLinks.website || undefined,
       },
       suggestedTags: parsed.tags,
+      pdpaConsentAt: new Date().toISOString(),
     })
 
     return undefined // Success — no error
