@@ -1,5 +1,13 @@
 import type { Brand, SocialLinks } from '@/lib/types'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
+import { getBrands, updateBrand } from '@/lib/services/brands'
+import { scrapeBrandUrl } from '@/lib/services/scraper'
+import { downloadAndStoreImages } from '@/lib/services/image-download'
+import { createServiceClient } from '@/lib/supabase/server'
+
+const TOP_N = 20
+const SCRAPE_DELAY_MS = 2_000
+const MAX_PRODUCT_PHOTOS = 5
 
 // ---------------------------------------------------------------------------
 // Scoring
@@ -107,17 +115,166 @@ export function buildEnrichPatch(
 }
 
 // ---------------------------------------------------------------------------
+// Commands
+// ---------------------------------------------------------------------------
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function scoreAndScrape(dryRun: boolean): Promise<void> {
+  console.log('Fetching all brands...')
+  const { brands } = await getBrands({ limit: 1000 })
+  console.log(`Found ${brands.length} brands`)
+
+  // Score and rank
+  const ranked = brands
+    .map((brand) => ({ brand, ...scoreBrand(brand) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, TOP_N)
+
+  // Print ranked table
+  console.log('\n  #  | Score | Slug                          | Website URL')
+  console.log('-----|-------|-------------------------------|-----------------------------')
+  ranked.forEach(({ brand, score, websiteUrl }, i) => {
+    const idx = String(i + 1).padStart(3)
+    const sc = String(score).padStart(5)
+    const slug = brand.slug.padEnd(30).slice(0, 30)
+    const url = websiteUrl ?? '(none)'
+    console.log(`${idx}  | ${sc} | ${slug}| ${url}`)
+  })
+
+  if (dryRun) {
+    console.log('\nDry run — no changes made.')
+    return
+  }
+
+  console.log(`\nEnriching top ${ranked.length} brands...`)
+
+  const summary: { slug: string; fields: string[]; images: number }[] = []
+
+  for (const { brand, websiteUrl } of ranked) {
+    if (!websiteUrl) {
+      console.log(`  [SKIP] ${brand.slug} — no scrapeable URL`)
+      summary.push({ slug: brand.slug, fields: [], images: 0 })
+      continue
+    }
+
+    console.log(`  [SCRAPE] ${brand.slug} → ${websiteUrl}`)
+
+    let scraped: ScrapedBrandData
+    try {
+      scraped = await scrapeBrandUrl(websiteUrl)
+    } catch (err) {
+      console.warn(`  [ERROR] Scrape failed for ${brand.slug}:`, err)
+      summary.push({ slug: brand.slug, fields: ['scrape-error'], images: 0 })
+      await sleep(SCRAPE_DELAY_MS)
+      continue
+    }
+
+    // Build text patch
+    const patch = buildEnrichPatch(brand, scraped)
+    const enrichedFields = Object.keys(patch)
+
+    // Handle images
+    const imageUrls: string[] = []
+    if (!brand.heroImageUrl && scraped.heroImageUrl) {
+      imageUrls.push(scraped.heroImageUrl)
+    }
+    const currentPhotoCount = brand.productPhotos.length
+    if (currentPhotoCount < 3 && scraped.galleryImageUrls.length > 0) {
+      const slotsAvailable = MAX_PRODUCT_PHOTOS - currentPhotoCount
+      // Skip the first gallery image if we're also using it as hero
+      const galleryStart = imageUrls.length > 0 ? 0 : 0
+      imageUrls.push(
+        ...scraped.galleryImageUrls.slice(galleryStart, galleryStart + slotsAvailable)
+      )
+    }
+
+    let downloadedImages: string[] = []
+    if (imageUrls.length > 0) {
+      try {
+        downloadedImages = await downloadAndStoreImages(imageUrls, brand.id)
+      } catch (err) {
+        console.warn(`  [ERROR] Image download failed for ${brand.slug}:`, err)
+      }
+    }
+
+    // Merge downloaded image URLs into patch
+    let imageIdx = 0
+    if (!brand.heroImageUrl && scraped.heroImageUrl && downloadedImages.length > 0) {
+      patch.heroImageUrl = downloadedImages[imageIdx]
+      imageIdx++
+      enrichedFields.push('heroImageUrl')
+    }
+
+    const newPhotos = downloadedImages.slice(imageIdx)
+    if (newPhotos.length > 0) {
+      patch.productPhotos = [
+        ...brand.productPhotos,
+        ...newPhotos,
+      ].slice(0, MAX_PRODUCT_PHOTOS)
+      enrichedFields.push('productPhotos')
+    }
+
+    // Apply patch
+    if (Object.keys(patch).length > 0) {
+      try {
+        await updateBrand(brand.id, patch)
+        console.log(`  [OK] ${brand.slug} — enriched: ${enrichedFields.join(', ')}`)
+      } catch (err) {
+        console.warn(`  [ERROR] Update failed for ${brand.slug}:`, err)
+      }
+    } else {
+      console.log(`  [OK] ${brand.slug} — no gaps to fill`)
+    }
+
+    summary.push({
+      slug: brand.slug,
+      fields: enrichedFields,
+      images: downloadedImages.length,
+    })
+
+    await sleep(SCRAPE_DELAY_MS)
+  }
+
+  // Print summary
+  console.log('\n--- Summary ---')
+  console.log('Slug                          | Fields Enriched            | Images')
+  console.log('------------------------------|----------------------------|-------')
+  for (const { slug, fields, images } of summary) {
+    const s = slug.padEnd(30).slice(0, 30)
+    const f = (fields.length > 0 ? fields.join(', ') : '(none)').padEnd(27).slice(0, 27)
+    console.log(`${s}| ${f}| ${images}`)
+  }
+
+  console.log(`\nDone. Enriched ${summary.filter((s) => s.fields.length > 0).length} of ${summary.length} brands.`)
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
+function printUsage(): void {
+  console.log('Usage: pnpm curate <command>')
+  console.log('Commands:')
+  console.log('  score-and-scrape [--dry-run]  Score brands and scrape top 20')
+  console.log('  set-visibility <slug1> ...    Hide all, approve selected')
+}
+
 async function main() {
   const command = process.argv[2]
-  if (!command) {
-    console.log('Usage: pnpm curate <command>')
-    console.log('Commands:')
-    console.log('  score-and-scrape [--dry-run]  Score brands and scrape top 20')
-    console.log('  set-visibility <slug1> ...    Hide all, approve selected')
-    process.exit(1)
+  const args = process.argv.slice(3)
+
+  switch (command) {
+    case 'score-and-scrape': {
+      const dryRun = args.includes('--dry-run')
+      await scoreAndScrape(dryRun)
+      break
+    }
+    default:
+      printUsage()
+      process.exit(1)
   }
 }
 
