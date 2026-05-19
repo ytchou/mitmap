@@ -185,7 +185,7 @@ async function scoreAndScrape(dryRun: boolean): Promise<void> {
     if (currentPhotoCount < 3 && scraped.galleryImageUrls.length > 0) {
       const slotsAvailable = MAX_PRODUCT_PHOTOS - currentPhotoCount
       // Skip the first gallery image if we're also using it as hero
-      const galleryStart = imageUrls.length > 0 ? 0 : 0
+      const galleryStart = imageUrls.length > 0 ? 1 : 0
       imageUrls.push(
         ...scraped.galleryImageUrls.slice(galleryStart, galleryStart + slotsAvailable)
       )
