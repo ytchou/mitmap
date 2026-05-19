@@ -1,4 +1,5 @@
 import type { TagCategory, TaxonomyTag } from '@/lib/types'
+import { NotFoundError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
 import { generateSlug } from './brands'
 
@@ -36,12 +37,15 @@ export function tagToInsert(data: Partial<TaxonomyTag>): Record<string, unknown>
 // Service functions
 // ---------------------------------------------------------------------------
 
-export async function getTags(category?: TagCategory): Promise<TaxonomyTag[]> {
+export async function getTags(category?: TagCategory, includeInactive?: boolean): Promise<TaxonomyTag[]> {
   const supabase = createServiceClient()
   let query = supabase
     .from('taxonomy_tags')
     .select('*')
-    .eq('is_active', true)
+
+  if (!includeInactive) {
+    query = query.eq('is_active', true)
+  }
 
   if (category) {
     query = query.eq('category', category)
@@ -97,6 +101,31 @@ export async function createTag(
 
   if (error) throw error
   return tagToDomain(inserted)
+}
+
+export async function updateTag(
+  id: string,
+  data: { name?: string; nameZh?: string }
+): Promise<TaxonomyTag> {
+  const supabase = createServiceClient()
+  const row: Record<string, unknown> = {}
+  if (data.name !== undefined) {
+    row.name = data.name
+    row.slug = generateSlug(data.name)
+  }
+  if (data.nameZh !== undefined) {
+    row.name_zh = data.nameZh
+  }
+
+  const { data: updated, error } = await supabase
+    .from('taxonomy_tags')
+    .update(row)
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error || !updated) throw new NotFoundError('TaxonomyTag', id)
+  return tagToDomain(updated)
 }
 
 export async function mergeTag(sourceId: string, targetId: string): Promise<void> {
