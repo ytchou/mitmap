@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import posthog from 'posthog-js'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -92,6 +92,14 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
 
           {selectedIndex !== null && (
             <div className="relative flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setSelectedIndex(null)}
+                className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
+                aria-label="Close photo viewer"
+              >
+                <X className="size-5" />
+              </button>
               <div className="relative h-[80vh] w-full">
                 <Image
                   src={photos[selectedIndex]}
