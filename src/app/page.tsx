@@ -45,6 +45,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     getBrands({
       status: 'approved',
       search: search || undefined,
+      category: categoryFilter || undefined,
       tags: tags.length > 0 ? tags : undefined,
       sort,
       limit: DEFAULT_PAGE_SIZE,
@@ -64,6 +65,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     const refetched = await getBrands({
       status: 'approved',
       search: search || undefined,
+      category: categoryFilter || undefined,
       tags: tags.length > 0 ? tags : undefined,
       sort,
       limit: DEFAULT_PAGE_SIZE,
