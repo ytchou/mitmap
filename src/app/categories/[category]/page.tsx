@@ -96,7 +96,6 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   // Breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
-    { label: 'Directory', href: '/' },
     { label: categoryName },
   ]
 
