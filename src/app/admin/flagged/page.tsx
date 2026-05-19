@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getPendingFlags } from "@/lib/services/moderation";
 import { reviewFlagAction } from "../actions";
 import { Button } from "@/components/ui/button";
 
@@ -8,22 +8,17 @@ export const metadata: Metadata = {
 };
 
 export default async function FlaggedContentPage() {
-  const supabase = createServiceClient();
-
-  const { data: flags, error } = await supabase
-    .from("moderation_flags")
-    .select("*, brands(name, slug)")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-
-  if (error) {
+  let flags;
+  try {
+    flags = await getPendingFlags();
+  } catch (err) {
     return (
       <div>
         <h1 className="font-heading text-3xl font-bold tracking-tight">
           Flagged Content
         </h1>
         <p className="mt-4 text-destructive">
-          Error loading flags: {error.message}
+          Error loading flags: {err instanceof Error ? err.message : "Unknown error"}
         </p>
       </div>
     );
@@ -34,11 +29,11 @@ export default async function FlaggedContentPage() {
       <h1 className="font-heading text-3xl font-bold tracking-tight">
         Flagged Content
       </h1>
-      <p className="mt-2 text-[#7C7570]">
+      <p className="mt-2 text-muted-foreground">
         Review content flagged by the moderation system.
       </p>
 
-      {(!flags || flags.length === 0) ? (
+      {flags.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">
           No pending flags. All clear!
         </p>
@@ -56,19 +51,18 @@ export default async function FlaggedContentPage() {
               </tr>
             </thead>
             <tbody>
-              {/* eslint-disable @typescript-eslint/no-explicit-any */}
-              {flags.map((flag: any) => (
+              {flags.map((flag) => (
                 <tr key={flag.id} className="border-b">
                   <td className="py-3 pr-4 font-medium">
-                    {flag.brands?.name ?? "Unknown"}
+                    {flag.brandName ?? "Unknown"}
                   </td>
-                  <td className="py-3 pr-4">{flag.field_name}</td>
+                  <td className="py-3 pr-4">{flag.fieldName}</td>
                   <td className="max-w-xs truncate py-3 pr-4 text-muted-foreground">
-                    {flag.flagged_content}
+                    {flag.flaggedContent}
                   </td>
-                  <td className="py-3 pr-4">{flag.flag_reason}</td>
+                  <td className="py-3 pr-4">{flag.flagReason}</td>
                   <td className="py-3 pr-4 text-muted-foreground">
-                    {new Date(flag.created_at).toLocaleDateString()}
+                    {new Date(flag.createdAt).toLocaleDateString()}
                   </td>
                   <td className="py-3">
                     <div className="flex gap-2">
@@ -96,7 +90,6 @@ export default async function FlaggedContentPage() {
                   </td>
                 </tr>
               ))}
-              {/* eslint-enable @typescript-eslint/no-explicit-any */}
             </tbody>
           </table>
         </div>

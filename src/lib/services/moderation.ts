@@ -72,6 +72,73 @@ function checkTier2(field: string, value: string): FieldFlag[] {
   return flags
 }
 
+export type ModerationFlag = {
+  id: string
+  brandId: string
+  brandName: string | null
+  brandSlug: string | null
+  userId: string
+  fieldName: string
+  flaggedContent: string
+  flagReason: string
+  tier: string
+  status: string
+  reviewedAt: string | null
+  createdAt: string
+}
+
+export async function getPendingFlags(): Promise<ModerationFlag[]> {
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = createServiceClient()
+
+  const { data, error } = await supabase
+    .from('moderation_flags')
+    .select('*, brands(name, slug)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    brandId: row.brand_id,
+    brandName: row.brands?.name ?? null,
+    brandSlug: row.brands?.slug ?? null,
+    userId: row.user_id,
+    fieldName: row.field_name,
+    flaggedContent: row.flagged_content,
+    flagReason: row.flag_reason,
+    tier: row.tier,
+    status: row.status,
+    reviewedAt: row.reviewed_at ?? null,
+    createdAt: row.created_at,
+  }))
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
+export async function updateFlagStatus(
+  flagId: string,
+  decision: 'reviewed' | 'dismissed'
+): Promise<void> {
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = createServiceClient()
+
+  const updateData: Record<string, unknown> = {
+    status: decision,
+  }
+  if (decision === 'reviewed') {
+    updateData.reviewed_at = new Date().toISOString()
+  }
+
+  const { error } = await supabase
+    .from('moderation_flags')
+    .update(updateData)
+    .eq('id', flagId)
+
+  if (error) throw error
+}
+
 export function checkContent(
   fields: Record<string, string>
 ): ModerationResult {

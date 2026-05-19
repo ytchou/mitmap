@@ -9,7 +9,7 @@ import { createTag, updateTag, mergeTag, deactivateTag } from '@/lib/services/ta
 import { createResendProvider } from '@/lib/email/resend-adapter'
 import { buildApprovalEmail, buildRejectionEmail, buildClaimEmail } from '@/lib/email/templates'
 import { generateClaimToken } from '@/lib/auth/claim-token'
-import { createServiceClient } from '@/lib/supabase/server'
+import { updateFlagStatus } from '@/lib/services/moderation'
 import type { TagCategory } from '@/lib/types'
 
 async function requireAdmin(): Promise<{ userId: string; email: string } | { error: string }> {
@@ -286,20 +286,7 @@ export async function reviewFlagAction(
     const auth = await requireAdmin()
     if ('error' in auth) return auth
 
-    const supabase = createServiceClient()
-    const updateData: Record<string, unknown> = {
-      status: decision,
-    }
-    if (decision === 'reviewed') {
-      updateData.reviewed_at = new Date().toISOString()
-    }
-
-    const { error } = await supabase
-      .from('moderation_flags')
-      .update(updateData)
-      .eq('id', flagId)
-
-    if (error) throw error
+    await updateFlagStatus(flagId, decision)
 
     revalidatePath('/admin/flagged')
     revalidatePath('/admin')
