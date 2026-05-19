@@ -1,6 +1,6 @@
 'use client'
 
-import posthog from 'posthog-js'
+import { usePostHog } from 'posthog-js/react'
 import { ExternalLink, Globe } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { ThreadsIcon } from '@/components/icons/threads-icon'
@@ -13,6 +13,7 @@ interface BrandLinksProps {
 }
 
 export function BrandLinks({ brand }: BrandLinksProps) {
+  const posthog = usePostHog()
   const links: {
     label: string
     url: string

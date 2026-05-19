@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
-import posthog from 'posthog-js'
+import { usePostHog } from 'posthog-js/react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import {
   Dialog,
@@ -16,6 +16,7 @@ interface BrandPhotoGalleryProps {
 }
 
 export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps) {
+  const posthog = usePostHog()
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
 
   const isOpen = selectedIndex !== null
