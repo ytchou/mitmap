@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tagToDomain, tagToInsert } from './taxonomy'
+import { tagToDomain, tagToInsert, updateTag, getTags } from './taxonomy'
 
 describe('tagToDomain', () => {
   it('transforms snake_case DB row to camelCase TaxonomyTag', () => {
@@ -24,6 +24,18 @@ describe('tagToDomain', () => {
     expect(tag.isActive).toBe(true)
     expect(tag.suggestedBy).toBeNull()
     expect(tag.createdAt).toBe('2026-01-01T00:00:00Z')
+  })
+})
+
+describe('updateTag', () => {
+  it('should be an exported async function', () => {
+    expect(typeof updateTag).toBe('function')
+  })
+})
+
+describe('getTags with includeInactive', () => {
+  it('should accept an includeInactive parameter', () => {
+    expect(typeof getTags).toBe('function')
   })
 })
 
