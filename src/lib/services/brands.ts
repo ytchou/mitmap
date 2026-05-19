@@ -229,7 +229,7 @@ export async function deleteBrand(id: string): Promise<void> {
   const supabase = createServiceClient()
   const { error, count } = await supabase
     .from('brands')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', id)
 
   if (error) throw error
