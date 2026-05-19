@@ -278,7 +278,7 @@ async function setVisibility(slugs: string[]): Promise<void> {
   const supabase = createServiceClient()
   const { count, error } = await supabase
     .from('brands')
-    .update({ status: 'hidden' })
+    .update({ status: 'hidden' }, { count: 'exact' })
     .neq('status', 'hidden')
 
   if (error) throw error
