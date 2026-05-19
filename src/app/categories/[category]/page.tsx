@@ -96,7 +96,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   // Breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: 'Home', href: '/' },
-    { label: 'Brands', href: '/brands' },
+    { label: 'Directory', href: '/' },
     { label: categoryName },
   ]
 
@@ -125,12 +125,6 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           <li>
             <Link href="/" className="hover:text-[#8B5E3C]">
               Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <Link href="/brands" className="hover:text-[#8B5E3C]">
-              Brands
             </Link>
           </li>
           <li aria-hidden="true">/</li>
