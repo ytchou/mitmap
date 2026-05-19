@@ -12,7 +12,7 @@ export function BrandBreadcrumb({ category, brandName }: BrandBreadcrumbProps) {
       <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <li>
           <Link
-            href="/brands"
+            href="/"
             className="transition-colors hover:text-foreground"
           >
             Brands
@@ -25,7 +25,7 @@ export function BrandBreadcrumb({ category, brandName }: BrandBreadcrumbProps) {
             </li>
             <li>
               <Link
-                href={`/brands?category=${encodeURIComponent(category)}`}
+                href={`/?category=${encodeURIComponent(category)}`}
                 className="transition-colors hover:text-foreground"
               >
                 {category}
