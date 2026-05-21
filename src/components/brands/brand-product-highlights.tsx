@@ -17,18 +17,18 @@ export function BrandProductHighlights({ brand }: BrandProductHighlightsProps) {
         {brand.productHighlights.map((product, i) => (
           <div
             key={i}
-            className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]"
+            className="overflow-hidden rounded-[10px] bg-secondary"
           >
             <div className="relative aspect-[4/3] bg-muted">
               <Image
                 src={product.imageUrl}
                 alt={product.name}
                 fill
-                className="rounded-t-xl object-cover"
+                className="rounded-t-[10px] object-cover"
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 200px"
               />
             </div>
-            <div className="p-3">
+            <div className="px-2.5 py-2">
               <p className="text-sm font-medium text-foreground">
                 {product.name}
               </p>
