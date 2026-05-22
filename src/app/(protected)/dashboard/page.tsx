@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "invalid-claim": "The claim link is invalid or has expired. Please contact support.",
-  "email-mismatch": "The email you signed in with does not match the claim invitation. Please sign in with the correct email.",
-  "claim-failed": "This brand has already been claimed. If you believe this is an error, please contact support.",
+  "invalid-claim": "認領連結無效或已過期，請聯繫客服。",
+  "email-mismatch": "您登入的電子郵件與認領邀請不符，請使用正確的電子郵件登入。",
+  "claim-failed": "此品牌已被認領。若您認為有誤，請聯繫客服。",
 };
 
 type Props = {
@@ -39,7 +39,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         品牌管理
       </h1>
       <p className="mt-2 text-muted-foreground">
-        Welcome, {user?.email}
+        歡迎，{user?.email}
       </p>
 
       {errorMessage && (
