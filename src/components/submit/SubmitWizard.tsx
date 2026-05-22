@@ -223,7 +223,7 @@ export function SubmitWizard({ categories, source = 'hero_cta' }: SubmitWizardPr
           提交品牌
         </h1>
         <p className="mt-2 text-sm text-[#7C7570]">
-          Share your Made in Taiwan brand with the community
+          將您的台灣製造品牌分享給社群
         </p>
       </div>
 
