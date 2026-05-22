@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const q = searchParams.get('q')?.trim() ?? ''
   const limitParam = searchParams.get('limit')
 
-  if (!q) {
+  if (!q || q.length > 100) {
     return NextResponse.json(
       { error: "Query parameter 'q' is required and must be 1-100 characters" },
       { status: 400 },

@@ -9,7 +9,7 @@ import {
   trackSearchSuggestionSelect,
 } from '@/lib/analytics'
 import type { SearchResult } from '@/lib/services/brands'
-import { SearchSuggestions } from './search-suggestions'
+import { SearchSuggestions, SEARCH_SUGGESTIONS_ID } from './search-suggestions'
 
 function SearchInput() {
   const { filters, setSearch } = useFilterParams()
@@ -30,7 +30,11 @@ function SearchInput() {
 
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=5`)
-      if (!res.ok) return
+      if (!res.ok) {
+        setSuggestions([])
+        setShowDropdown(false)
+        return
+      }
 
       const data = await res.json()
       const results = data.results ?? []
@@ -123,7 +127,7 @@ function SearchInput() {
     <div ref={containerRef} className="relative w-full max-w-md">
       {/* Search icon */}
       <svg
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7C7570]"
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -143,12 +147,18 @@ function SearchInput() {
         role="searchbox"
         aria-label="Search brands"
         aria-autocomplete="list"
+        aria-controls={showDropdown ? SEARCH_SUGGESTIONS_ID : undefined}
+        aria-activedescendant={
+          showDropdown && selectedIndex >= 0 && suggestions[selectedIndex]
+            ? `search-suggestion-${suggestions[selectedIndex].id}`
+            : undefined
+        }
         placeholder="Search brands..."
         maxLength={100}
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        className="w-full rounded-lg border border-[#E5E4E1] bg-white py-2 pl-9 pr-8 text-sm text-[#1A1918] placeholder:text-[#857E79] focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
+        className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
       />
 
       {/* Clear button */}
@@ -157,7 +167,7 @@ function SearchInput() {
           type="button"
           onClick={handleClear}
           aria-label="Clear search"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#7C7570] hover:text-[#1A1918]"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
         >
           <svg
             className="h-4 w-4"
