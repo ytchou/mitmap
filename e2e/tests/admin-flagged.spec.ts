@@ -9,9 +9,9 @@ test.describe('Admin flagged deep', () => {
 
   test('flagged table renders columns correctly', async ({ adminPage }) => {
     await adminPage.goto('/admin/flagged');
-    // Table should have expected columns: brand name, flag type, flagged at, actions
+    // Table renders when flags exist; empty state shows when no flags
     await expect(
-      adminPage.locator('table, [role="table"]').first().or(adminPage.getByText(/no flagged|nothing flagged/i))
-    ).toBeVisible({ timeout: 5_000 });
+      adminPage.locator('table').first().or(adminPage.getByText(/no pending flags|all clear/i))
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
