@@ -15,7 +15,7 @@ test.describe('Admin smoke', () => {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     // Create a test submission via Supabase directly for approve/reject test
-    const { data } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('brand_submissions')
       .insert({
         brand_name: '[E2E-TEST] Admin Smoke Brand',
@@ -25,6 +25,7 @@ test.describe('Admin smoke', () => {
       })
       .select('id')
       .single();
+    if (error) throw new Error(`Failed to create test submission: ${error.message}`);
     testSubmissionId = data?.id;
   });
 
@@ -36,12 +37,14 @@ test.describe('Admin smoke', () => {
 
   test('admin dashboard loads', async ({ adminPage }) => {
     await adminPage.goto('/admin');
-    await expect(adminPage.getByRole('heading', { name: /admin|dashboard/i })).toBeVisible({ timeout: 10_000 });
+    // Use level-only selector to avoid translated text mismatch
+    await expect(adminPage.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10_000 });
     // Stats should be visible
     await expect(adminPage.locator('.font-heading.text-4xl').first()).toBeVisible();
   });
 
   test('submissions review queue shows pending items', async ({ adminPage }) => {
+    if (!testSubmissionId) test.skip();
     await adminPage.goto('/admin/submissions');
     await expect(adminPage.getByRole('heading', { name: /submission/i })).toBeVisible();
     // Test submission should appear
@@ -49,17 +52,18 @@ test.describe('Admin smoke', () => {
   });
 
   test('admin can approve a submission', async ({ adminPage }) => {
+    if (!testSubmissionId) test.skip();
     await adminPage.goto('/admin/submissions');
     // Find and approve the test submission
     const row = adminPage.locator('tr, [role="row"]').filter({ hasText: '[E2E-TEST] Admin Smoke Brand' });
-    const approveBtn = row.getByRole('button', { name: /approve/i });
+    const approveBtn = row.getByRole('button', { name: /approve|核准/i });
     await approveBtn.click();
-    // Confirm dialog or toast
-    const confirmBtn = adminPage.getByRole('button', { name: /confirm|yes|approve/i }).last();
+    // Confirm dialog or toast (bilingual)
+    const confirmBtn = adminPage.getByRole('button', { name: /confirm|yes|approve|確認|是|核准/i }).last();
     if (await confirmBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await confirmBtn.click();
     }
-    // Success feedback
-    await expect(adminPage.getByText(/approved|success/i)).toBeVisible({ timeout: 10_000 });
+    // Success feedback (bilingual)
+    await expect(adminPage.getByText(/approved|success|已核准|成功/i)).toBeVisible({ timeout: 10_000 });
   });
 });
