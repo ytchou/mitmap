@@ -12,17 +12,18 @@ test.describe('SEO deep', () => {
     await page.goto('/');
     const ogTitle = await page.locator('meta[property="og:title"]').getAttribute('content');
     const ogDesc = await page.locator('meta[property="og:description"]').getAttribute('content');
-    const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
     expect(ogTitle?.length).toBeGreaterThan(0);
     expect(ogDesc?.length).toBeGreaterThan(0);
-    expect(ogImage?.length).toBeGreaterThan(0);
+    const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
+    expect(ogImage).toBeTruthy();
   });
 
   test('robots.txt is accessible and allows crawling', async ({ request }) => {
     const response = await request.get('/robots.txt');
     expect(response.status()).toBe(200);
     const body = await response.text();
-    expect(body).toContain('User-agent');
+    // Next.js generates "User-Agent" (capital A) — compare case-insensitively
+    expect(body.toLowerCase()).toContain('user-agent');
     expect(body).not.toMatch(/Disallow: \/$|Disallow: \*$/m);
   });
 
@@ -34,7 +35,7 @@ test.describe('SEO deep', () => {
   });
 
   test('category page has unique title and description', async ({ page }) => {
-    const categorySlug = process.env.E2E_CATEGORY_SLUG ?? 'fashion';
+    const categorySlug = process.env.E2E_CATEGORY_SLUG ?? 'clothing';
     await page.goto(`/categories/${categorySlug}`);
     const title = await page.title();
     expect(title.length).toBeGreaterThan(0);
