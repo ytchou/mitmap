@@ -6,7 +6,7 @@ type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 test.describe('Admin smoke', () => {
   let testSubmissionId: string;
-  // createClient is deferred to beforeAll to ensure env vars are loaded by Playwright
+  let testBrandName: string;
   let supabaseAdmin: AnySupabaseClient;
 
   test.beforeAll(async () => {
@@ -14,11 +14,11 @@ test.describe('Admin smoke', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    // Create a test submission via Supabase directly for approve/reject test
+    testBrandName = `[E2E-TEST] Admin Smoke ${Date.now()}`;
     const { data, error } = await supabaseAdmin
       .from('brand_submissions')
       .insert({
-        brand_name: '[E2E-TEST] Admin Smoke Brand',
+        brand_name: testBrandName,
         website_url: 'https://e2e-test.example.com',
         status: 'pending',
         submitter_email: process.env.E2E_USER_EMAIL,
@@ -47,15 +47,13 @@ test.describe('Admin smoke', () => {
     if (!testSubmissionId) test.skip();
     await adminPage.goto('/admin/submissions');
     await expect(adminPage.getByRole('heading', { name: /submission/i })).toBeVisible();
-    // Test submission should appear
-    await expect(adminPage.getByText('[E2E-TEST] Admin Smoke Brand')).toBeVisible({ timeout: 10_000 });
+    await expect(adminPage.getByText(testBrandName)).toBeVisible({ timeout: 10_000 });
   });
 
   test('admin can approve a submission', async ({ adminPage }) => {
     if (!testSubmissionId) test.skip();
     await adminPage.goto('/admin/submissions');
-    // Find and approve the test submission
-    const row = adminPage.locator('tr, [role="row"]').filter({ hasText: '[E2E-TEST] Admin Smoke Brand' });
+    const row = adminPage.locator('tr, [role="row"]').filter({ hasText: testBrandName });
     const approveBtn = row.getByRole('button', { name: /approve|核准/i });
     await approveBtn.click();
     // Confirm dialog or toast (bilingual)

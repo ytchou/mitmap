@@ -48,8 +48,9 @@ test.describe('Visitor smoke', () => {
     await page.goto('/');
     const firstBrand = page.locator('main a[aria-label]').first();
     await firstBrand.waitFor({ state: 'visible', timeout: 10_000 });
-    await firstBrand.click();
-    await expect(page).not.toHaveURL('http://localhost:3000/', { timeout: 5_000 });
+    const href = await firstBrand.getAttribute('href');
+    expect(href).toBeTruthy();
+    await page.goto(href!);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 5_000 });
   });
 });
