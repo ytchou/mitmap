@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event'
 import { SearchInput } from './search-input'
 
 const mockSetSearch = vi.fn()
+const mockPush = vi.fn()
 vi.mock('@/hooks/use-filter-params', () => ({
   useFilterParams: () => ({
     filters: { search: '' },
@@ -15,7 +16,7 @@ vi.mock('@/hooks/use-filter-params', () => ({
 }))
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
   useSearchParams: () => new URLSearchParams(),
   usePathname: () => '/',
 }))
@@ -76,5 +77,37 @@ describe('SearchInput', () => {
 
     const input = screen.getByRole('searchbox')
     expect(input).toHaveAttribute('maxLength', '100')
+  })
+})
+
+describe('SearchInput with redirectTo prop', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('navigates to redirectTo path with search param on Enter', async () => {
+    const user = userEvent.setup()
+    render(<SearchInput redirectTo="/brands" />)
+
+    const input = screen.getByRole('searchbox')
+    await user.type(input, 'coffee')
+    await user.keyboard('{Enter}')
+
+    expect(mockPush).toHaveBeenCalledWith('/brands?search=coffee')
+  })
+
+  it('does not call setSearch when redirectTo is set and Enter is pressed', async () => {
+    const user = userEvent.setup()
+    render(<SearchInput redirectTo="/brands" />)
+
+    const input = screen.getByRole('searchbox')
+    await user.type(input, 'coffee')
+
+    // Clear calls from typing (change events)
+    vi.clearAllMocks()
+
+    await user.keyboard('{Enter}')
+
+    expect(mockSetSearch).not.toHaveBeenCalled()
   })
 })

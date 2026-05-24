@@ -11,7 +11,12 @@ import {
 import type { SearchResult } from '@/lib/services/brands'
 import { SearchSuggestions, SEARCH_SUGGESTIONS_ID } from './search-suggestions'
 
-function SearchInput() {
+interface SearchInputProps {
+  redirectTo?: string
+  placeholder?: string
+}
+
+function SearchInput({ redirectTo }: SearchInputProps = {}) {
   const { filters, setSearch } = useFilterParams()
   const [value, setValue] = useState(filters.search)
   const [suggestions, setSuggestions] = useState<SearchResult[]>([])
@@ -115,7 +120,12 @@ function SearchInput() {
         e.preventDefault()
         handleSelect(suggestions[selectedIndex].slug, selectedIndex)
       } else if (value.trim()) {
-        trackSearchExecuted(value, suggestions.length)
+        if (redirectTo) {
+          e.preventDefault()
+          router.push(`${redirectTo}?search=${encodeURIComponent(value.trim())}`)
+        } else {
+          trackSearchExecuted(value, suggestions.length)
+        }
       }
     } else if (e.key === 'Escape') {
       setShowDropdown(false)
