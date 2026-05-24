@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getActiveCategories } from '@/lib/services/taxonomy'
 import { buildWebSiteJsonLd } from '@/lib/json-ld'
@@ -36,7 +37,9 @@ export default async function LandingPage() {
       <main>
         <HeroSection />
         <section className="mx-auto max-w-screen-xl px-6 py-8 md:px-10">
-          <SearchInput placeholder="搜尋品牌..." redirectTo="/brands" />
+          <Suspense fallback={null}>
+            <SearchInput placeholder="搜尋品牌..." redirectTo="/brands" />
+          </Suspense>
         </section>
         <section className="mx-auto max-w-screen-xl px-6 pb-8 md:px-10">
           <CategoryNav categories={categories} />
