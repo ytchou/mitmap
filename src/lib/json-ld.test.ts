@@ -110,6 +110,14 @@ describe('buildCategoryItemListJsonLd', () => {
     expect(result.numberOfItems).toBe(0)
     expect(result.itemListElement).toEqual([])
   })
+
+  it('uses /brands/:slug for brand item URLs', () => {
+    const result = buildCategoryItemListJsonLd('美妝', 'beauty', [
+      { name: 'Test', slug: 'test-brand' },
+    ])
+    expect(result.itemListElement[0].url).toContain('/brands/test-brand')
+    expect(result.itemListElement[0].url).not.toMatch(/^https?:\/\/[^/]+\/test-brand$/)
+  })
 })
 
 describe('buildBreadcrumbJsonLd', () => {
@@ -164,15 +172,5 @@ describe('buildWebSiteJsonLd', () => {
     const urlTemplate = jsonLd.potentialAction.target.urlTemplate
     expect(urlTemplate).toContain('/brands?search=')
     expect(urlTemplate).not.toContain('/?search=')
-  })
-})
-
-describe('buildCategoryItemListJsonLd — /brands URL structure', () => {
-  it('uses /brands/:slug for brand item URLs', () => {
-    const brands = [{ slug: 'test-brand', name: 'Test Brand' }]
-    const result = buildCategoryItemListJsonLd('Food', 'food', brands)
-    const brandItem = result.itemListElement[0]
-    expect(brandItem.url).toContain('/brands/test-brand')
-    expect(brandItem.url).not.toMatch(/^https?:\/\/[^/]+\/test-brand$/)
   })
 })
