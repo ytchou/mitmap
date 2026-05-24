@@ -16,7 +16,7 @@ interface SearchInputProps {
   placeholder?: string
 }
 
-function SearchInput({ redirectTo }: SearchInputProps = {}) {
+function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
   const { filters, setSearch } = useFilterParams()
   const [value, setValue] = useState(filters.search)
   const [suggestions, setSuggestions] = useState<SearchResult[]>([])
@@ -88,12 +88,16 @@ function SearchInput({ redirectTo }: SearchInputProps = {}) {
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.value
     setValue(next)
-    setSearch(next)
+    if (!redirectTo) {
+      setSearch(next)
+    }
   }
 
   function handleClear() {
     setValue('')
-    setSearch('')
+    if (!redirectTo) {
+      setSearch('')
+    }
     setSuggestions([])
     setShowDropdown(false)
   }
@@ -122,6 +126,7 @@ function SearchInput({ redirectTo }: SearchInputProps = {}) {
       } else if (value.trim()) {
         if (redirectTo) {
           e.preventDefault()
+          trackSearchExecuted(value, suggestions.length)
           router.push(`${redirectTo}?search=${encodeURIComponent(value.trim())}`)
         } else {
           trackSearchExecuted(value, suggestions.length)
@@ -163,7 +168,7 @@ function SearchInput({ redirectTo }: SearchInputProps = {}) {
             ? `search-suggestion-${suggestions[selectedIndex].id}`
             : undefined
         }
-        placeholder="搜尋品牌..."
+        placeholder={placeholder ?? '搜尋品牌...'}
         maxLength={100}
         value={value}
         onChange={handleChange}

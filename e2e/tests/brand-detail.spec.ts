@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Brand detail deep', () => {
-  let brandSlug: string;
+  let brandHref: string;
 
   test.beforeAll(async ({ browser }) => {
     // Get first brand href from brands directory — use goto(href) to avoid hydration race
@@ -14,19 +14,19 @@ test.describe('Brand detail deep', () => {
     if (!href) {
       throw new Error('brand-detail: could not resolve a brand href from /brands. Ensure the DB has at least one approved brand.');
     }
-    // href is now /brands/some-slug — keep as-is for goto()
-    brandSlug = href.replace(/^\//, '');
+    // href is /brands/some-slug — store full path, use directly in goto()
+    brandHref = href;
   });
 
   test('all sections render without error', async ({ page }) => {
-    await page.goto(`/${brandSlug}`);
+    await page.goto(brandHref);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10_000 });
     // No error boundaries or 404
     await expect(page.getByText(/something went wrong|not found|error/i)).not.toBeVisible();
   });
 
   test('external links have target="_blank" and rel="noopener"', async ({ page }) => {
-    await page.goto(`/${brandSlug}`);
+    await page.goto(brandHref);
     const externalLinks = page.locator('a[href^="http"]:not([href*="localhost"])');
     const count = await externalLinks.count();
     for (let i = 0; i < Math.min(count, 5); i++) {
@@ -37,7 +37,7 @@ test.describe('Brand detail deep', () => {
   });
 
   test('SEO meta tags are present', async ({ page }) => {
-    await page.goto(`/${brandSlug}`);
+    await page.goto(brandHref);
     const title = await page.title();
     expect(title.length).toBeGreaterThan(0);
     const ogTitle = await page.locator('meta[property="og:title"]').getAttribute('content');
@@ -47,15 +47,15 @@ test.describe('Brand detail deep', () => {
   });
 
   test('JSON-LD structured data is present', async ({ page }) => {
-    await page.goto(`/${brandSlug}`);
+    await page.goto(brandHref);
     const jsonLd = await page.locator('script[type="application/ld+json"]').first().textContent();
     const parsed = JSON.parse(jsonLd || '{}');
     expect(parsed['@type']).toBeTruthy();
   });
 
   test('canonical URL matches current URL', async ({ page }) => {
-    await page.goto(`/${brandSlug}`);
+    await page.goto(brandHref);
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toContain(brandSlug);
+    expect(canonical).toContain(brandHref);
   });
 });
