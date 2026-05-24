@@ -1,6 +1,6 @@
 'use server'
 
-import { fullSubmissionSchema, type SubmissionFormData } from '@/lib/validations/submission'
+import { createSubmissionSchema, type SubmissionFormData } from '@/lib/validations/submission'
 import { createBrand } from '@/lib/services/brands'
 import { createSubmission } from '@/lib/services/submissions'
 import { createClient } from '@/lib/supabase/server'
@@ -10,12 +10,19 @@ import { createInMemoryRateLimiter } from '@/lib/security/rate-limiter'
 // Per-user in-action rate limiter for brand submissions (5 per 60s)
 const submissionRateLimiter = createInMemoryRateLimiter()
 
+type SubmitBrandInput = SubmissionFormData & {
+  isOwner?: boolean
+  sourceAttribution?: string
+}
+
 export async function submitBrand(
-  data: SubmissionFormData
+  data: SubmitBrandInput
 ): Promise<{ error: string } | undefined> {
   try {
-    // Server-side validation
-    const parsed = fullSubmissionSchema.parse(data)
+    // Server-side validation — schema switches based on isOwner flag
+    const isOwner = data.isOwner ?? false
+    const schema = createSubmissionSchema(isOwner)
+    const parsed = schema.parse(data)
 
     // Get authenticated user
     const supabase = await createClient()
@@ -50,7 +57,7 @@ export async function submitBrand(
       name: parsed.name,
       slug: '',
       description: parsed.description,
-      logoUrl: parsed.logoUrl,
+      logoUrl: parsed.logoUrl ?? null,
       heroImageUrl: null,
       status: 'pending',
       category: parsed.category,
@@ -92,6 +99,10 @@ export async function submitBrand(
       },
       suggestedTags: parsed.tags,
       pdpaConsentAt: new Date().toISOString(),
+      isBrandOwner: isOwner,
+      sourceAttribution: data.sourceAttribution
+        ? (data.sourceAttribution as import('@/lib/types/submission').SourceAttribution)
+        : undefined,
     })
 
     return undefined // Success — no error

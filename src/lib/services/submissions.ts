@@ -84,6 +84,7 @@ export function submissionToInsert(data: Partial<BrandSubmission>): Record<strin
   if (data.validationErrors !== undefined) row.validation_errors = data.validationErrors
   if (data.notifiedAt !== undefined) row.notified_at = data.notifiedAt
   if (data.isBrandOwner !== undefined) row.is_brand_owner = data.isBrandOwner
+  if (data.sourceAttribution !== undefined) row.source_attribution = data.sourceAttribution
   return row
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -94,7 +95,7 @@ export function submissionToInsert(data: Partial<BrandSubmission>): Record<strin
 
 export async function createSubmission(
   data: Pick<BrandSubmission, 'brandName' | 'submitterEmail'> &
-    Partial<Pick<BrandSubmission, 'brandId' | 'submitterName' | 'description' | 'websiteUrl' | 'socialLinks' | 'suggestedTags' | 'pdpaConsentAt'>>
+    Partial<Pick<BrandSubmission, 'brandId' | 'submitterName' | 'description' | 'websiteUrl' | 'socialLinks' | 'suggestedTags' | 'pdpaConsentAt' | 'isBrandOwner' | 'sourceAttribution'>>
 ): Promise<BrandSubmission> {
   // Public insert — use anon client with RLS (policy allows anonymous inserts)
   const supabase = await createClient()

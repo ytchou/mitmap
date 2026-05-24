@@ -203,8 +203,7 @@ export function SubmitWizard({ categories, source = 'hero_cta' }: SubmitWizardPr
     }
 
     startTransition(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await submitBrand(mergedData as any)
+      const result = await submitBrand(mergedData)
       if (result?.error) {
         setSubmitError(result.error)
       } else {
