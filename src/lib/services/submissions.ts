@@ -1,6 +1,42 @@
-import type { BrandSubmission, SubmissionStatus } from '@/lib/types'
+import type { BrandSubmission, SubmissionStatus, SourceAttribution } from '@/lib/types'
 import { NotFoundError } from '@/lib/errors'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+
+// ---------------------------------------------------------------------------
+// Pure record builder (no DB calls — testable in isolation)
+// ---------------------------------------------------------------------------
+
+export type CreateSubmissionInput = {
+  brandId?: string
+  brandName: string
+  submitterEmail: string
+  submitterName?: string
+  description?: string
+  websiteUrl?: string
+  logoUrl?: string
+  socialLinks?: Record<string, string>
+  suggestedTags?: string[]
+  pdpaConsentAt?: string
+  isOwner?: boolean
+  sourceAttribution?: SourceAttribution | null
+}
+
+export function buildSubmissionRecord(input: CreateSubmissionInput): Record<string, unknown> {
+  return {
+    brand_id: input.brandId ?? null,
+    brand_name: input.brandName,
+    submitter_email: input.submitterEmail,
+    submitter_name: input.submitterName ?? null,
+    description: input.description ?? null,
+    website_url: input.websiteUrl ?? null,
+    logo_url: input.logoUrl ?? null,
+    social_links: input.socialLinks ?? {},
+    suggested_tags: input.suggestedTags ?? [],
+    pdpa_consent_at: input.pdpaConsentAt ?? null,
+    is_brand_owner: input.isOwner ?? false,
+    source_attribution: input.sourceAttribution ?? null,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Mappers
