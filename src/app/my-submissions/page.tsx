@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getUserSubmissions } from '@/lib/services/submissions'
@@ -46,12 +47,12 @@ export default async function MySubmissionsPage() {
           <p className="text-sm text-[#7C7570]">
             您尚未提交任何品牌。
           </p>
-          <a
+          <Link
             href="/submit"
             className="mt-4 inline-flex rounded-full bg-[#E06B3F] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#C85A33]"
           >
             提交品牌
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="mt-8 space-y-3">
