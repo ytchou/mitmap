@@ -122,4 +122,24 @@ export function buildWebSiteJsonLd(): Record<string, any> {
   }
 }
 
+/**
+ * Build FAQPage JSON-LD structured data for the FAQ page.
+ */
+export function buildFaqPageJsonLd(
+  items: Array<{ question: string; answer: string }>
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  }
+}
+
 /* eslint-enable @typescript-eslint/no-explicit-any */
