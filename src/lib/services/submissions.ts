@@ -183,7 +183,7 @@ export type UserSubmissionSummary = {
 }
 
 export async function getUserSubmissions(userEmail: string): Promise<UserSubmissionSummary[]> {
-  const supabase = createServiceClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('brand_submissions')
     .select('id, brand_name, status, submitted_at')
