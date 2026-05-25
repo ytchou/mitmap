@@ -96,11 +96,7 @@ export function brandToDomain(row: any): Brand {
           quote: row.founder.quote ?? null,
         }
       : null,
-    productHighlights: (row.product_highlights ?? []).map((ph: any) => ({
-      name: ph.name,
-      imageUrl: ph.image_url,
-      description: ph.description ?? null,
-    })),
+    brandHighlights: row.brand_highlights ?? null,
     tags,
     submittedAt: row.submitted_at,
     approvedAt: row.approved_at ?? null,
@@ -129,11 +125,7 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
       ? { name: data.founder.name, title: data.founder.title, avatar_url: data.founder.avatarUrl, quote: data.founder.quote }
       : null
   }
-  if (data.productHighlights !== undefined) {
-    row.product_highlights = data.productHighlights.map((ph) => ({
-      name: ph.name, image_url: ph.imageUrl, description: ph.description,
-    }))
-  }
+  if (data.brandHighlights !== undefined) row.brand_highlights = data.brandHighlights
   return row
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
