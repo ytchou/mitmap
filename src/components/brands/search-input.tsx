@@ -108,7 +108,7 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
     router.push(`/brands/${slug}`)
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
       handleSelect(suggestions[selectedIndex].slug, selectedIndex)
