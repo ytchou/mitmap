@@ -23,7 +23,7 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [showDropdown, setShowDropdown] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
   const fetchSuggestions = useCallback(async (q: string) => {
@@ -108,6 +108,20 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
     router.push(`/brands/${slug}`)
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+      handleSelect(suggestions[selectedIndex].slug, selectedIndex)
+      return
+    }
+    if (value.trim()) {
+      trackSearchExecuted(value, suggestions.length)
+      if (redirectTo) {
+        router.push(`${redirectTo}?search=${encodeURIComponent(value.trim())}`)
+      }
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -119,19 +133,9 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIndex((prev) => Math.max(prev - 1, -1))
-    } else if (e.key === 'Enter') {
-      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-        e.preventDefault()
-        handleSelect(suggestions[selectedIndex].slug, selectedIndex)
-      } else if (value.trim()) {
-        if (redirectTo) {
-          e.preventDefault()
-          trackSearchExecuted(value, suggestions.length)
-          router.push(`${redirectTo}?search=${encodeURIComponent(value.trim())}`)
-        } else {
-          trackSearchExecuted(value, suggestions.length)
-        }
-      }
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && suggestions[selectedIndex]) {
+      e.preventDefault()
+      handleSelect(suggestions[selectedIndex].slug, selectedIndex)
     } else if (e.key === 'Escape') {
       setShowDropdown(false)
       setSelectedIndex(-1)
@@ -139,7 +143,7 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
+    <form ref={containerRef} role="search" onSubmit={handleSubmit} className="relative w-full max-w-md">
       {/* Search icon */}
       <svg
         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -158,7 +162,7 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
       </svg>
 
       <input
-        type="search"
+        type="text"
         role="searchbox"
         aria-label="搜尋品牌"
         aria-autocomplete="list"
@@ -205,7 +209,7 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
           onSelect={handleSelect}
         />
       )}
-    </div>
+    </form>
   )
 }
 
