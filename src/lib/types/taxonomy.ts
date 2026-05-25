@@ -13,6 +13,3 @@ export type TaxonomyTag = {
   createdAt: string
 }
 
-export type BrandTaxonomyJoin = TaxonomyTag & {
-  source: TagSource
-}
