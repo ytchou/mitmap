@@ -22,9 +22,9 @@ export type BrandForReview = {
   tags: Array<TaxonomyTag & { source: TagSource }>
 }
 
-export type ProcessSuggestedTagAction = 'create-new' | 'map-existing' | 'reject'
+type ProcessSuggestedTagAction = 'create-new' | 'map-existing' | 'reject'
 
-export type NewTagData = {
+type NewTagData = {
   name: string
   nameZh?: string
   category: TagCategory
