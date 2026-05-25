@@ -29,7 +29,7 @@ function makeChain(resolveValue: { data: unknown; error: unknown }) {
             return (resolve: (v: unknown) => void) => resolve(resolveValue)
           }
           if (prop === Symbol.toPrimitive || prop === Symbol.iterator) return undefined
-          return vi.fn((..._args: unknown[]) => buildProxy())
+          return vi.fn(() => buildProxy())
         },
       }
     )
