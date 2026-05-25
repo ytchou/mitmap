@@ -234,6 +234,14 @@ export async function setBrandTags(
 ): Promise<void> {
   const supabase = createServiceClient()
 
+  // Fetch existing rows before delete so we can restore on insert failure
+  const { data: existingRows, error: fetchErr } = await supabase
+    .from('brand_taxonomy')
+    .select('tag_id, source')
+    .eq('brand_id', brandId)
+
+  if (fetchErr) throw fetchErr
+
   const { error: deleteErr } = await supabase
     .from('brand_taxonomy')
     .delete()
@@ -246,7 +254,21 @@ export async function setBrandTags(
   const rows = tagIds.map((tagId) => ({ brand_id: brandId, tag_id: tagId, source }))
   const { error: insertErr } = await supabase.from('brand_taxonomy').insert(rows)
 
-  if (insertErr) throw insertErr
+  if (insertErr) {
+    // Best-effort restore of original rows to prevent permanent data loss
+    if (existingRows && existingRows.length > 0) {
+      const restoreRows = existingRows.map((r) => ({
+        brand_id: brandId,
+        tag_id: r.tag_id,
+        source: r.source,
+      }))
+      const { error: restoreErr } = await supabase.from('brand_taxonomy').insert(restoreRows)
+      if (restoreErr) {
+        console.error('setBrandTags: failed to restore original tags after insert error', restoreErr)
+      }
+    }
+    throw insertErr
+  }
 }
 
 export async function addTagToBrand(
