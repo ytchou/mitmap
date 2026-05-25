@@ -108,16 +108,17 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
     router.push(`/brands/${slug}`)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
       handleSelect(suggestions[selectedIndex].slug, selectedIndex)
       return
     }
-    if (value.trim()) {
-      trackSearchExecuted(value, suggestions.length)
+    const q = (new FormData(e.currentTarget).get('q') as string)?.trim() ?? ''
+    if (q) {
+      trackSearchExecuted(q, suggestions.length)
       if (redirectTo) {
-        router.push(`${redirectTo}?search=${encodeURIComponent(value.trim())}`)
+        router.push(`${redirectTo}?search=${encodeURIComponent(q)}`)
       }
     }
   }
@@ -162,6 +163,7 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
       </svg>
 
       <input
+        name="q"
         type="text"
         role="searchbox"
         aria-label="搜尋品牌"
