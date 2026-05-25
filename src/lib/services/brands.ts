@@ -125,7 +125,7 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
       ? { name: data.founder.name, title: data.founder.title, avatar_url: data.founder.avatarUrl, quote: data.founder.quote }
       : null
   }
-  if (data.brandHighlights !== undefined) row.brand_highlights = data.brandHighlights
+  if (data.brandHighlights != null) row.brand_highlights = data.brandHighlights
   return row
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

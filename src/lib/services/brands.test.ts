@@ -189,10 +189,10 @@ describe('brandToInsert — founder and brandHighlights', () => {
     expect(row.brand_highlights).toBe('Eco-certified packaging')
   })
 
-  it('writes null brandHighlights to brand_highlights null', () => {
+  it('omits brand_highlights when brandHighlights is null', () => {
     const data = { brandHighlights: null }
     const row = brandToInsert(data)
-    expect(row.brand_highlights).toBeNull()
+    expect(row).not.toHaveProperty('brand_highlights')
   })
 })
 
