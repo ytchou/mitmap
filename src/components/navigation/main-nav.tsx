@@ -12,7 +12,7 @@ import {
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog'
 
 const navLinks = [
-  { label: '瀏覽', href: '/' },
+  { label: '瀏覽', href: '/brands' },
   { label: '關於', href: '/about' },
   { label: '我的提交', href: '/my-submissions' },
 ]
@@ -22,7 +22,7 @@ export function MainNav() {
   const [open, setOpen] = useState(false)
 
   function isActive(href: string) {
-    if (href === '/') return pathname === '/'
+    if (href === '/brands') return pathname === '/brands' || pathname.startsWith('/brands/')
     return pathname.startsWith(href)
   }
 

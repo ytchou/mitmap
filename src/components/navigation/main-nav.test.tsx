@@ -34,7 +34,7 @@ describe('MainNav', () => {
     render(<MainNav />)
     expect(screen.getByRole('link', { name: /瀏覽/ })).toHaveAttribute(
       'href',
-      '/'
+      '/brands'
     )
     expect(screen.getByRole('link', { name: /關於/ })).toHaveAttribute(
       'href',

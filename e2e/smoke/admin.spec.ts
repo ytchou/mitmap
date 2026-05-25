@@ -39,8 +39,8 @@ test.describe('Admin smoke', () => {
     await adminPage.goto('/admin');
     // Use level-only selector to avoid translated text mismatch
     await expect(adminPage.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10_000 });
-    // Stats should be visible
-    await expect(adminPage.locator('.font-heading.text-4xl').first()).toBeVisible();
+    // Stats should be visible — use stable text labels rather than fragile CSS class selectors
+    await expect(adminPage.getByText('品牌總數')).toBeVisible();
   });
 
   test('submissions review queue shows pending items', async ({ adminPage }) => {

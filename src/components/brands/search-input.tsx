@@ -11,18 +11,23 @@ import {
 import type { SearchResult } from '@/lib/services/brands'
 import { SearchSuggestions, SEARCH_SUGGESTIONS_ID } from './search-suggestions'
 
-function SearchInput() {
+interface SearchInputProps {
+  redirectTo?: string
+  placeholder?: string
+}
+
+function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
   const { filters, setSearch } = useFilterParams()
   const [value, setValue] = useState(filters.search)
   const [suggestions, setSuggestions] = useState<SearchResult[]>([])
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [showDropdown, setShowDropdown] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
   const fetchSuggestions = useCallback(async (q: string) => {
-    if (!q.trim()) {
+    if (!q.trim() || redirectTo) {
       setSuggestions([])
       setShowDropdown(false)
       return
@@ -47,7 +52,7 @@ function SearchInput() {
     } catch {
       // Ignore fetch errors; search filtering still works.
     }
-  }, [])
+  }, [redirectTo])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -83,12 +88,16 @@ function SearchInput() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.value
     setValue(next)
-    setSearch(next)
+    if (!redirectTo) {
+      setSearch(next)
+    }
   }
 
   function handleClear() {
     setValue('')
-    setSearch('')
+    if (!redirectTo) {
+      setSearch('')
+    }
     setSuggestions([])
     setShowDropdown(false)
   }
@@ -97,6 +106,21 @@ function SearchInput() {
     trackSearchResultClicked(value, index)
     setShowDropdown(false)
     router.push(`/brands/${slug}`)
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+      handleSelect(suggestions[selectedIndex].slug, selectedIndex)
+      return
+    }
+    const q = (new FormData(e.currentTarget).get('q') as string)?.trim() ?? ''
+    if (q) {
+      trackSearchExecuted(q, suggestions.length)
+      if (redirectTo) {
+        router.push(`${redirectTo}?search=${encodeURIComponent(q)}`)
+      }
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -110,13 +134,9 @@ function SearchInput() {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIndex((prev) => Math.max(prev - 1, -1))
-    } else if (e.key === 'Enter') {
-      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-        e.preventDefault()
-        handleSelect(suggestions[selectedIndex].slug, selectedIndex)
-      } else if (value.trim()) {
-        trackSearchExecuted(value, suggestions.length)
-      }
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && suggestions[selectedIndex]) {
+      e.preventDefault()
+      handleSelect(suggestions[selectedIndex].slug, selectedIndex)
     } else if (e.key === 'Escape') {
       setShowDropdown(false)
       setSelectedIndex(-1)
@@ -124,7 +144,7 @@ function SearchInput() {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
+    <form ref={containerRef} role="search" onSubmit={handleSubmit} className="relative w-full max-w-md">
       {/* Search icon */}
       <svg
         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -143,7 +163,8 @@ function SearchInput() {
       </svg>
 
       <input
-        type="search"
+        name="q"
+        type="text"
         role="searchbox"
         aria-label="搜尋品牌"
         aria-autocomplete="list"
@@ -153,7 +174,7 @@ function SearchInput() {
             ? `search-suggestion-${suggestions[selectedIndex].id}`
             : undefined
         }
-        placeholder="搜尋品牌..."
+        placeholder={placeholder ?? '搜尋品牌...'}
         maxLength={100}
         value={value}
         onChange={handleChange}
@@ -190,7 +211,7 @@ function SearchInput() {
           onSelect={handleSelect}
         />
       )}
-    </div>
+    </form>
   )
 }
 

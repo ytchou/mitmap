@@ -65,24 +65,16 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // /categories → /brands (brands directory moved to /brands)
       {
-        source: '/brands',
-        destination: '/',
+        source: '/categories',
+        destination: '/brands',
         permanent: true,
       },
-      {
-        source: '/brands/:slug',
-        destination: '/:slug',
-        permanent: true,
-      },
+      // Legacy /category/:category → /categories/:category (unchanged)
       {
         source: '/category/:category',
         destination: '/categories/:category',
-        permanent: true,
-      },
-      {
-        source: '/categories',
-        destination: '/',
         permanent: true,
       },
     ]
