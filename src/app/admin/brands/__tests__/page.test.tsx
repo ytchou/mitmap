@@ -2,6 +2,12 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() })),
+  usePathname: vi.fn(() => '/'),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+}))
+
 vi.mock('@/lib/services/taxonomy', () => ({
   getUntaggedBrands: vi.fn(),
   getTags: vi.fn(),

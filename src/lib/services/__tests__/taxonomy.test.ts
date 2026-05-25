@@ -48,7 +48,8 @@ describe('setBrandTags', () => {
     await setBrandTags('brand-1', ['tag-1', 'tag-2'], 'manual')
 
     expect(mockFrom).toHaveBeenCalledWith('brand_taxonomy')
-    expect(mockFrom).toHaveBeenCalledTimes(2)
+    // select (preflight) + delete + insert = 3 calls
+    expect(mockFrom).toHaveBeenCalledTimes(3)
   })
 
   it('skips insert when tagIds is empty (untagging)', async () => {
@@ -56,19 +57,19 @@ describe('setBrandTags', () => {
 
     await setBrandTags('brand-1', [], 'manual')
 
-    // Only one from() call — delete only, no insert
-    expect(mockFrom).toHaveBeenCalledTimes(1)
+    // select (preflight) + delete = 2 calls; insert is skipped
+    expect(mockFrom).toHaveBeenCalledTimes(2)
   })
 
   it('uses the provided source on all inserted rows', async () => {
     const insertedRows: unknown[] = []
 
-    // First call returns delete chain; second call intercepts insert
+    // Calls: 1=select (preflight), 2=delete, 3=insert
     let callCount = 0
     mockFrom.mockImplementation(() => {
       callCount++
-      if (callCount === 1) return makeChain({ data: null, error: null })
-      // Second call: intercept insert
+      if (callCount <= 2) return makeChain({ data: null, error: null })
+      // Third call: intercept insert
       const insertMock = vi.fn((rows: unknown[]) => {
         insertedRows.push(...rows)
         return makeChain({ data: null, error: null })
