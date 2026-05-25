@@ -70,7 +70,7 @@ describe('getRandomBrands', () => {
 
   it('returns at most `limit` approved brands', async () => {
     const chain = createMockChain(mockBrandRows)
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as ReturnType<typeof createServiceClient>)
+    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
 
     const result = await getRandomBrands(2)
 
@@ -84,7 +84,7 @@ describe('getRandomBrands', () => {
 
   it('returns empty array when no brands exist', async () => {
     const chain = createMockChain([])
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as ReturnType<typeof createServiceClient>)
+    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
 
     const result = await getRandomBrands(4)
 
@@ -93,7 +93,7 @@ describe('getRandomBrands', () => {
 
   it('returns all brands when fewer than limit exist', async () => {
     const chain = createMockChain(mockBrandRows.slice(0, 1))
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as ReturnType<typeof createServiceClient>)
+    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
 
     const result = await getRandomBrands(4)
 
@@ -108,7 +108,7 @@ describe('getNewBrands', () => {
 
   it('returns brands and queries with approved_at descending', async () => {
     const chain = createMockChain(mockBrandRows.slice(0, 2))
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as ReturnType<typeof createServiceClient>)
+    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
 
     const result = await getNewBrands(2)
 
@@ -119,7 +119,7 @@ describe('getNewBrands', () => {
 
   it('returns empty array when no brands exist', async () => {
     const chain = createMockChain([])
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as ReturnType<typeof createServiceClient>)
+    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
 
     const result = await getNewBrands(4)
 
@@ -134,7 +134,7 @@ describe('getBrandStats', () => {
 
   it('returns brandCount and categoryCount', async () => {
     const chain = createMockChain(null, { count: 42 })
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as ReturnType<typeof createServiceClient>)
+    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
 
     const stats = await getBrandStats()
 
