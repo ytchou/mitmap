@@ -235,7 +235,7 @@ export async function scrapeBrandUrl(url: string): Promise<ScrapedBrandData> {
     const founderTitle = jsonLdFounder?.jobTitle ?? null
 
     // Brand highlights from meta description
-    const brandHighlights = description ?? null
+    const brandHighlights = description
 
     return {
       brandName,
