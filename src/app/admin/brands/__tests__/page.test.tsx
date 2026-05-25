@@ -26,7 +26,7 @@ describe('Admin brands page', () => {
       { id: 'b1', name: 'Untagged Brand', slug: 'untagged-brand', category: 'Fashion' },
     ])
     vi.mocked(getTags).mockResolvedValue([])
-    vi.mocked(getBrands).mockResolvedValue({ brands: [] })
+    vi.mocked(getBrands).mockResolvedValue({ brands: [], totalCount: 0 })
 
     const BrandsPage = (await import('../page')).default
     render(await BrandsPage())
@@ -41,7 +41,7 @@ describe('Admin brands page', () => {
 
     vi.mocked(getUntaggedBrands).mockResolvedValue([])
     vi.mocked(getTags).mockResolvedValue([])
-    vi.mocked(getBrands).mockResolvedValue({ brands: [] })
+    vi.mocked(getBrands).mockResolvedValue({ brands: [], totalCount: 0 })
 
     const BrandsPage = (await import('../page')).default
     render(await BrandsPage())
