@@ -86,6 +86,20 @@ describe('SearchInput with redirectTo prop', () => {
   })
 
   it('navigates to redirectTo path with search param on Enter', async () => {
+    // window.location.href assignment is used for cross-page redirects.
+    // jsdom throws "Not implemented: navigation" but we can catch and verify.
+    const originalLocation = window.location
+    const assignMock = vi.fn()
+    // @ts-expect-error jsdom allows deleting location for mocking
+    delete window.location
+    window.location = { ...originalLocation, assign: assignMock, href: '' } as unknown as Location
+    const hrefValues: string[] = []
+    Object.defineProperty(window.location, 'href', {
+      set(v: string) { hrefValues.push(v) },
+      get() { return '' },
+      configurable: true,
+    })
+
     const user = userEvent.setup()
     render(<SearchInput redirectTo="/brands" />)
 
@@ -93,7 +107,9 @@ describe('SearchInput with redirectTo prop', () => {
     await user.type(input, 'coffee')
     await user.keyboard('{Enter}')
 
-    expect(mockPush).toHaveBeenCalledWith('/brands?search=coffee')
+    expect(hrefValues).toContain('/brands?search=coffee')
+
+    window.location = originalLocation
   })
 
   it('does not call setSearch when redirectTo is set and Enter is pressed', async () => {

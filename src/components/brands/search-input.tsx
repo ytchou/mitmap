@@ -118,7 +118,9 @@ function SearchInput({ redirectTo, placeholder }: SearchInputProps = {}) {
     if (q) {
       trackSearchExecuted(q, suggestions.length)
       if (redirectTo) {
-        router.push(`${redirectTo}?search=${encodeURIComponent(q)}`)
+        // Use native navigation for cross-page redirects — router.push
+        // intermittently fails in WebKit when navigating from / to /brands.
+        window.location.href = `${redirectTo}?search=${encodeURIComponent(q)}`
       }
     }
   }
