@@ -56,16 +56,15 @@ describe('DynamicArrayField', () => {
     expect(screen.queryByText('shopee')).not.toBeInTheDocument()
   })
 
-  it('renders hidden inputs for form submission with array notation', () => {
+  it('does not render hidden inputs — form submission is handled by renderItem', () => {
     const { container } = render(
       <DynamicArrayField
-        name="links"
         initialItems={[{ platform: 'shopee', url: 'https://shopee.tw' }]}
         renderItem={renderLink}
         createItem={emptyLink}
         addLabel="Add link"
       />
     )
-    expect(container.querySelector('input[name="links[0].platform"]')).toBeTruthy()
+    expect(container.querySelector('input[type="hidden"]')).toBeNull()
   })
 })
