@@ -3,11 +3,11 @@ import { buildWebSiteJsonLd } from '@/lib/json-ld'
 import HeroSection from '@/components/landing/hero-section'
 import TrustBar from '@/components/landing/trust-bar'
 import Manifesto from '@/components/landing/manifesto'
-import CategoryGrid from '@/components/landing/category-grid'
 import BrandShowcase from '@/components/shared/brand-showcase'
+import FilterableBrandShowcase from '@/components/landing/filterable-brand-showcase'
 import ValueChips from '@/components/landing/value-chips'
 import DualCta from '@/components/landing/dual-cta'
-import { getBrandStats, getRandomBrands, getNewBrands } from '@/lib/services/brands'
+import { getBrandStats, getBrands, getNewBrands } from '@/lib/services/brands'
 import { getActiveCategories, getTags } from '@/lib/services/taxonomy'
 
 export const revalidate = 3600
@@ -26,10 +26,10 @@ export const metadata: Metadata = {
 export default async function LandingPage() {
   const jsonLd = buildWebSiteJsonLd()
 
-  const [stats, categories, randomBrands, newBrands, valueTags] = await Promise.all([
+  const [stats, categories, { brands: allBrands }, newBrands, valueTags] = await Promise.all([
     getBrandStats(),
     getActiveCategories(),
-    getRandomBrands(4),
+    getBrands(),
     getNewBrands(4),
     getTags('value'),
   ])
@@ -43,42 +43,31 @@ export default async function LandingPage() {
       <main>
         <HeroSection />
 
-        <div className="py-6">
+        <div className="py-4">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <TrustBar brandCount={stats.brandCount} categoryCount={stats.categoryCount} />
           </div>
         </div>
 
-        <div className="py-12 md:py-16">
+        <div className="py-6 md:py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <Manifesto />
           </div>
         </div>
 
-        <div className="py-12 md:py-16">
+        <div className="py-6 md:py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <CategoryGrid categories={categories} />
+            <FilterableBrandShowcase brands={allBrands} categories={categories} />
           </div>
         </div>
 
-        <div className="py-12 md:py-16">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <BrandShowcase
-              brands={randomBrands}
-              heading="探索品牌"
-              linkText="瀏覽全部品牌 →"
-              linkHref="/brands"
-            />
-          </div>
-        </div>
-
-        <div className="py-12 md:py-16">
+        <div className="py-6 md:py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <ValueChips tags={valueTags} />
           </div>
         </div>
 
-        <div className="py-12 md:py-16">
+        <div className="py-6 md:py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <BrandShowcase
               brands={newBrands}
