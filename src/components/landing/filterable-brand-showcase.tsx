@@ -1,0 +1,98 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { BrandCard } from '@/components/brands/brand-card'
+import type { Brand } from '@/lib/types/brand'
+
+interface Category {
+  slug: string
+  name: string
+  nameZh: string | null
+}
+
+interface FilterableBrandShowcaseProps {
+  brands: Brand[]
+  categories: Category[]
+}
+
+export default function FilterableBrandShowcase({
+  brands,
+  categories,
+}: FilterableBrandShowcaseProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
+  const filteredBrands = useMemo(() => {
+    if (!selectedCategory) return brands
+    return brands.filter((b) =>
+      b.tags.some((t) => t.slug === selectedCategory),
+    )
+  }, [brands, selectedCategory])
+
+  const displayBrands = filteredBrands.slice(0, 4)
+
+  const selectedCategoryLabel = selectedCategory
+    ? (categories.find((c) => c.slug === selectedCategory)?.nameZh ??
+      categories.find((c) => c.slug === selectedCategory)?.name)
+    : null
+
+  const ctaText = selectedCategoryLabel
+    ? `瀏覽全部${selectedCategoryLabel} →`
+    : '瀏覽全部品牌 →'
+
+  const ctaHref = selectedCategory
+    ? `/brands?category=${selectedCategory}`
+    : '/brands'
+
+  return (
+    <section>
+      <h2 className="font-heading text-2xl font-bold">探索品牌</h2>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          onClick={() => setSelectedCategory(null)}
+          className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+            !selectedCategory
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+          }`}
+        >
+          全部
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.slug}
+            onClick={() => setSelectedCategory(cat.slug)}
+            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+              selectedCategory === cat.slug
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {cat.nameZh ?? cat.name}
+          </button>
+        ))}
+      </div>
+
+      {displayBrands.length > 0 ? (
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {displayBrands.map((brand, i) => (
+            <BrandCard key={brand.id} brand={brand} position={i} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-6 text-sm text-muted-foreground">
+          目前此分類尚無品牌
+        </p>
+      )}
+
+      {filteredBrands.length > 0 && (
+        <div className="mt-6">
+          <Link href={ctaHref} className="font-medium text-primary">
+            {ctaText}
+          </Link>
+        </div>
+      )}
+    </section>
+  )
+}
