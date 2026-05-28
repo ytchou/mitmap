@@ -129,7 +129,7 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
       : null
   }
   if (data.brandHighlights != null) row.brand_highlights = data.brandHighlights
-  if (data.isDemo !== undefined) row.is_demo = data.isDemo
+  if (data.isDemo) row.is_demo = data.isDemo
   return row
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

@@ -81,9 +81,9 @@ describe('brandToInsert — isDemo', () => {
     expect(result.is_demo).toBe(true)
   })
 
-  it('maps isDemo false to is_demo false', () => {
+  it('does not include is_demo when isDemo is false', () => {
     const result = brandToInsert({ isDemo: false } as any)
-    expect(result.is_demo).toBe(false)
+    expect(result).not.toHaveProperty('is_demo')
   })
 
   it('does not include is_demo when isDemo is undefined', () => {
