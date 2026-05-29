@@ -58,3 +58,23 @@ describe('CategoryPills', () => {
     expect(mockReplace).toHaveBeenCalled()
   })
 })
+
+describe('CategoryPills — nameZh support', () => {
+  const categoriesWithZh = [
+    { slug: 'food', name: 'Food', nameZh: '食品' },
+    { slug: 'fashion', name: 'Fashion', nameZh: null },
+  ]
+
+  it('renders nameZh when provided', async () => {
+    const { CategoryPills } = await import('./category-pills')
+    render(<CategoryPills categories={categoriesWithZh} />)
+    expect(screen.getByRole('button', { name: '食品' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Food' })).not.toBeInTheDocument()
+  })
+
+  it('falls back to name when nameZh is null', async () => {
+    const { CategoryPills } = await import('./category-pills')
+    render(<CategoryPills categories={categoriesWithZh} />)
+    expect(screen.getByRole('button', { name: 'Fashion' })).toBeInTheDocument()
+  })
+})

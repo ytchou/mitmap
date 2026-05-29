@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { trackCategoryFilterApplied } from '@/lib/analytics'
 
 interface CategoryPillsProps {
-  categories: Array<{ slug: string; name: string }>
+  categories: Array<{ slug: string; name: string; nameZh: string | null }>
 }
 
 export function CategoryPills({ categories }: CategoryPillsProps) {
@@ -60,7 +60,7 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
                 : 'border border-border bg-card text-foreground hover:bg-secondary'
             }`}
           >
-            {cat.name}
+            {cat.nameZh ?? cat.name}
           </button>
         )
       })}
