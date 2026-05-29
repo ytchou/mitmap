@@ -1,8 +1,10 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getBrands } from '@/lib/services/brands'
+import { getActiveCategories } from '@/lib/services/taxonomy'
 import { buildWebSiteJsonLd } from '@/lib/json-ld'
 import { parsePageParam, parseSortParam, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
+import { CategoryPills } from '@/components/brands/category-pills'
 import { MasonryGrid } from '@/components/brands/masonry-grid'
 import { BrandCard } from '@/components/brands/brand-card'
 import { Pagination } from '@/components/brands/pagination'
@@ -39,15 +41,18 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
           .filter(Boolean)
       : []
 
-  const { brands, totalCount } = await getBrands({
-    status: 'approved',
-    search: search || undefined,
-    category: categoryFilter || undefined,
-    tags: tags.length > 0 ? tags : undefined,
-    sort,
-    limit: DEFAULT_PAGE_SIZE,
-    offset: (page - 1) * DEFAULT_PAGE_SIZE,
-  })
+  const [{ brands, totalCount }, categories] = await Promise.all([
+    getBrands({
+      status: 'approved',
+      search: search || undefined,
+      category: categoryFilter || undefined,
+      tags: tags.length > 0 ? tags : undefined,
+      sort,
+      limit: DEFAULT_PAGE_SIZE,
+      offset: (page - 1) * DEFAULT_PAGE_SIZE,
+    }),
+    getActiveCategories(),
+  ])
 
   // Clamp page to last valid page if user navigated beyond
   const totalPages = Math.ceil(totalCount / DEFAULT_PAGE_SIZE)
@@ -83,12 +88,12 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebSiteJsonLd()) }}
       />
 
+      <CategoryPills categories={categories} />
+
       {/* Count + sort header */}
       <div className="mb-6 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {totalCount > 0
-            ? `${totalCount} brand${totalCount !== 1 ? 's' : ''}`
-            : '0 brands found'}
+          {totalCount > 0 ? `共 ${totalCount} 個品牌` : '找不到品牌'}
         </p>
         <Suspense fallback={null}>
           <SortSelect />
@@ -117,10 +122,10 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
         {displayBrands.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="text-base font-semibold text-foreground">
-              No brands found
+              找不到品牌
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Try adjusting or clearing your filters.
+              請調整或清除篩選條件
             </p>
           </div>
         ) : (
