@@ -2,7 +2,7 @@ import { Check, Home, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata = {
-  title: '提交成功 | MIT Map',
+  title: '提交成功',
   description: '我們已收到您的品牌提交，正在進行審核。',
 }
 

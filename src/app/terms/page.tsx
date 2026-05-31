@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '服務條款 | MIT Map',
+  title: '服務條款',
   description:
     '了解 MIT Map 的服務條款，包括內容所有權、資料使用方式、品牌審核流程及免責聲明。',
 }

@@ -188,8 +188,11 @@ describe('buildWebSiteJsonLd', () => {
     const jsonLd = buildWebSiteJsonLd()
     expect(jsonLd['@context']).toBe('https://schema.org')
     expect(jsonLd['@type']).toBe('WebSite')
-    expect(jsonLd.name).toBe('MIT Map')
+    expect(jsonLd.name).toBe('Formoria')
+    expect(jsonLd.alternateName).toBe('島藏')
     expect(jsonLd.url).toBeDefined()
+    expect(jsonLd.url).toContain('formoria.com')
+    expect(jsonLd.url).not.toContain('mitmap')
   })
 
   it('includes SearchAction with search URL template', () => {

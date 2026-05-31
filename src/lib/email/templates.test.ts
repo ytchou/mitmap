@@ -17,9 +17,12 @@ describe('buildApprovalEmail', () => {
     expect(email.to).toBe('owner@brand.com')
     expect(email.subject).toContain('Test Brand')
     expect(email.subject).toContain('已通過審核')
+    expect(email.subject).toContain('Formoria')
+    expect(email.subject).not.toContain('MIT Map')
     expect(email.html).toContain('Test Brand')
     expect(email.html).toContain('https://mitmap.tw/brands/test-brand')
-    expect(email.from).toContain('mitmap')
+    expect(email.html).toContain('Formoria — 台灣品牌目錄')
+    expect(email.from).toBe('Formoria <noreply@formoria.com>')
   })
 })
 
@@ -56,7 +59,7 @@ describe('buildClaimEmail', () => {
     })
 
     expect(result.to).toBe('owner@example.com')
-    expect(result.subject).toContain('認領您在 MIT Map')
+    expect(result.subject).toContain('認領您在 Formoria')
     expect(result.html).toContain('Dachun Soap')
     expect(result.html).toContain('https://mitmap.tw/auth/sign-up?claim=abc123')
     expect(result.html).toContain('認領')

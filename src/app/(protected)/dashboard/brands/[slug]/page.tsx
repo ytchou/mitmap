@@ -15,7 +15,7 @@ import {
 import { AnalyticsCards } from "@/components/dashboard/analytics-cards";
 
 export const metadata: Metadata = {
-  title: "品牌管理 | MIT Map",
+  title: "品牌管理",
 };
 
 type Props = {
