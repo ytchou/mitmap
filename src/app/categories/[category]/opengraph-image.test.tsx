@@ -8,7 +8,7 @@ vi.mock('@/lib/services/taxonomy', () => ({
 }));
 
 vi.mock('@/lib/services/brands', () => ({
-  getBrands: vi.fn().mockResolvedValue({ brands: [], totalCount: 12 }),
+  getBrands: vi.fn().mockResolvedValue({ totalCount: 12 }),
 }));
 
 import Image from './opengraph-image';

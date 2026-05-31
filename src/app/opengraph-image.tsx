@@ -4,13 +4,6 @@ import { BrandMark } from '@/lib/brand/BrandMark'
 import { brand } from '@/lib/brand/colors'
 import { getOgFonts } from '@/lib/brand/og-fonts'
 
-type ImageResponseFonts =
-  NonNullable<ConstructorParameters<typeof ImageResponse>[1]> extends {
-    fonts?: infer Fonts
-  }
-    ? Fonts
-    : never
-
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -100,7 +93,7 @@ export default async function OgImage() {
     ),
     {
       ...size,
-      fonts: fonts as ImageResponseFonts,
+      fonts,
     },
   )
 }

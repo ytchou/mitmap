@@ -5,8 +5,6 @@ import { getOgFonts } from '@/lib/brand/og-fonts'
 import { getTags } from '@/lib/services/taxonomy'
 import { getBrands } from '@/lib/services/brands'
 
-type ImageResponseOptions = NonNullable<ConstructorParameters<typeof ImageResponse>[1]>
-
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -16,7 +14,7 @@ export default async function OgImage({
   params: Promise<{ category: string }>
 }) {
   const { category: slug } = await params
-  const fonts = (await getOgFonts()) as ImageResponseOptions['fonts']
+  const fonts = await getOgFonts()
 
   let categoryName = 'Made in Taiwan Brands'
   let brandCount = 0
@@ -30,7 +28,7 @@ export default async function OgImage({
       const { totalCount } = await getBrands({
         tags: [slug],
         status: 'approved',
-        limit: 0,
+        limit: 1,
       })
       brandCount = totalCount
     }

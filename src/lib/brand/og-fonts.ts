@@ -1,14 +1,15 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { ImageResponse } from "next/og";
 
-export type OgFontFace = {
-  name: string;
-  data: ArrayBuffer | Buffer;
-  style: "normal";
-  weight: number;
-};
+type ImageResponseOptions = NonNullable<
+  ConstructorParameters<typeof ImageResponse>[1]
+>;
 
-export async function getOgFonts(): Promise<OgFontFace[]> {
+export type OgFontFace = NonNullable<ImageResponseOptions["fonts"]>[number];
+type OgFonts = NonNullable<ImageResponseOptions["fonts"]>;
+
+export async function getOgFonts(): Promise<OgFonts> {
   try {
     const [bricolageData, notoSansTcData] = await Promise.all([
       readFile(
