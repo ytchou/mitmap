@@ -2,6 +2,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { NextIntlClientProvider } from 'next-intl'
+import zh from '../../../messages/zh-TW.json'
 
 const mockTrackExternalLinkClicked = vi.fn()
 vi.mock('@/lib/analytics', () => ({
@@ -37,6 +39,14 @@ const mockBrand = {
   updatedAt: '2024-01-01',
 }
 
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="zh-TW" messages={zh}>
+      {ui}
+    </NextIntlClientProvider>
+  )
+}
+
 describe('BrandLinks', () => {
   beforeEach(() => {
     mockTrackExternalLinkClicked.mockClear()
@@ -44,7 +54,7 @@ describe('BrandLinks', () => {
 
   it('calls trackExternalLinkClicked when an outbound link is clicked', async () => {
     const user = userEvent.setup()
-    render(<BrandLinks brand={mockBrand} />)
+    renderWithIntl(<BrandLinks brand={mockBrand} />)
     await user.click(screen.getByRole('link', { name: /Website/i }))
     expect(mockTrackExternalLinkClicked).toHaveBeenCalledWith(
       'test-brand',
@@ -55,7 +65,7 @@ describe('BrandLinks', () => {
 
   it('passes the brand slug as first argument', async () => {
     const user = userEvent.setup()
-    render(<BrandLinks brand={mockBrand} />)
+    renderWithIntl(<BrandLinks brand={mockBrand} />)
     await user.click(screen.getByRole('link', { name: /Website/i }))
     expect(mockTrackExternalLinkClicked.mock.calls[0][0]).toBe('test-brand')
   })

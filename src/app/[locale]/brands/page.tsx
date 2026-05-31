@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getBrands } from '@/lib/services/brands'
 import { getActiveCategories } from '@/lib/services/taxonomy'
 import { buildWebSiteJsonLd } from '@/lib/json-ld'
@@ -9,33 +10,52 @@ import { MasonryGrid } from '@/components/brands/masonry-grid'
 import { BrandCard } from '@/components/brands/brand-card'
 import { Pagination } from '@/components/brands/pagination'
 import { SortSelect } from '@/components/brands/sort-select'
-
-export const metadata: Metadata = {
-  title: { absolute: 'Formoria — Made in Taiwan Brand Directory' },
-  description:
-    'Discover thoughtfully curated Taiwanese brands. Browse by category, search, and explore the best of Made in Taiwan.',
-  alternates: { canonical: '/brands' },
-}
+import { buildAlternates } from '@/lib/seo/alternates'
+import type { Locale } from '@/lib/seo/alternates'
 
 // ISR: revalidate every hour
 export const revalidate = 3600
 
 interface BrandsPageProps {
+  params: Promise<{ locale: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function BrandsPage({ searchParams }: BrandsPageProps) {
-  const params = await searchParams
+export async function generateMetadata({ params }: BrandsPageProps): Promise<Metadata> {
+  const { locale } = await params
+  setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
+  const { canonical, languages } = buildAlternates('/brands', safeLocale)
+  const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
+  const ogAlternateLocale = safeLocale === 'zh-TW' ? 'en_US' : 'zh_TW'
+  return {
+    title: { absolute: 'MIT Map — Made in Taiwan Brand Directory' },
+    description:
+      'Discover thoughtfully curated Taiwanese brands. Browse by category, search, and explore the best of Made in Taiwan.',
+    alternates: { canonical, languages },
+    openGraph: {
+      locale: ogLocale,
+      alternateLocale: [ogAlternateLocale],
+    },
+  }
+}
 
-  const page = parsePageParam(params.page as string | undefined)
-  const sort = parseSortParam(params.sort as string | undefined)
+export default async function BrandsPage({ params, searchParams }: BrandsPageProps) {
+  const { locale } = await params
+  setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
+  const t = await getTranslations('brands')
+  const sp = await searchParams
+
+  const page = parsePageParam(sp.page as string | undefined)
+  const sort = parseSortParam(sp.sort as string | undefined)
   const search =
-    typeof params.search === 'string' ? params.search.trim() : ''
+    typeof sp.search === 'string' ? sp.search.trim() : ''
   const categoryFilter =
-    typeof params.category === 'string' ? params.category.trim() : ''
+    typeof sp.category === 'string' ? sp.category.trim() : ''
   const tags =
-    typeof params.tags === 'string'
-      ? params.tags
+    typeof sp.tags === 'string'
+      ? sp.tags
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean)
@@ -85,7 +105,7 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
       {/* JSON-LD structured data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebSiteJsonLd()) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebSiteJsonLd(safeLocale)) }}
       />
 
       <CategoryPills categories={categories} />
@@ -93,7 +113,7 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
       {/* Count + sort header */}
       <div className="mb-6 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {totalCount > 0 ? `共 ${totalCount} 個品牌` : '找不到品牌'}
+          {totalCount > 0 ? t('count', { count: totalCount }) : t('notFound')}
         </p>
         <Suspense fallback={null}>
           <SortSelect />
@@ -105,7 +125,7 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
         fallback={
           <div
             className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2 lg:grid-cols-4"
-            aria-label="Loading brands..."
+            aria-label={t('loadingAria')}
           >
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="rounded-xl border border-border bg-card">
@@ -122,10 +142,10 @@ export default async function BrandsPage({ searchParams }: BrandsPageProps) {
         {displayBrands.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="text-base font-semibold text-foreground">
-              找不到品牌
+              {t('emptyTitle')}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              請調整或清除篩選條件
+              {t('emptyDescription')}
             </p>
           </div>
         ) : (

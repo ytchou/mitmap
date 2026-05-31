@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { CheckCircle, MapPin } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { Brand } from '@/lib/types'
@@ -8,6 +9,7 @@ interface BrandHeaderProps {
 }
 
 export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
+  const t = useTranslations('brandDetail')
   const locationName = brand.retailLocations[0]?.name
 
   return (
@@ -36,7 +38,7 @@ export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
             className="flex items-center gap-1 rounded-full bg-verified-green-bg px-2.5 py-1 text-[11px] font-semibold text-verified-green"
           >
             <CheckCircle className="size-3" aria-hidden />
-            已認證
+            {t('verified')}
           </span>
         )}
 
@@ -51,7 +53,7 @@ export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
         {/* Founding year */}
         {brand.foundingYear && (
           <span className="text-xs text-warm-caption">
-            創立於 {brand.foundingYear}
+            {t('foundingYear', { year: brand.foundingYear })}
           </span>
         )}
       </div>

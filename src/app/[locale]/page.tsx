@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { buildWebSiteJsonLd } from '@/lib/json-ld'
 import HeroSection from '@/components/landing/hero-section'
 import TrustBar from '@/components/landing/trust-bar'
@@ -9,22 +10,44 @@ import ValueChips from '@/components/landing/value-chips'
 import DualCta from '@/components/landing/dual-cta'
 import { getBrandStats, getBrands, getNewBrands } from '@/lib/services/brands'
 import { getActiveCategories, getValueTagsWithCoverage } from '@/lib/services/taxonomy'
+import { buildAlternates } from '@/lib/seo/alternates'
+import type { Locale } from '@/lib/seo/alternates'
 
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: { absolute: 'Formoria — 探索台灣製造品牌' },
-  description:
-    '探索並發現精選的台灣製造品牌。從食品到時尚，支持本土設計師和製造商。',
-  alternates: { canonical: '/' },
-  openGraph: {
-    title: 'Formoria — 探索台灣製造品牌',
-    description: '探索並發現精選的台灣製造品牌。從食品到時尚，支持本土設計師和製造商。',
-  },
+type PageProps = {
+  params: Promise<{ locale: string }>
 }
 
-export default async function LandingPage() {
-  const jsonLd = buildWebSiteJsonLd()
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params
+  setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
+  const t = await getTranslations('landing.metadata')
+  const { canonical, languages } = buildAlternates('/', safeLocale)
+
+  const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
+  const ogAlternateLocale = safeLocale === 'zh-TW' ? 'en_US' : 'zh_TW'
+
+  return {
+    title: { absolute: t('title') },
+    description: t('description'),
+    alternates: { canonical, languages },
+    openGraph: {
+      title: t('title'),
+      description: t('description'),
+      locale: ogLocale,
+      alternateLocale: [ogAlternateLocale],
+    },
+  }
+}
+
+export default async function LandingPage({ params }: PageProps) {
+  const { locale } = await params
+  setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
+  const t = await getTranslations('landing')
+  const jsonLd = buildWebSiteJsonLd(safeLocale)
 
   const [stats, categories, { brands: allBrands }, newBrands, valueTags] = await Promise.all([
     getBrandStats(),
@@ -67,8 +90,8 @@ export default async function LandingPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <BrandShowcase
               brands={newBrands}
-              heading="最新品牌"
-              linkText="瀏覽全部品牌 →"
+              heading={t('newBrands.heading')}
+              linkText={t('newBrands.linkText')}
               linkHref="/brands"
             />
           </div>

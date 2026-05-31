@@ -3,10 +3,22 @@ import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { Footer } from './footer'
 
-vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+}))
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, params?: Record<string, unknown>) => {
+    const map: Record<string, string> = {
+      about: '關於我們',
+      terms: '服務條款',
+      contact: '聯絡我們',
+      copyright: `© ${params?.year ?? new Date().getFullYear()} Formoria`,
+    }
+    return map[key] ?? key
+  },
 }))
 
 describe('Footer', () => {

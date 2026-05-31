@@ -6,10 +6,21 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"],
     setupFiles: ["./src/test/setup.ts", "./src/test/setup-dom.ts"],
+    server: {
+      deps: {
+        inline: ["next-intl"],
+      },
+    },
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "next/server": path.resolve(__dirname, "./node_modules/next/server.js"),
+      "next/navigation": path.resolve(
+        __dirname,
+        "./node_modules/next/navigation.js"
+      ),
+      "next/headers": path.resolve(__dirname, "./node_modules/next/headers.js"),
     },
   },
 });

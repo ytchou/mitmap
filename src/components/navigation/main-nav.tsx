@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, Globe } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import NextLink from 'next/link'
+import { Link, usePathname } from '@/i18n/navigation'
+import { Menu } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -13,6 +14,7 @@ import { Dialog as SheetPrimitive } from '@base-ui/react/dialog'
 import { NavSearchInput } from './nav-search-input'
 import { NavCategoryTabs } from './nav-category-tabs'
 import { BrandMark } from '@/lib/brand/BrandMark'
+import { LocaleSwitcher } from '@/components/i18n/locale-switcher'
 
 interface MainNavProps {
   categories: Array<{ slug: string; name: string; nameZh: string | null }>
@@ -21,6 +23,7 @@ interface MainNavProps {
 export function MainNav({ categories }: MainNavProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const t = useTranslations('nav')
 
   function isActive(href: string) {
     return pathname.startsWith(href)
@@ -53,7 +56,7 @@ export function MainNav({ categories }: MainNavProps) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            品牌目錄
+            {t('brandDirectory')}
           </Link>
           <Link
             href="/faq"
@@ -63,7 +66,7 @@ export function MainNav({ categories }: MainNavProps) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            常見問題
+            {t('faq')}
           </Link>
           <Link
             href="/support"
@@ -73,9 +76,9 @@ export function MainNav({ categories }: MainNavProps) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            請我喝咖啡
+            {t('support')}
           </Link>
-          <Link
+          <NextLink
             href="/my-submissions"
             className={`text-sm transition-colors ${
               isActive('/my-submissions')
@@ -83,20 +86,15 @@ export function MainNav({ categories }: MainNavProps) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            我的提交
-          </Link>
-          <Link
+            {t('mySubmissions')}
+          </NextLink>
+          <NextLink
             href="/submit"
             className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            提交品牌
-          </Link>
-          <button
-            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Switch language"
-          >
-            <Globe className="size-4" />
-          </button>
+            {t('submitBrand')}
+          </NextLink>
+          <LocaleSwitcher />
         </div>
 
         {/* Mobile hamburger */}
@@ -129,7 +127,7 @@ export function MainNav({ categories }: MainNavProps) {
                   }`}
                   onClick={() => setOpen(false)}
                 >
-                  品牌目錄
+                  {t('brandDirectory')}
                 </Link>
                 <Link
                   href="/faq"
@@ -140,7 +138,7 @@ export function MainNav({ categories }: MainNavProps) {
                   }`}
                   onClick={() => setOpen(false)}
                 >
-                  常見問題
+                  {t('faq')}
                 </Link>
                 <Link
                   href="/support"
@@ -151,9 +149,9 @@ export function MainNav({ categories }: MainNavProps) {
                   }`}
                   onClick={() => setOpen(false)}
                 >
-                  請我喝咖啡
+                  {t('support')}
                 </Link>
-                <Link
+                <NextLink
                   href="/my-submissions"
                   className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                     isActive('/my-submissions')
@@ -162,15 +160,18 @@ export function MainNav({ categories }: MainNavProps) {
                   }`}
                   onClick={() => setOpen(false)}
                 >
-                  我的提交
-                </Link>
-                <Link
+                  {t('mySubmissions')}
+                </NextLink>
+                <NextLink
                   href="/submit"
                   className="block rounded-full bg-primary px-5 py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   onClick={() => setOpen(false)}
                 >
-                  提交品牌
-                </Link>
+                  {t('submitBrand')}
+                </NextLink>
+                <div className="px-4">
+                  <LocaleSwitcher />
+                </div>
               </div>
             </SheetContent>
           </Sheet>
