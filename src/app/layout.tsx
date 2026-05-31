@@ -31,7 +31,7 @@ const getCachedCategories = unstable_cache(
 )
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formoria.com'),
   title: {
     default: 'Formoria 島藏 — 台灣製造品牌目錄',
     template: '%s | Formoria',
