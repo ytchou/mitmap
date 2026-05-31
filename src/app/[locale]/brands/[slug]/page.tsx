@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { getBrandBySlug, getRelatedBrands, getBrandCountByCategory, getAllBrandSlugs } from '@/lib/services/brands'
 import { buildBrandJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld'
 import type { BreadcrumbItem } from '@/lib/json-ld'
@@ -37,12 +38,13 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
+  const t = await getTranslations('brandDetail')
 
   try {
     const brand = await getBrandBySlug(slug)
     return {
       title: brand.name,
-      description: brand.description ?? `探索 ${brand.name}，台灣製造品牌。`,
+      description: brand.description ?? t('metadata.fallbackDescription', { name: brand.name }),
       alternates: { canonical: `/brands/${brand.slug}` },
       openGraph: {
         title: brand.name,
@@ -56,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     }
   } catch {
-    return { title: '找不到品牌' }
+    return { title: t('metadata.notFoundTitle') }
   }
 }
 

@@ -124,6 +124,11 @@
     "links": {
       "purchaseChannels": "Where to Buy"
     },
+    "notFound": {
+      "title": "Brand Not Found",
+      "description": "The brand you're looking for doesn't exist or hasn't been approved yet.",
+      "browseAll": "Browse All Brands"
+    },
     "report": {
       "trigger": "Report",
       "title": "Report Brand",

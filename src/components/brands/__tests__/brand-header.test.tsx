@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { NextIntlClientProvider } from 'next-intl'
 import { BrandHeader } from '../brand-header'
 import type { Brand } from '@/lib/types'
+import zh from '../../../../messages/zh-TW.json'
 
 function makeBrand(overrides: Partial<Brand> = {}): Brand {
   return {
@@ -32,23 +34,31 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
   }
 }
 
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="zh-TW" messages={zh}>
+      {ui}
+    </NextIntlClientProvider>
+  )
+}
+
 describe('BrandHeader — verified badge', () => {
   it('shows verified badge tooltip when isVerified is true', () => {
-    render(<BrandHeader brand={makeBrand({ isVerified: true })} />)
+    renderWithIntl(<BrandHeader brand={makeBrand({ isVerified: true })} />)
     expect(
       screen.getByTitle('This brand has been verified by its owner')
     ).toBeInTheDocument()
   })
 
   it('does not show verified badge when isVerified is false', () => {
-    render(<BrandHeader brand={makeBrand({ isVerified: false })} />)
+    renderWithIntl(<BrandHeader brand={makeBrand({ isVerified: false })} />)
     expect(
       screen.queryByTitle('This brand has been verified by its owner')
     ).not.toBeInTheDocument()
   })
 
   it('does not show verified badge based on approvedAt alone', () => {
-    render(<BrandHeader brand={makeBrand({ isVerified: false, approvedAt: '2026-05-01' })} />)
+    renderWithIntl(<BrandHeader brand={makeBrand({ isVerified: false, approvedAt: '2026-05-01' })} />)
     expect(
       screen.queryByTitle('This brand has been verified by its owner')
     ).not.toBeInTheDocument()

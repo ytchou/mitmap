@@ -124,6 +124,11 @@
     "links": {
       "purchaseChannels": "購買管道"
     },
+    "notFound": {
+      "title": "找不到品牌",
+      "description": "您尋找的品牌不存在或尚未通過審核。",
+      "browseAll": "瀏覽所有品牌"
+    },
     "report": {
       "trigger": "檢舉",
       "title": "檢舉品牌",

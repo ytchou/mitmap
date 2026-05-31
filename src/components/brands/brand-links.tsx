@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { ExternalLink, Globe } from 'lucide-react'
 import { ThreadsIcon } from '@/components/icons/threads-icon'
 import type { Brand } from '@/lib/types'
@@ -12,6 +13,7 @@ interface BrandLinksProps {
 }
 
 export function BrandLinks({ brand }: BrandLinksProps) {
+  const t = useTranslations('brandDetail')
   const links: {
     label: string
     url: string
@@ -65,7 +67,7 @@ export function BrandLinks({ brand }: BrandLinksProps) {
   return (
     <section>
       <h2 className="mb-3 font-heading text-base font-bold text-foreground">
-        購買管道
+        {t('links.purchaseChannels')}
       </h2>
       <div className="flex flex-wrap gap-3">
         {links.map((link, i) => (

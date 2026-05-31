@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Flag } from 'lucide-react'
 import { submitReportAction, type ReportState } from '@/app/[locale]/brands/[slug]/actions'
 import {
@@ -22,6 +23,7 @@ interface ReportDialogProps {
 }
 
 export function ReportDialog({ brandId, brandSlug }: ReportDialogProps) {
+  const t = useTranslations('brandDetail.report')
   const [state, action, pending] = useActionState<ReportState, FormData>(submitReportAction, {})
 
   const alreadyReported =
@@ -31,25 +33,32 @@ export function ReportDialog({ brandId, brandSlug }: ReportDialogProps) {
     localStorage.setItem(`report:${brandSlug}`, '1')
   }
 
+  const reasons = [
+    { value: 'not_mit', label: t('reasonNotMit') },
+    { value: 'incorrect_info', label: t('reasonIncorrectInfo') },
+    { value: 'broken_link', label: t('reasonBrokenLink') },
+    { value: 'inappropriate', label: t('reasonInappropriate') },
+  ]
+
   return (
     <Dialog>
       <DialogTrigger
         className="flex size-[42px] shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground transition-colors hover:bg-secondary/80"
-        aria-label="檢舉"
+        aria-label={t('trigger')}
       >
         <Flag className="size-4" />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>檢舉品牌</DialogTitle>
-          <DialogDescription>請選擇檢舉原因</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         {state.success ? (
           <div className="space-y-4">
-            <p>感謝你的回報，我們會盡快審核。</p>
+            <p>{t('success')}</p>
             <DialogClose>
-              <Button variant="outline">關閉</Button>
+              <Button variant="outline">{t('close')}</Button>
             </DialogClose>
           </div>
         ) : (
@@ -58,17 +67,12 @@ export function ReportDialog({ brandId, brandSlug }: ReportDialogProps) {
 
             {alreadyReported && (
               <p className="rounded bg-muted p-2 text-sm text-muted-foreground">
-                你已回報過此品牌
+                {t('alreadyReported')}
               </p>
             )}
 
             <div className="space-y-2">
-              {[
-                { value: 'not_mit', label: '非台灣製造' },
-                { value: 'incorrect_info', label: '資訊有誤' },
-                { value: 'broken_link', label: '連結失效' },
-                { value: 'inappropriate', label: '不當內容' },
-              ].map(({ value, label }) => (
+              {reasons.map(({ value, label }) => (
                 <Label key={value} className="flex items-center gap-2">
                   <input type="radio" name="reason" value={value} required />
                   {label}
@@ -76,7 +80,7 @@ export function ReportDialog({ brandId, brandSlug }: ReportDialogProps) {
               ))}
             </div>
 
-            <Textarea name="notes" maxLength={1000} placeholder="補充說明（選填）" />
+            <Textarea name="notes" maxLength={1000} placeholder={t('notesPlaceholder')} />
 
             {state.error && (
               <p className="rounded bg-destructive/10 p-2 text-sm text-destructive">
@@ -85,7 +89,7 @@ export function ReportDialog({ brandId, brandSlug }: ReportDialogProps) {
             )}
 
             <Button type="submit" disabled={pending || alreadyReported}>
-              {pending ? '送出中...' : '送出檢舉'}
+              {pending ? t('submitting') : t('submit')}
             </Button>
           </form>
         )}

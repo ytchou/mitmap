@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { BrandActions } from './brand-actions';
+import zh from '../../../messages/zh-TW.json';
 
 vi.mock('@/lib/analytics', () => ({
   trackExternalLinkClicked: vi.fn(),
@@ -12,20 +14,28 @@ vi.mock('@/components/brands/report-dialog', () => ({
   ReportDialog: () => <button aria-label="檢舉">mock-report</button>,
 }));
 
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="zh-TW" messages={zh}>
+      {ui}
+    </NextIntlClientProvider>
+  );
+}
+
 describe('BrandActions', () => {
   it('renders 前往官網 link with bg-cta class when websiteUrl is provided', () => {
-    render(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
+    renderWithIntl(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
     const ctaLink = screen.getByRole('link', { name: /前往官網/i });
     expect(ctaLink).toBeInTheDocument();
     expect(ctaLink.className).toContain('bg-cta');
     expect(ctaLink.className).not.toContain('bg-terracotta');
   });
   it('does NOT render bookmark button', () => {
-    render(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
+    renderWithIntl(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
     expect(screen.queryByRole('button', { name: /收藏/i })).not.toBeInTheDocument();
   });
   it('renders report button when brandId is provided', () => {
-    render(
+    renderWithIntl(
       <BrandActions
         websiteUrl="https://example.com"
         brandSlug="test-brand"
@@ -35,21 +45,21 @@ describe('BrandActions', () => {
     expect(screen.getByRole('button', { name: /檢舉/i })).toBeInTheDocument()
   })
   it('does not render report button when brandId is absent', () => {
-    render(<BrandActions websiteUrl="https://example.com" brandSlug="test-brand" />)
+    renderWithIntl(<BrandActions websiteUrl="https://example.com" brandSlug="test-brand" />)
     expect(screen.queryByRole('button', { name: /檢舉/i })).not.toBeInTheDocument()
   })
   it('renders share button', () => {
-    render(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
+    renderWithIntl(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
     expect(screen.getByRole('button', { name: /分享/i })).toBeInTheDocument();
   });
   it('renders mobile sticky bar with 前往官網 when websiteUrl is provided', () => {
-    render(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
+    renderWithIntl(<BrandActions websiteUrl='https://example.com' brandSlug='test-brand' />);
     expect(screen.getByTestId('mobile-cta-bar')).toBeInTheDocument();
     const stickyLink = screen.getByTestId('mobile-cta-bar').querySelector('a');
     expect(stickyLink).toHaveAttribute('href', 'https://example.com');
   });
   it('does NOT render 前往官網 link when websiteUrl is null', () => {
-    render(<BrandActions websiteUrl={null} brandSlug='test-brand' />);
+    renderWithIntl(<BrandActions websiteUrl={null} brandSlug='test-brand' />);
     expect(screen.queryByRole('link', { name: /前往官網/i })).not.toBeInTheDocument();
   });
 });
