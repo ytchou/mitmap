@@ -1,12 +1,15 @@
-import Link from 'next/link'
-
-const footerLinks = [
-  { label: '關於我們', href: '/about' },
-  { label: '服務條款', href: '/terms' },
-  { label: '聯絡我們', href: 'mailto:patrick.ytchou@gmail.com' },
-]
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 export function Footer() {
+  const t = useTranslations('footer')
+
+  const footerLinks = [
+    { labelKey: 'about' as const, href: '/about' },
+    { labelKey: 'terms' as const, href: '/terms' },
+    { labelKey: 'contact' as const, href: 'mailto:patrick.ytchou@gmail.com' },
+  ]
+
   return (
     <footer
       role="contentinfo"
@@ -17,27 +20,27 @@ export function Footer() {
           {footerLinks.map((link) =>
             link.href.startsWith('/') ? (
               <Link
-                key={link.label}
+                key={link.labelKey}
                 href={link.href}
                 className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-colors"
               >
-                {link.label}
+                {t(link.labelKey)}
               </Link>
             ) : (
               <a
-                key={link.label}
+                key={link.labelKey}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-colors"
               >
-                {link.label}
+                {t(link.labelKey)}
               </a>
             )
           )}
         </div>
         <p className="text-xs text-accent-foreground/50">
-          © {new Date().getFullYear()} Formoria
+          {t('copyright', { year: new Date().getFullYear() })}
         </p>
       </div>
     </footer>

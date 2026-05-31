@@ -2,24 +2,36 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('next/link', () => ({
-  default: ({
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({
     children,
     href,
     className,
+    onClick,
   }: {
     children: React.ReactNode
     href: string
     className?: string
+    onClick?: () => void
   }) => (
-    <a href={href} className={className}>
+    <a href={href} className={className} onClick={onClick}>
       {children}
     </a>
   ),
+  usePathname: () => '/',
 }))
 
-vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const map: Record<string, string> = {
+      brandDirectory: '品牌目錄',
+      faq: '常見問題',
+      support: '請我喝咖啡',
+      mySubmissions: '我的提交',
+      submitBrand: '提交品牌',
+    }
+    return map[key] ?? key
+  },
 }))
 
 vi.mock('./nav-search-input', () => ({
@@ -28,6 +40,10 @@ vi.mock('./nav-search-input', () => ({
 
 vi.mock('./nav-category-tabs', () => ({
   NavCategoryTabs: () => <div data-testid="nav-category-tabs" />,
+}))
+
+vi.mock('@/components/i18n/locale-switcher', () => ({
+  LocaleSwitcher: () => <div data-testid="locale-switcher" />,
 }))
 
 const mockCategories = [
