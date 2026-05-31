@@ -10,25 +10,42 @@ import ValueChips from '@/components/landing/value-chips'
 import DualCta from '@/components/landing/dual-cta'
 import { getBrandStats, getBrands, getNewBrands } from '@/lib/services/brands'
 import { getActiveCategories, getValueTagsWithCoverage } from '@/lib/services/taxonomy'
+import { buildAlternates } from '@/lib/seo/alternates'
+import type { Locale } from '@/lib/seo/alternates'
 
 export const revalidate = 3600
 
-export async function generateMetadata(): Promise<Metadata> {
+type PageProps = {
+  params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('landing.metadata')
+  const { canonical, languages } = buildAlternates('/', safeLocale)
+
+  const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
+  const ogAlternateLocale = safeLocale === 'zh-TW' ? 'en_US' : 'zh_TW'
+
   return {
     title: { absolute: t('title') },
     description: t('description'),
-    alternates: { canonical: '/' },
+    alternates: { canonical, languages },
     openGraph: {
       title: t('title'),
       description: t('description'),
+      locale: ogLocale,
+      alternateLocale: [ogAlternateLocale],
     },
   }
 }
 
-export default async function LandingPage() {
+export default async function LandingPage({ params }: PageProps) {
+  const { locale } = await params
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('landing')
-  const jsonLd = buildWebSiteJsonLd()
+  const jsonLd = buildWebSiteJsonLd(safeLocale)
 
   const [stats, categories, { brands: allBrands }, newBrands, valueTags] = await Promise.all([
     getBrandStats(),

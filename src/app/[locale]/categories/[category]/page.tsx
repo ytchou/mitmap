@@ -6,6 +6,8 @@ import { getBrands } from '@/lib/services/brands'
 import { getTags, getActiveCategories } from '@/lib/services/taxonomy'
 import { buildCategoryItemListJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld'
 import type { BreadcrumbItem } from '@/lib/json-ld'
+import { buildAlternates } from '@/lib/seo/alternates'
+import type { Locale } from '@/lib/seo/alternates'
 import { parsePageParam, parseSortParam, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import { BrandGrid } from '@/components/brands/brand-grid'
 import { Pagination } from '@/components/brands/pagination'
@@ -30,6 +32,7 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, category: slug } = await params
   setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('categories')
 
   try {
@@ -40,13 +43,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const displayName = tag.nameZh ?? tag.name
     const title = t('metadata.title', { displayName })
     const description = t('metadata.description', { displayName, name: tag.name })
+    const { canonical, languages } = buildAlternates(`/categories/${slug}`, safeLocale)
+    const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
+    const ogAlternateLocale = safeLocale === 'zh-TW' ? 'en_US' : 'zh_TW'
     return {
       title,
       description,
-      alternates: { canonical: `/categories/${slug}` },
+      alternates: { canonical, languages },
       openGraph: {
         title,
         description,
+        locale: ogLocale,
+        alternateLocale: [ogAlternateLocale],
       },
       twitter: {
         title,
@@ -61,6 +69,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CategoryPage({ params, searchParams }: PageProps) {
   const { locale, category: slug } = await params
   setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('categories')
 
   const sp = await searchParams
@@ -123,13 +132,13 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildCategoryItemListJsonLd(categoryName, slug, brandSummaries)),
+          __html: JSON.stringify(buildCategoryItemListJsonLd(categoryName, slug, brandSummaries, safeLocale)),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildBreadcrumbJsonLd(breadcrumbItems)),
+          __html: JSON.stringify(buildBreadcrumbJsonLd(breadcrumbItems, safeLocale)),
         }}
       />
 

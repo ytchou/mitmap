@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { buildAlternates } from '@/lib/seo/alternates'
+import type { Locale } from '@/lib/seo/alternates'
 
 type PageProps = {
   params: Promise<{ locale: string }>
@@ -8,10 +10,13 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params
   setRequestLocale(locale)
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('legal.terms.metadata')
+  const { canonical, languages } = buildAlternates('/terms', safeLocale)
   return {
     title: t('title'),
     description: t('description'),
+    alternates: { canonical, languages },
   }
 }
 

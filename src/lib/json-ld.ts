@@ -1,8 +1,14 @@
 import type { Brand } from '@/lib/types'
+import type { Locale } from '@/lib/seo/alternates'
 
 export type BreadcrumbItem = {
   label: string
   href?: string
+}
+
+/** Map a next-intl locale to a schema.org inLanguage value. */
+function toInLanguage(locale: Locale): string {
+  return locale === 'zh-TW' ? 'zh-TW' : 'en'
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -10,7 +16,7 @@ export type BreadcrumbItem = {
 /**
  * Build Organization JSON-LD structured data for a brand detail page.
  */
-export function buildBrandJsonLd(brand: Brand): Record<string, any> {
+export function buildBrandJsonLd(brand: Brand, locale: Locale = 'zh-TW'): Record<string, any> {
   const socialUrls = Object.entries(brand.socialLinks)
     .filter(([key]) => key !== 'officialWebsite')
     .map(([, url]) => url)
@@ -21,6 +27,7 @@ export function buildBrandJsonLd(brand: Brand): Record<string, any> {
     '@type': 'Organization',
     name: brand.name,
     description: brand.description ?? undefined,
+    inLanguage: toInLanguage(locale),
   }
 
   const url = brand.socialLinks.officialWebsite ?? brand.purchaseLinks[0]?.url
@@ -45,12 +52,13 @@ export function buildBrandJsonLd(brand: Brand): Record<string, any> {
 /**
  * Build BreadcrumbList JSON-LD structured data.
  */
-export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]): Record<string, any> {
+export function buildBreadcrumbJsonLd(items: BreadcrumbItem[], locale: Locale = 'zh-TW'): Record<string, any> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
+    inLanguage: toInLanguage(locale),
     itemListElement: items.map((item, index) => {
       const element: Record<string, any> = {
         '@type': 'ListItem',
@@ -72,6 +80,7 @@ export function buildCategoryItemListJsonLd(
   categoryName: string,
   categorySlug: string,
   brands: Array<{ name: string; slug: string }>,
+  locale: Locale = 'zh-TW',
 ): Record<string, any> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -80,6 +89,7 @@ export function buildCategoryItemListJsonLd(
     '@type': 'ItemList',
     name: `${categoryName} — Made in Taiwan Brands`,
     url: `${siteUrl}/categories/${categorySlug}`,
+    inLanguage: toInLanguage(locale),
     numberOfItems: brands.length,
     itemListElement: brands.map((brand, index) => ({
       '@type': 'ListItem',
@@ -93,7 +103,7 @@ export function buildCategoryItemListJsonLd(
 /**
  * Build WebSite JSON-LD structured data for the home page.
  */
-export function buildWebSiteJsonLd(): Record<string, any> {
+export function buildWebSiteJsonLd(locale: Locale = 'zh-TW'): Record<string, any> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formoria.com'
 
   return {
@@ -102,6 +112,7 @@ export function buildWebSiteJsonLd(): Record<string, any> {
     name: 'Formoria',
     alternateName: '島藏',
     url: siteUrl,
+    inLanguage: toInLanguage(locale),
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -117,11 +128,13 @@ export function buildWebSiteJsonLd(): Record<string, any> {
  * Build FAQPage JSON-LD structured data for the FAQ page.
  */
 export function buildFaqPageJsonLd(
-  items: Array<{ question: string; answer: string }>
+  items: Array<{ question: string; answer: string }>,
+  locale: Locale = 'zh-TW',
 ): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
+    inLanguage: toInLanguage(locale),
     mainEntity: items.map((item) => ({
       '@type': 'Question',
       name: item.question,

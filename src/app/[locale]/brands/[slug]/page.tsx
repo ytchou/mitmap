@@ -4,6 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import { getBrandBySlug, getRelatedBrands, getBrandCountByCategory, getAllBrandSlugs } from '@/lib/services/brands'
 import { buildBrandJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld'
 import type { BreadcrumbItem } from '@/lib/json-ld'
+import { buildAlternates } from '@/lib/seo/alternates'
+import type { Locale } from '@/lib/seo/alternates'
 import { BrandViewTracker } from '@/components/brands/brand-view-tracker'
 import { BrandAnalyticsTracker } from './brand-analytics-tracker'
 import { BrandBreadcrumb } from '@/components/brands/brand-breadcrumb'
@@ -32,24 +34,30 @@ export async function generateStaticParams() {
 }
 
 type PageProps = {
-  params: Promise<{ slug: string }>
+  params: Promise<{ locale: string; slug: string }>
   searchParams: Promise<{ source?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { locale, slug } = await params
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('brandDetail')
 
   try {
     const brand = await getBrandBySlug(slug)
+    const { canonical, languages } = buildAlternates(`/brands/${brand.slug}`, safeLocale)
+    const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
+    const ogAlternateLocale = safeLocale === 'zh-TW' ? 'en_US' : 'zh_TW'
     return {
       title: brand.name,
       description: brand.description ?? t('metadata.fallbackDescription', { name: brand.name }),
-      alternates: { canonical: `/brands/${brand.slug}` },
+      alternates: { canonical, languages },
       openGraph: {
         title: brand.name,
         description: brand.description ?? undefined,
         images: brand.heroImageUrl ? [{ url: brand.heroImageUrl }] : undefined,
+        locale: ogLocale,
+        alternateLocale: [ogAlternateLocale],
       },
       twitter: {
         title: brand.name,
@@ -63,7 +71,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BrandDetailPage({ params, searchParams }: PageProps) {
-  const { slug } = await params
+  const { locale, slug } = await params
+  const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const { source: sourceParam } = await searchParams
   const source = (
     sourceParam === 'search' ||
@@ -116,11 +125,11 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
       {/* JSON-LD structured data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBrandJsonLd(brand)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBrandJsonLd(brand, safeLocale)) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd(breadcrumbItems)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd(breadcrumbItems, safeLocale)) }}
       />
 
       {/* Breadcrumb */}
