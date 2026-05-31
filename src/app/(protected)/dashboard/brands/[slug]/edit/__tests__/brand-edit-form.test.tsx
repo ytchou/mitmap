@@ -60,8 +60,10 @@ describe('BrandEditForm — sections', () => {
     expect(screen.getByRole('button', { name: /add.*location/i })).toBeInTheDocument()
   })
 
-  it('renders About section with founder fields', () => {
+  it('does not render founder fields', () => {
     render(<BrandEditForm brand={mockBrand} />)
-    expect(screen.getByLabelText(/founder name/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/founder name/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/founder title/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/founder quote/i)).not.toBeInTheDocument()
   })
 })
