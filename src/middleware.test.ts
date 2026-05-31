@@ -13,9 +13,25 @@ vi.mock('next/server', () => {
     next: vi.fn(() => ({
       cookies: { set: vi.fn() },
     })),
+    redirect: vi.fn(),
   }
   return { NextResponse }
 })
+
+vi.mock('next-intl/middleware', () => ({
+  default: vi.fn(() => vi.fn()),
+}))
+
+vi.mock('@/i18n/routing', () => ({
+  routing: {
+    locales: ['zh-TW', 'en'],
+    defaultLocale: 'zh-TW',
+  },
+}))
+
+vi.mock('@/lib/security/rate-limiter', () => ({
+  checkRateLimit: vi.fn(() => null),
+}))
 
 import { RESERVED_ROUTES } from './middleware'
 
