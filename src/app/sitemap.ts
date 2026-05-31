@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     makeEntry('/', now, 'daily', 1.0),
     makeEntry('/brands', now, 'weekly', 0.9),
+    makeEntry('/about', now, 'monthly', 0.5),
     makeEntry('/faq', now, 'monthly', 0.5),
     makeEntry('/terms', now, 'monthly', 0.5),
     makeEntry('/support', now, 'monthly', 0.5),

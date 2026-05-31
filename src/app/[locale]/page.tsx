@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { buildWebSiteJsonLd } from '@/lib/json-ld'
 import HeroSection from '@/components/landing/hero-section'
 import TrustBar from '@/components/landing/trust-bar'
@@ -21,6 +21,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params
+  setRequestLocale(locale)
   const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('landing.metadata')
   const { canonical, languages } = buildAlternates('/', safeLocale)
@@ -43,6 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function LandingPage({ params }: PageProps) {
   const { locale } = await params
+  setRequestLocale(locale)
   const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('landing')
   const jsonLd = buildWebSiteJsonLd(safeLocale)

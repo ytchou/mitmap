@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getBrands } from '@/lib/services/brands'
 import { getActiveCategories } from '@/lib/services/taxonomy'
 import { buildWebSiteJsonLd } from '@/lib/json-ld'
@@ -23,6 +23,7 @@ interface BrandsPageProps {
 
 export async function generateMetadata({ params }: BrandsPageProps): Promise<Metadata> {
   const { locale } = await params
+  setRequestLocale(locale)
   const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const { canonical, languages } = buildAlternates('/brands', safeLocale)
   const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
@@ -41,6 +42,7 @@ export async function generateMetadata({ params }: BrandsPageProps): Promise<Met
 
 export default async function BrandsPage({ params, searchParams }: BrandsPageProps) {
   const { locale } = await params
+  setRequestLocale(locale)
   const safeLocale = (locale === 'en' ? 'en' : 'zh-TW') as Locale
   const t = await getTranslations('brands')
   const sp = await searchParams
