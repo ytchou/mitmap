@@ -64,7 +64,7 @@ function escapeHtml(str: string): string {
 }
 
 const FROM_ADDRESS = 'Formoria <noreply@formoria.com>'
-const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://mitmap.tw'
+const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://formoria.com'
 
 const ERROR_LABELS: Record<ValidationErrorCode, string> = {
   brand_name_empty: 'Brand name is required',
