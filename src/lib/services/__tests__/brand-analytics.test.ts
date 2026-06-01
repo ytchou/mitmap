@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { incrementView, incrementClick, getAnalytics } from '../brand-analytics'
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -41,6 +41,18 @@ describe('incrementClick', () => {
 })
 
 describe('getAnalytics', () => {
+  // Freeze the clock so the fixed row dates below stay inside the 30-day
+  // window regardless of when the suite runs (otherwise the test is a
+  // time-bomb that fails once today is >30 days past the row dates).
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-20T00:00:00Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('returns totals and trend data for 30 days', async () => {
     const rows = [
       { date: '2026-05-01', views: 10, clicks: 2 },
