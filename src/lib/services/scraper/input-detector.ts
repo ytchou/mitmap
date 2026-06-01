@@ -92,13 +92,16 @@ async function hasLargeSitemap(pageUrl: URL): Promise<boolean> {
   return locCount >= 3
 }
 
-export async function detectInputType(url: string): Promise<InputType> {
+export async function detectInputType(
+  url: string,
+  prefetchedHtml?: string | null
+): Promise<InputType> {
   const domainType = classifyByDomain(url)
   if (domainType) return domainType
 
   try {
     const pageUrl = new URL(url)
-    const html = await fetchHtml(url)
+    const html = prefetchedHtml ?? await fetchHtml(url)
     if (!html) return 'official-site'
 
     let score = 0

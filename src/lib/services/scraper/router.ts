@@ -1,12 +1,25 @@
 import type { InputType, ScrapeStrategy } from './strategies/types'
+import { CrawlStrategy } from './strategies/crawl'
+import { PlatformAdapterStrategy } from './strategies/platform-adapter'
+import { SinglePageStrategy } from './strategies/single-page'
 
-// Stubbed in Task 5; real Crawl/Platform/SinglePage mapping wired in Task 9.
+const platformAdapterStrategy = new PlatformAdapterStrategy()
+const crawlStrategy = new CrawlStrategy()
+const singlePageStrategy = new SinglePageStrategy()
+
 export function selectStrategy(
   type: InputType,
   url: string
 ): ScrapeStrategy {
-  void type
   void url
 
-  throw new Error('selectStrategy is wired in Task 9')
+  if (type === 'social' || type === 'e-commerce') {
+    return platformAdapterStrategy
+  }
+
+  if (type === 'deep-multi-page') {
+    return crawlStrategy
+  }
+
+  return singlePageStrategy
 }
