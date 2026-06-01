@@ -2,7 +2,11 @@ import { z } from 'zod/v3'
 import { SOURCE_ATTRIBUTION_VALUES } from '@/lib/types/submission'
 
 export const scrapeUrlSchema = z.object({
-  url: z.string().url().max(2048).startsWith('https://'),
+  urls: z
+    .array(z.string().url().max(2048).startsWith('https://'))
+    .min(1)
+    .transform((a) => [...new Set(a)])
+    .pipe(z.array(z.string().url().max(2048).startsWith('https://')).max(3)),
 })
 
 const nameField = z.string().min(2, '品牌名稱至少需要 2 個字元').max(100)
