@@ -155,6 +155,96 @@ export async function getPendingFlags(): Promise<ModerationFlag[]> {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
+export type CreateModerationFlagInput = {
+  brandId: string
+  userId: string
+  fieldName: string
+  flaggedContent: string
+  previousContent: string | null
+  flagReason: string
+  tier: string
+  status: string
+}
+
+export async function createModerationFlags(
+  records: CreateModerationFlagInput[]
+): Promise<ModerationFlag[]> {
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = createServiceClient()
+
+  const rows = records.map((r) => ({
+    brand_id: r.brandId,
+    user_id: r.userId,
+    field_name: r.fieldName,
+    flagged_content: r.flaggedContent,
+    previous_content: r.previousContent,
+    flag_reason: r.flagReason,
+    tier: r.tier,
+    status: r.status,
+  }))
+
+  const { data, error } = await supabase
+    .from('moderation_flags')
+    .insert(rows)
+    .select('*, brands(name, slug)')
+
+  if (error) throw error
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    brandId: row.brand_id,
+    brandName: row.brands?.name ?? null,
+    brandSlug: row.brands?.slug ?? null,
+    userId: row.user_id,
+    fieldName: row.field_name,
+    flaggedContent: row.flagged_content,
+    previousContent: row.previous_content ?? null,
+    flagReason: row.flag_reason,
+    tier: row.tier,
+    status: row.status,
+    reviewedAt: row.reviewed_at ?? null,
+    createdAt: row.created_at,
+  }))
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
+export async function getModerationFlag(id: string): Promise<ModerationFlag | null> {
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = createServiceClient()
+
+  const { data, error } = await supabase
+    .from('moderation_flags')
+    .select('*, brands(name, slug)')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null // row not found
+    throw error
+  }
+  if (!data) return null
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const row: any = data
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  return {
+    id: row.id,
+    brandId: row.brand_id,
+    brandName: row.brands?.name ?? null,
+    brandSlug: row.brands?.slug ?? null,
+    userId: row.user_id,
+    fieldName: row.field_name,
+    flaggedContent: row.flagged_content,
+    previousContent: row.previous_content ?? null,
+    flagReason: row.flag_reason,
+    tier: row.tier,
+    status: row.status,
+    reviewedAt: row.reviewed_at ?? null,
+    createdAt: row.created_at,
+  }
+}
+
 export async function updateFlagStatus(
   flagId: string,
   decision: 'reviewed' | 'dismissed'
