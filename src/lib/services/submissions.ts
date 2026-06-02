@@ -97,7 +97,8 @@ export async function createSubmission(
   data: Pick<BrandSubmission, 'brandName' | 'submitterEmail'> &
     Partial<Pick<BrandSubmission, 'brandId' | 'submitterName' | 'description' | 'websiteUrl' | 'socialLinks' | 'suggestedTags' | 'pdpaConsentAt' | 'isBrandOwner' | 'sourceAttribution'>>
 ): Promise<BrandSubmission> {
-  // Public insert — use anon client with RLS (policy allows anonymous inserts)
+  // Authenticated insert — RLS requires a signed-in user (migration 00009_rls_security_hardening.sql
+  // tightened the policy; the submit action authenticates before calling this function).
   const supabase = await createClient()
   const row = submissionToInsert(data)
   const { data: inserted, error } = await supabase
