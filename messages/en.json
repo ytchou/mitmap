@@ -28,7 +28,17 @@
     "about": "About",
     "terms": "Terms of Service",
     "contact": "Contact",
-    "copyright": "© {year} Formoria"
+    "copyright": "© {year} Formoria",
+    "tagline": "Putting Taiwanese brands on the world map.",
+    "discoverHeading": "Discover",
+    "directory": "Brand Directory",
+    "categories": "Categories",
+    "submit": "Submit a Brand",
+    "companyHeading": "Company",
+    "faq": "FAQ",
+    "support": "Support",
+    "legalHeading": "Legal",
+    "connectHeading": "Connect"
   },
   "landing": {
     "metadata": {
@@ -143,6 +153,9 @@
       "notesPlaceholder": "Additional notes (optional)",
       "submitting": "Submitting...",
       "submit": "Submit Report"
+    },
+    "breadcrumb": {
+      "directory": "Brands"
     }
   },
   "categories": {
@@ -152,8 +165,16 @@
     },
     "notFoundTitle": "Category Not Found",
     "breadcrumbHome": "Home",
-    "brandCount": "{count} brand{plural}",
-    "description": "Discover Made in Taiwan {category} brands."
+    "brandCount": "{count, plural, =0 {No brands} one {# brand} other {# brands}}",
+    "description": "Discover Made in Taiwan {category} brands.",
+    "index": {
+      "metadata": {
+        "title": "Browse by Category — Made in Taiwan Brands",
+        "description": "Explore all categories of Made in Taiwan brands on Formoria. Discover food, fashion, design, and more."
+      },
+      "heading": "Browse by Category",
+      "subheading": "Discover Made in Taiwan brands across all categories"
+    }
   },
   "legal": {
     "terms": {
@@ -379,6 +400,19 @@
       "invalidClaim": "The claim link is invalid or has expired. Please contact support.",
       "emailMismatch": "The email you signed in with does not match the claim invitation. Please sign in with the correct email.",
       "claimFailed": "This brand has already been claimed. If you believe this is an error, please contact support."
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "The page you're looking for doesn't exist or may have moved.",
+      "cta": "Back to home",
+      "browseDirectory": "Browse the directory"
+    },
+    "boundary": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again.",
+      "retry": "Try again"
     }
   },
   "submit": {

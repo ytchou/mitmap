@@ -28,7 +28,17 @@
     "about": "關於我們",
     "terms": "服務條款",
     "contact": "聯絡我們",
-    "copyright": "© {year} Formoria"
+    "copyright": "© {year} 島藏",
+    "tagline": "讓台灣品牌被世界看見。",
+    "discoverHeading": "探索",
+    "directory": "品牌目錄",
+    "categories": "分類瀏覽",
+    "submit": "提交品牌",
+    "companyHeading": "關於",
+    "faq": "常見問題",
+    "support": "支持我們",
+    "legalHeading": "法律",
+    "connectHeading": "聯絡"
   },
   "landing": {
     "metadata": {
@@ -143,6 +153,9 @@
       "notesPlaceholder": "補充說明（選填）",
       "submitting": "送出中...",
       "submit": "送出檢舉"
+    },
+    "breadcrumb": {
+      "directory": "品牌目錄"
     }
   },
   "categories": {
@@ -152,8 +165,16 @@
     },
     "notFoundTitle": "Category Not Found",
     "breadcrumbHome": "Home",
-    "brandCount": "{count} brand{plural}",
-    "description": "Discover Made in Taiwan {category} brands."
+    "brandCount": "{count, plural, =0 {尚無品牌} other {# 個品牌}}",
+    "description": "Discover Made in Taiwan {category} brands.",
+    "index": {
+      "metadata": {
+        "title": "依類別瀏覽 — 台灣製造品牌",
+        "description": "在島藏探索所有台灣製造品牌的類別，涵蓋食品、時尚、設計等多元品項。"
+      },
+      "heading": "依類別瀏覽",
+      "subheading": "探索各類別的台灣在地品牌"
+    }
   },
   "legal": {
     "terms": {
@@ -379,6 +400,19 @@
       "invalidClaim": "認領連結無效或已過期，請聯繫客服。",
       "emailMismatch": "您登入的電子郵件與認領邀請不符，請使用正確的電子郵件登入。",
       "claimFailed": "此品牌已被認領。若您認為有誤，請聯繫客服。"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "找不到此頁面",
+      "description": "您要找的頁面不存在或已移至其他位置。",
+      "cta": "返回首頁",
+      "browseDirectory": "瀏覽品牌目錄"
+    },
+    "boundary": {
+      "title": "發生錯誤",
+      "description": "發生了預期外的錯誤，請再試一次。",
+      "retry": "重試"
     }
   },
   "submit": {
