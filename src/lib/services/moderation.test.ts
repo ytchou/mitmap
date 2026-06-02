@@ -7,8 +7,6 @@ import { checkContent } from './moderation'
 
 const mockInsert = vi.fn()
 const mockSelect = vi.fn()
-const mockEq = vi.fn()
-const mockSingle = vi.fn()
 
 const mockFrom = vi.fn(() => ({
   insert: mockInsert,
@@ -126,6 +124,7 @@ describe('getModerationFlag', () => {
     }
 
     mockFrom.mockReturnValue({
+      insert: mockInsert,
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({ data: fakeRow, error: null }),
@@ -147,6 +146,7 @@ describe('getModerationFlag', () => {
     const { getModerationFlag } = await import('./moderation')
 
     mockFrom.mockReturnValue({
+      insert: mockInsert,
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({
