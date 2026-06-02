@@ -14,8 +14,101 @@ on:
 jobs:
   lint-type-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+      - name: Nudge on potential e2e drift
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = '<!-- e2e-drift-nudge -->';
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              core.info('No pull request context; skipping.');
+              return;
+            }
+
+            const files = await github.paginate(
+              github.rest.pulls.listFiles,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                per_page: 100,
+              }
+            );
+
+            const filenames = files.map((file) => file.filename);
+            const touchesUi = filenames.some((name) =>
+              name.startsWith('app/') ||
+              name.startsWith('src/app/') ||
+              name.startsWith('components/') ||
+              name.startsWith('src/components/') ||
+              /(^|\/)route\.(ts|tsx|js|jsx)$/.test(name)
+            );
+            const touchesE2E = filenames.some((name) => name.startsWith('e2e/'));
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 100,
+              }
+            );
+
+            const existing = comments.find((comment) =>
+              comment.body?.includes(marker) &&
+              comment.user?.type === 'Bot'
+            );
+
+            if (touchesUi && !touchesE2E) {
+              const body = [
+                marker,
+                'Heads up: this PR changes `app/`, `src/app/`, `components/`, `src/components/`, or a `route.*` file, but it does not touch `e2e/`.',
+                '',
+                'Please check for potential e2e drift and update coverage if the UI or routing behavior changed.',
+              ].join('\n');
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+                core.info('Updated existing e2e drift nudge comment.');
+                return;
+              }
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+              core.info('Created e2e drift nudge comment.');
+              return;
+            }
+
+            if (existing) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+              });
+              core.info('Removed stale e2e drift nudge comment.');
+              return;
+            }
+
+            core.info('No e2e drift nudge needed.');
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
