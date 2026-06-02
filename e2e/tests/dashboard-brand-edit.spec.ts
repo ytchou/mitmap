@@ -70,8 +70,6 @@ test.describe('Dashboard brand edit', () => {
       await supabase.from('brand_owners').delete().eq('brand_id', brandId);
       await supabase.from('brands').delete().eq('id', brandId);
     }
-    // Sweep any orphaned [E2E-TEST] rows
-    await supabase.from('brands').delete().like('name', '[E2E-TEST]%');
   });
 
   test('owner can edit description and change persists', async ({ userPage }) => {
