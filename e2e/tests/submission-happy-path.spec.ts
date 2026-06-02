@@ -242,7 +242,10 @@ test.describe('Submission happy path', () => {
           if (error) throw error;
           return data?.status ?? null;
         },
-        { timeout: 10_000 }
+        // Generous timeout: under parallel CI load the insert can lag past 10s,
+        // which made this poll intermittently see null (flaky). 30s + slower
+        // initial interval makes it deterministic.
+        { timeout: 30_000, intervals: [500, 1_000, 2_000] }
       )
       .toBe('pending');
 
