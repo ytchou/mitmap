@@ -9,8 +9,9 @@ test.describe('Dashboard brand edit', () => {
   let brandSlug: string;
   let supabase: AnySupabaseClient;
 
-  const initialDescription = '[E2E-TEST] Initial description for edit test';
-  const updatedDescription = '[E2E-TEST] Updated description after save';
+  const descriptionSuffix = Date.now();
+  const initialDescription = `[E2E-TEST] Initial description for edit test ${descriptionSuffix}`;
+  const updatedDescription = `[E2E-TEST] Updated description after save ${descriptionSuffix}`;
 
   test.beforeAll(async () => {
     supabase = createClient(
@@ -81,9 +82,11 @@ test.describe('Dashboard brand edit', () => {
       userPage.getByRole('heading', { name: /edit/i })
     ).toBeVisible({ timeout: 10_000 });
 
-    // Clear and fill the description field
+    // Wait for the seeded value to be hydrated, then clear and fill
     const descriptionField = userPage.locator('textarea[name="description"]');
     await expect(descriptionField).toBeVisible({ timeout: 5_000 });
+    await expect(descriptionField).toHaveValue(initialDescription, { timeout: 5_000 });
+    await descriptionField.fill('');
     await descriptionField.fill(updatedDescription);
 
     // Submit the form
