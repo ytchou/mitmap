@@ -104,7 +104,7 @@ async function waitForTurnstileWidgetToken(page: Page, timeout = 15_000) {
 
   if (!tokenHandle) return null;
 
-  const token = await tokenHandle.jsonValue<string | null>();
+  const token = (await tokenHandle.jsonValue()) as string | null;
   return token?.trim() || null;
 }
 
