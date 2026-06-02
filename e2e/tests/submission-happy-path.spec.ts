@@ -164,17 +164,17 @@ test.describe('Submission happy path', () => {
     await userPage.getByRole('checkbox', { name: ownerCheckboxName, exact: true }).check();
     await userPage.getByRole('button', { name: manualEntryButtonName, exact: true }).click();
 
-    await expect(userPage.getByLabel('Brand Name', { exact: true })).toBeVisible({
+    await expect(userPage.getByLabel('品牌名稱', { exact: true })).toBeVisible({
       timeout: 5_000,
     });
 
-    await userPage.getByLabel('Brand Name', { exact: true }).fill(brandName);
+    await userPage.getByLabel('品牌名稱', { exact: true }).fill(brandName);
     await userPage
-      .getByLabel('Brand Description', { exact: true })
+      .getByLabel('品牌描述', { exact: true })
       .fill('A handcrafted Taiwanese brand used to characterize the full submission wizard.');
-    await userPage.getByLabel('Category', { exact: true }).selectOption({ index: 1 });
+    await userPage.getByLabel('類別', { exact: true }).selectOption({ index: 1 });
 
-    const tagInput = userPage.getByPlaceholder('Type and press Enter to add a tag');
+    const tagInput = userPage.getByPlaceholder('輸入後按 Enter 新增標籤');
     await tagInput.fill('characterization');
     await tagInput.press('Enter');
 
@@ -194,28 +194,28 @@ test.describe('Submission happy path', () => {
     await expect(userPage.getByAltText('Upload 1')).toBeVisible({ timeout: 10_000 });
     await userPage.getByRole('button', { name: nextButtonName, exact: true }).click();
 
-    await expect(userPage.getByLabel('Brand Highlights', { exact: true })).toBeVisible({
+    await expect(userPage.getByLabel('品牌亮點', { exact: true })).toBeVisible({
       timeout: 5_000,
     });
     await userPage
-      .getByLabel('Brand Highlights', { exact: true })
+      .getByLabel('品牌亮點', { exact: true })
       .fill('Small-batch production with a clear Taiwan-made story.');
     await userPage.getByRole('button', { name: nextButtonName, exact: true }).click();
 
-    await expect(userPage.getByText(/Purchase Links/i)).toBeVisible({ timeout: 5_000 });
+    await expect(userPage.getByText('購買連結 *', { exact: true })).toBeVisible({ timeout: 5_000 });
     await userPage.locator('select').first().selectOption('official');
     await userPage.getByPlaceholder('https://...').fill(purchaseUrl);
     await userPage.getByLabel('Instagram', { exact: true }).fill('@e2e_happy_path');
     await userPage.getByLabel('Website', { exact: true }).fill(websiteUrl);
     await userPage.getByRole('button', { name: nextButtonName, exact: true }).click();
 
-    await expect(userPage.getByRole('heading', { name: 'Brand Info', exact: true })).toBeVisible({
+    await expect(userPage.getByRole('heading', { name: '品牌資訊', exact: true })).toBeVisible({
       timeout: 5_000,
     });
 
     await userPage
       .getByRole('checkbox', {
-        name: /I agree to the collection and use of my personal data/i,
+        name: /我同意依據.*隱私政策.*收集和使用我的個人資料（PDPA 合規）/,
       })
       .check();
 

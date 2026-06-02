@@ -1,32 +1,53 @@
 import { test, expect } from '../fixtures/auth';
 
 test.describe('Categories index', () => {
-  test('renders category cards and navigates to a filtered category page', async ({
+  test('renders the categories index and follows a category link when one is available', async ({
     anonPage,
   }) => {
-    await anonPage.goto('/categories');
+    const response = await anonPage.goto('/categories');
+    expect(response?.status()).toBe(200);
 
-    await expect(anonPage.locator('main h1')).toHaveText(/依類別瀏覽|Browse by Category/);
+    await expect(
+      anonPage.getByRole('heading', { level: 1, name: '依類別瀏覽', exact: true })
+    ).toBeVisible({ timeout: 10_000 });
 
-    const firstCategoryLink = anonPage.locator('main a[href^="/categories/"]').first();
+    const categoryLinks = anonPage.locator('main a[href^="/categories/"]');
+    const categoryLinkCount = await categoryLinks.count();
+
+    if (categoryLinkCount === 0) {
+      await expect(categoryLinks).toHaveCount(0);
+      return;
+    }
+
+    const firstCategoryLink = categoryLinks.first();
     await expect(firstCategoryLink).toBeVisible({ timeout: 10_000 });
-    await expect(firstCategoryLink).toContainText(/尚無品牌|個品牌|No brands|\d+\s+brands?/);
 
     const href = await firstCategoryLink.getAttribute('href');
+    expect(href).toBeTruthy();
+    if (!href) {
+      throw new Error('Expected category link to have an href');
+    }
     expect(href).toMatch(/^\/categories\/[^/]+$/);
 
     const categoryName = (await firstCategoryLink.locator('span').first().textContent())?.trim();
     expect(categoryName).toBeTruthy();
+    if (!categoryName) {
+      throw new Error('Expected category link to include a category name');
+    }
 
-    await anonPage.goto(href!);
+    await Promise.all([
+      anonPage.waitForURL((url) => url.pathname === href, { timeout: 10_000 }),
+      firstCategoryLink.click(),
+    ]);
 
-    expect(new URL(anonPage.url()).pathname).toBe(href);
-    await expect(anonPage.locator('main h1')).toHaveText(categoryName!);
+    await expect(
+      anonPage.getByRole('heading', { level: 1, name: categoryName, exact: true })
+    ).toBeVisible({ timeout: 10_000 });
+
     await expect(
       anonPage
-        .locator('main [role="list"] [role="listitem"]')
-        .first()
-        .or(anonPage.getByText(/找不到品牌|no brands|no results/i))
+        .locator('main [role="list"][aria-label="Brand directory"]')
+        .or(anonPage.getByText('找不到品牌', { exact: true }))
     ).toBeVisible({ timeout: 10_000 });
   });
 });

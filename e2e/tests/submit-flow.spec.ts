@@ -37,7 +37,7 @@ test.describe('Submit flow deep', () => {
   test('Tier 1 keyword blocks submission', async ({ userPage }) => {
     await userPage.goto('/submit');
     await userPage.getByRole('button', { name: manualEntryButtonName, exact: true }).click();
-    const nameInput = userPage.getByLabel('Brand Name', { exact: true });
+    const nameInput = userPage.getByLabel('品牌名稱', { exact: true });
     if (await nameInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await nameInput.fill(`[E2E-TEST] Brand casino ${Date.now()}`);
       const nextBtn = userPage.getByRole('button', { name: nextButtonName, exact: true });
