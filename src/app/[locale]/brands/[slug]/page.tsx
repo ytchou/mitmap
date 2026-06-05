@@ -13,6 +13,7 @@ import { ImageCarousel } from '@/components/brands/image-carousel'
 import { BrandHeader } from '@/components/brands/brand-header'
 import { BrandActions } from '@/components/brands/brand-actions'
 import { ClaimBrandCta } from '@/components/brands/claim-brand-cta'
+import { RequestRemoval } from '@/components/brands/request-removal'
 import { BrandAbout } from '@/components/brands/brand-about'
 import { BrandTags } from '@/components/brands/brand-tags'
 import { BrandHighlights } from '@/components/brands/brand-highlights'
@@ -161,7 +162,12 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
             actionsSlot={<BrandActions websiteUrl={visitUrl ?? null} brandSlug={brand.slug} brandId={brand.id} />}
           />
 
-          {!brand.isVerified && <ClaimBrandCta brandId={brand.id} />}
+          {!brand.isVerified && (
+            <div className="space-y-2">
+              <ClaimBrandCta brandId={brand.id} />
+              <RequestRemoval brandId={brand.id} />
+            </div>
+          )}
 
           <hr className="border-border" />
 

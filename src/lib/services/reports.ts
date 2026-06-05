@@ -13,7 +13,14 @@ type ReportRowWithBrand = ReportRow & {
   brands: { name: string; slug: string } | null
 }
 
-export type ReportReason = 'not_mit' | 'incorrect_info' | 'broken_link' | 'inappropriate'
+export const REMOVAL_REQUEST_REASON = 'removal_request' as const
+
+export type ReportReason =
+  | 'not_mit'
+  | 'incorrect_info'
+  | 'broken_link'
+  | 'inappropriate'
+  | typeof REMOVAL_REQUEST_REASON
 
 export type ReportStatus = ReviewStatus
 
@@ -54,6 +61,18 @@ export async function createReport(input: {
     .insert(buildReportRecord(input))
 
   if (error) throw error
+}
+
+export async function requestBrandRemoval(input: {
+  brandId: string
+  reason: typeof REMOVAL_REQUEST_REASON
+  message?: string | null
+}): Promise<void> {
+  await createReport({
+    brandId: input.brandId,
+    reason: input.reason,
+    notes: input.message ?? null,
+  })
 }
 
 export async function getPendingReports(): Promise<BrandReport[]> {

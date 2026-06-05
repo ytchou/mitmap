@@ -5,10 +5,15 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createInMemoryRateLimiter } from '@/lib/security/rate-limiter'
 import { createClaimRequest } from '@/lib/services/claim-requests'
-import { createReport, type ReportReason } from '@/lib/services/reports'
+import {
+  createReport,
+  REMOVAL_REQUEST_REASON,
+  requestBrandRemoval,
+} from '@/lib/services/reports'
 
 const REPORT_REASONS = ['not_mit', 'incorrect_info', 'broken_link', 'inappropriate'] as const
 const CLAIM_PROOF_TYPES = ['domain_email', 'social_post', 'business_registration'] as const
+type SubmitReportReason = (typeof REPORT_REASONS)[number]
 
 export type ReportState = { error?: string; success?: boolean }
 
@@ -20,6 +25,12 @@ export type SubmitClaimInput = {
 }
 
 export type SubmitClaimResult = { ok: true } | { error: string }
+export type RequestBrandRemovalInput = {
+  brandId: string
+  message?: string
+}
+
+export type RequestBrandRemovalResult = { ok: true } | { error: string }
 
 const reportRateLimiter = createInMemoryRateLimiter()
 
@@ -79,13 +90,44 @@ export async function submitClaimAction(input: SubmitClaimInput): Promise<Submit
   }
 }
 
+export async function requestBrandRemovalAction(
+  input: RequestBrandRemovalInput
+): Promise<RequestBrandRemovalResult> {
+  try {
+    const brandId = input.brandId.trim()
+    if (!brandId) {
+      return { error: '缺少品牌 ID / Missing brand ID.' }
+    }
+
+    const message = input.message?.trim()
+    if (message && message.length > 1000) {
+      return { error: '補充說明不得超過 1000 字 / Message must be 1000 characters or fewer.' }
+    }
+
+    await requestBrandRemoval({
+      brandId,
+      reason: REMOVAL_REQUEST_REASON,
+      message: message || undefined,
+    })
+
+    revalidatePath('/admin/reports')
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (err) {
+    console.error('[brands:requestRemoval]', err)
+    return {
+      error: err instanceof Error ? err.message : '提交失敗，請稍後再試。 / Something went wrong. Please try again.',
+    }
+  }
+}
+
 export async function submitReportAction(prevState: ReportState, formData: FormData): Promise<ReportState> {
   try {
     const brandId = formData.get('brandId') as string | null
     if (!brandId) return { error: '缺少品牌 ID' }
 
     const reason = formData.get('reason') as string | null
-    if (!reason || !REPORT_REASONS.includes(reason as ReportReason)) {
+    if (!reason || !REPORT_REASONS.includes(reason as SubmitReportReason)) {
       return { error: '請選擇有效的檢舉原因' }
     }
 
@@ -103,7 +145,7 @@ export async function submitReportAction(prevState: ReportState, formData: FormD
       return { error: '檢舉次數過多，請稍後再試。' }
     }
 
-    await createReport({ brandId, reason: reason as ReportReason, notes })
+    await createReport({ brandId, reason: reason as SubmitReportReason, notes })
     revalidatePath('/admin/reports')
     revalidatePath('/admin')
     return { success: true }
