@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockRevalidatePath = vi.fn()
+const mockRevalidateTag = vi.fn()
 
 vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
+  revalidateTag: mockRevalidateTag,
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -120,7 +122,7 @@ describe('admin actions cache invalidation', () => {
   it('approveClaimAction revalidates locale-aware public brand pages', async () => {
     await approveClaimAction('claim-1')
 
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/[locale]/brands/[slug]', 'page')
+    expect(mockRevalidateTag).toHaveBeenCalledWith('brand:test-brand', 'max')
     expect(mockRevalidatePath).toHaveBeenCalledWith('/[locale]/brands', 'page')
     expect(mockRevalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
   })
