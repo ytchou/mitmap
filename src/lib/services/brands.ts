@@ -156,6 +156,15 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
 
 const BRAND_SELECT = '*, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)'
 
+function applyVerificationFilter(
+  brands: Brand[],
+  filter: BrandFilters['verificationFilter']
+): Brand[] {
+  if (filter === 'verified') return brands.filter((b) => b.isVerified)
+  if (filter === 'community') return brands.filter((b) => !b.isVerified)
+  return brands
+}
+
 export async function getBrands(
   filters?: BrandFilters
 ): Promise<{ brands: Brand[]; totalCount: number }> {
@@ -209,9 +218,13 @@ export async function getBrands(
       query = query.range(offset, offset + filters.limit - 1)
     }
 
-    const { data, error, count } = await query
+    const { data, error } = await query
     if (error) throw error
-    return { brands: (data ?? []).map(brandToDomain), totalCount: count ?? 0 }
+    const mapped = applyVerificationFilter(
+      (data ?? []).map(brandToDomain),
+      filters.verificationFilter
+    )
+    return { brands: mapped, totalCount: mapped.length }
   }
 
   let query = supabase.from('brands').select(BRAND_SELECT, { count: 'exact' })
@@ -239,10 +252,14 @@ export async function getBrands(
     query = query.range(offset, offset + filters.limit - 1)
   }
 
-  const { data, error, count } = await query
+  const { data, error } = await query
 
   if (error) throw error
-  return { brands: (data ?? []).map(brandToDomain), totalCount: count ?? 0 }
+  const mapped = applyVerificationFilter(
+    (data ?? []).map(brandToDomain),
+    filters?.verificationFilter
+  )
+  return { brands: mapped, totalCount: mapped.length }
 }
 
 export async function getBrandBySlug(slug: string): Promise<Brand> {
