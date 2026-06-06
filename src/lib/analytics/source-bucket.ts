@@ -50,8 +50,7 @@ export function bucketSource(
 
   if (
     normalizedHostname === normalizedCurrentHost ||
-    normalizedHostname.endsWith(`.${normalizedCurrentHost}`) ||
-    normalizedHostname.endsWith(normalizedCurrentHost)
+    normalizedHostname.endsWith(`.${normalizedCurrentHost}`)
   ) {
     return 'direct'
   }

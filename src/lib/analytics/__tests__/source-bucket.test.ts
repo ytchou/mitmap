@@ -22,6 +22,7 @@ describe('bucketSource', () => {
 
   it('classifies a same-host referrer as direct (untagged internal)', () => {
     expect(bucketSource(undefined, 'https://formoria.com/brands', HOST)).toBe('direct')
+    expect(bucketSource(undefined, 'https://www.formoria.com/brands', HOST)).toBe('direct')
   })
 
   it('classifies search engines as external_search', () => {
@@ -36,6 +37,7 @@ describe('bucketSource', () => {
 
   it('classifies any other external host as external', () => {
     expect(bucketSource(undefined, 'https://some-blog.example/post', HOST)).toBe('external')
+    expect(bucketSource(undefined, 'https://evilformoria.com/x', HOST)).toBe('external')
   })
 
   it('never throws on a malformed referrer', () => {
