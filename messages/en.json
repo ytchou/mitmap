@@ -130,6 +130,7 @@
     "verified": "Brand-managed",
     "verifiedTitle": "Managed by the brand owner",
     "mitVerified": "MIT Verified",
+    "mitVerifiedTitle": "Verified against the MIT Smile registry",
     "foundingYear": "Est. {year}",
     "actions": {
       "visitWebsite": "Visit Website",

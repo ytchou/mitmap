@@ -130,6 +130,7 @@
     "verified": "品牌經營",
     "verifiedTitle": "由品牌方經營管理",
     "mitVerified": "MIT 已驗證",
+    "mitVerifiedTitle": "已通過 MIT 微笑標章登錄驗證",
     "foundingYear": "創立於 {year}",
     "actions": {
       "visitWebsite": "前往官網",

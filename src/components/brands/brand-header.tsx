@@ -39,6 +39,7 @@ export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
           <div className="flex items-center gap-2">
             {hasMitVerifiedBadge && (
               <span
+                title={t('mitVerifiedTitle')}
                 className={`${badgeClassName} bg-mit-verified-bg text-mit-verified`}
               >
                 <ShieldCheck className="h-[11px] w-[11px]" aria-hidden />
