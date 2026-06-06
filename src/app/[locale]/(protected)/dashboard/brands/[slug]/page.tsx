@@ -5,7 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getBrandBySlug } from "@/lib/services/brands";
 import { computeBrandCompleteness } from "@/lib/services/brand-completeness";
 import { isOwnerOf } from "@/lib/services/brand-owners";
-import { getAnalytics } from "@/lib/services/brand-analytics";
+import {
+  getAnalytics,
+  getSourceBreakdown,
+} from "@/lib/services/brand-analytics";
 import { BrandCompletenessCard } from "@/components/dashboard/brand-completeness-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AnalyticsCards } from "@/components/dashboard/analytics-cards";
+import { SourcesBreakdownCard } from "@/components/dashboard/sources-breakdown-card";
 
 export const metadata: Metadata = {
   title: "品牌管理",
@@ -39,7 +43,10 @@ export default async function BrandDashboardPage({ params }: Props) {
 
   if (!owner) redirect("/dashboard");
 
-  const analytics = await getAnalytics(brand.id, 30);
+  const [analytics, sources] = await Promise.all([
+    getAnalytics(brand.id, 30),
+    getSourceBreakdown(brand.id, 30),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -57,7 +64,7 @@ export default async function BrandDashboardPage({ params }: Props) {
         </Link>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-6">
         <h2 className="mb-4 text-sm font-semibold uppercase text-muted-foreground">
           Analytics
         </h2>
@@ -67,6 +74,7 @@ export default async function BrandDashboardPage({ params }: Props) {
           viewTrend={analytics.viewTrend}
           clickTrend={analytics.clickTrend}
         />
+        <SourcesBreakdownCard sources={sources} />
       </div>
 
       <div className="mt-8">

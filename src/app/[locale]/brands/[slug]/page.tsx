@@ -83,6 +83,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
   const source = (
     sourceParam === 'search' ||
     sourceParam === 'category' ||
+    sourceParam === 'directory' ||
     sourceParam === 'direct' ||
     sourceParam === 'recommendation'
   ) ? sourceParam : 'direct'
@@ -134,7 +135,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
   return (
     <main className="mx-auto max-w-screen-xl px-6 pt-10 pb-24 md:px-10 lg:pb-10">
       <BrandViewTracker brandSlug={slug} source={source} />
-      <BrandAnalyticsTracker brandId={brand.id} />
+      <BrandAnalyticsTracker brandId={brand.id} source={source} />
       {/* JSON-LD structured data */}
       <script
         type="application/ld+json"
