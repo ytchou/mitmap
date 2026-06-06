@@ -28,7 +28,7 @@ export function LinkBreakdown({ rows }: LinkBreakdownProps) {
       className="space-y-3"
       style={chartStyles}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7C7570]">
+      <p className="text-[11px] font-medium tracking-widest text-[#7C7570]">
         {t('breakdownLabel')}
       </p>
 
