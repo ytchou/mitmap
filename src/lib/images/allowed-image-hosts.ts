@@ -43,7 +43,14 @@ export function safeImageSrc(url: string | null | undefined): string | null {
       return null
     }
 
-    return isAllowedImageHost(parsedUrl.hostname) ? url : null
+    if (!isAllowedImageHost(parsedUrl.hostname)) {
+      return null
+    }
+
+    // next/image remotePatterns are https-only; upgrade http -> https for allowed
+    // hosts (these CDNs all serve https) so the returned URL satisfies the optimizer.
+    parsedUrl.protocol = 'https:'
+    return parsedUrl.toString()
   } catch {
     return null
   }
