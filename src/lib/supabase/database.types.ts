@@ -40,6 +40,11 @@ export type Database = {
           updated_at: string
           is_demo: boolean
           tag_slugs: string[]
+          source: string | null
+          mit_status: string
+          mit_claimed_at: string | null
+          mit_verified_at: string | null
+          mit_evidence: Json | null
         }
         Insert: {
           id?: string
@@ -64,6 +69,11 @@ export type Database = {
           updated_at?: string
           is_demo?: boolean
           tag_slugs?: string[]
+          source?: string | null
+          mit_status?: string
+          mit_claimed_at?: string | null
+          mit_verified_at?: string | null
+          mit_evidence?: Json | null
         }
         Update: {
           id?: string
@@ -88,6 +98,11 @@ export type Database = {
           updated_at?: string
           is_demo?: boolean
           tag_slugs?: string[]
+          source?: string | null
+          mit_status?: string
+          mit_claimed_at?: string | null
+          mit_verified_at?: string | null
+          mit_evidence?: Json | null
         }
       }
       taxonomy_tags: {
@@ -231,6 +246,50 @@ export type Database = {
           brand_id?: string
           claimed_at?: string
           created_at?: string
+        }
+      }
+      claim_requests: {
+        Row: {
+          id: string
+          brand_id: string
+          user_id: string
+          proof_type: string
+          proof_url: string | null
+          proof_notes: string | null
+          status: string
+          reviewer_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          created_at: string
+          mit_smile_cert: string | null
+        }
+        Insert: {
+          id?: string
+          brand_id: string
+          user_id: string
+          proof_type: string
+          proof_url?: string | null
+          proof_notes?: string | null
+          status?: string
+          reviewer_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          created_at?: string
+          mit_smile_cert?: string | null
+        }
+        Update: {
+          id?: string
+          brand_id?: string
+          user_id?: string
+          proof_type?: string
+          proof_url?: string | null
+          proof_notes?: string | null
+          status?: string
+          reviewer_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          created_at?: string
+          mit_smile_cert?: string | null
         }
       }
       moderation_flags: {

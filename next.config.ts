@@ -1,24 +1,14 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from 'next-intl/plugin'
+import { ALLOWED_IMAGE_HOSTS } from './src/lib/images/allowed-image-hosts'
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-      { protocol: 'https', hostname: 'cdn01.pinkoi.com' },
-      { protocol: 'https', hostname: 'cdn02.pinkoi.com' },
-      { protocol: 'https', hostname: 'cms-static.cdn.91app.com' },
-      { protocol: 'https', hostname: 'img.gogoshop.cloud' },
-      { protocol: 'https', hostname: 'img.shoplineapp.com' },
-      { protocol: 'https', hostname: 'shoplineimg.com' },
-      { protocol: 'https', hostname: 'twrr.org.tw' },
-      { protocol: 'https', hostname: 'www.sobdeall.com.tw' },
-    ],
+    remotePatterns: ALLOWED_IMAGE_HOSTS.map((hostname) => ({
+      protocol: 'https',
+      hostname,
+    })),
   },
   async headers() {
     return [
@@ -31,7 +21,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://challenges.cloudflare.com https://*.sentry.io",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co https://cdn01.pinkoi.com https://cdn02.pinkoi.com https://cms-static.cdn.91app.com https://img.gogoshop.cloud https://img.shoplineapp.com https://shoplineimg.com https://twrr.org.tw https://www.sobdeall.com.tw",
+              "img-src 'self' data: blob: https://*.supabase.co https://1973home.myshopify.com https://cdn01.pinkoi.com https://cdn02.pinkoi.com https://cms-static.cdn.91app.com https://img.gogoshop.cloud https://img.shoplineapp.com https://shoplineimg.com https://twrr.org.tw https://www.sobdeall.com.tw",
               "font-src 'self'",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://www.google-analytics.com https://challenges.cloudflare.com",
               "frame-src https://challenges.cloudflare.com",

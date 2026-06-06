@@ -23,6 +23,14 @@ export type RetailLocation = {
   longitude: number
 }
 
+export type MitEvidence = {
+  mit_smile_listed?: boolean
+  mit_smile_cert?: string
+  notes?: string
+  verified_source?: string
+  verified_by?: string
+}
+
 export type Brand = {
   id: string
   name: string
@@ -33,6 +41,10 @@ export type Brand = {
   status: BrandStatus
   category: string | null
   isVerified: boolean
+  mitStatus?: 'unverified' | 'claimed' | 'verified' | 'rejected'
+  mitVerifiedAt?: string | null
+  mitEvidence?: MitEvidence | null
+  mitVerified?: boolean
   isDemo: boolean
   foundingYear: number | null
   purchaseLinks: PurchaseLink[]

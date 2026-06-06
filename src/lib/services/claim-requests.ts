@@ -11,6 +11,9 @@ const MAX_PROOF_URL_LENGTH = 2048
 const DUPLICATE_PENDING_CLAIM_ERROR = 'a pending claim already exists for this brand'
 const CLAIM_ALREADY_REVIEWED_ERROR = 'claim already reviewed'
 const CLAIM_REQUESTER_EMAIL_NOT_FOUND_ERROR = 'Claim requester email not found'
+const CLAIM_REQUEST_SELECT =
+  'id, brand_id, user_id, proof_type, proof_url, proof_notes, mit_smile_cert, status, reviewer_notes, reviewed_at, reviewed_by, created_at'
+const CLAIM_REQUEST_WITH_BRAND_SELECT = `${CLAIM_REQUEST_SELECT}, brands(name, slug)`
 
 type ClaimRequestRow = {
   id: string
@@ -19,6 +22,7 @@ type ClaimRequestRow = {
   proof_type: string
   proof_url: string | null
   proof_notes: string | null
+  mit_smile_cert: string | null
   status: string
   reviewer_notes: string | null
   reviewed_at: string | null
@@ -90,6 +94,7 @@ export type ClaimRequest = {
   proofType: ClaimProofType
   proofUrl: string | null
   proofNotes: string | null
+  mitSmileCert: string | null
   status: ClaimRequestStatus
   reviewerNotes: string | null
   reviewedAt: string | null
@@ -108,6 +113,7 @@ export function rowToClaimRequest(row: ClaimRequestRowWithJoins): ClaimRequest {
     proofType: row.proof_type as ClaimProofType,
     proofUrl: row.proof_url ?? null,
     proofNotes: row.proof_notes ?? null,
+    mitSmileCert: row.mit_smile_cert ?? null,
     status: row.status as ClaimRequestStatus,
     reviewerNotes: row.reviewer_notes ?? null,
     reviewedAt: row.reviewed_at ?? null,
@@ -149,6 +155,11 @@ function normalizeProofUrl(proofUrl?: string): string | null {
   return parsed.toString()
 }
 
+function normalizeMitSmileCert(mitSmileCert?: string | null): string | null {
+  const trimmed = mitSmileCert?.trim()
+  return trimmed ? trimmed : null
+}
+
 async function attachRequesterEmails(rows: ClaimRequestRowWithJoins[]): Promise<ClaimRequest[]> {
   const supabase = createServiceClient()
   const userIds = [...new Set(rows.map((row) => row.user_id))]
@@ -176,9 +187,11 @@ export async function createClaimRequest(input: {
   proofType: ClaimProofType
   proofUrl?: string
   proofNotes?: string
+  mitSmileCert?: string | null
 }): Promise<ClaimRequest> {
   const supabase = createServiceClient()
   const proofUrl = normalizeProofUrl(input.proofUrl)
+  const mitSmileCert = normalizeMitSmileCert(input.mitSmileCert)
 
   const { data: brand, error: brandError } = await supabase
     .from('brands')
@@ -223,8 +236,9 @@ export async function createClaimRequest(input: {
       proof_type: input.proofType,
       proof_url: proofUrl,
       proof_notes: input.proofNotes ?? null,
+      mit_smile_cert: mitSmileCert,
     })
-    .select('*')
+    .select(CLAIM_REQUEST_SELECT)
     .single()
 
   if (error) {
@@ -238,7 +252,7 @@ export async function createClaimRequest(input: {
 
 export async function listClaimRequests(status?: ClaimRequestStatus): Promise<ClaimRequest[]> {
   const supabase = createServiceClient()
-  let query = claimRequestsTable(supabase).select('*, brands(name, slug)')
+  let query = claimRequestsTable(supabase).select(CLAIM_REQUEST_WITH_BRAND_SELECT)
 
   if (status) {
     query = query.eq('status', status)
@@ -253,7 +267,7 @@ export async function listClaimRequests(status?: ClaimRequestStatus): Promise<Cl
 export async function getClaimRequest(id: string): Promise<ClaimRequest> {
   const supabase = createServiceClient()
   const { data, error } = await claimRequestsTable(supabase)
-    .select('*, brands(name, slug)')
+    .select(CLAIM_REQUEST_WITH_BRAND_SELECT)
     .eq('id', id)
     .single()
 

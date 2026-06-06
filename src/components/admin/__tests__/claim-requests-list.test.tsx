@@ -18,6 +18,7 @@ const FAKE_PENDING_CLAIM: ClaimRequest = {
   proofType: 'social_post',
   proofUrl: 'https://instagram.com/p/abc123',
   proofNotes: 'Posted the studio walkthrough on our official account.',
+  mitSmileCert: null,
   status: 'pending',
   reviewerNotes: null,
   reviewedAt: null,

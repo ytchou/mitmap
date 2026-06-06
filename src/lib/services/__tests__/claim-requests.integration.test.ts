@@ -139,6 +139,27 @@ describeWithDb('claim requests service (integration)', () => {
     expect(request.proofType).toBe('domain_email')
   })
 
+  it('createClaimRequest stores the MIT Smile cert when provided', async () => {
+    const request = await createClaimRequest({
+      userId,
+      brandId,
+      proofType: 'domain_email',
+      mitSmileCert: '01200024-02134',
+    })
+
+    expect(request.mitSmileCert).toBe('01200024-02134')
+  })
+
+  it('createClaimRequest stores a null MIT Smile cert when omitted', async () => {
+    const request = await createClaimRequest({
+      userId,
+      brandId,
+      proofType: 'domain_email',
+    })
+
+    expect(request.mitSmileCert).toBeNull()
+  })
+
   it('approveClaimRequest claims the brand and marks the request approved', async () => {
     const request = await createClaimRequest({
       userId,

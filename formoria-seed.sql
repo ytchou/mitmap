@@ -38,7 +38,7 @@ INSERT INTO brands (
    'threads_seed', 'unverified', NULL, false, 'pending'),
   ('Entadar 海漂計畫', 'entadar', 'Entadar 以城市生活中需要的物件大小來開發組合包袋及配件、讓每一趟旅行跟通勤的轉換變得更加自由 輕便且有趣。 Entadar 的產品採用輕重量 低排碳量 防水防霉的無溶劑PPU皮革(Prepolymer Polyurethane) 製成、並搭配可組合的設計、讓您輕鬆應對不同攜帶需求、是遷徙於城市及戶外之間的理想選擇。無論是日常上班 週末郊遊、還是短途旅行、Entadar都能為您提供最完美的組合包選項、滿足您多變的出行目的。讓Entadar陪伴您、探索城市生活裡的無限可能！', 'Bags & Accessories', 'http://entadar.com/cdn/shop/files/Entadar1200x628px_1200x1200.jpg?v=1683281276',
    '{"urban-bags","water-resistant","ppu-leather"}'::text[], '{"instagram": "@entadarr", "threads": "@entadarr"}'::jsonb, '[{"label": "Website", "url": "https://entadar.com"}, {"label": "Shop", "url": "https://entadar.com/cart"}]'::jsonb, '["https://entadar.com/cdn/shop/files/01_1000x1000px.jpg?v=1680255172&width=300", "https://entadar.com/cdn/shop/collections/SuperCoreIndex2400px_01.jpg?v=1681400100&width=300", "https://entadar.com/cdn/shop/collections/12.jpg?v=1680946542&width=300"]'::jsonb,
-   'threads_seed', 'unverified', '{"mit_smile_listed": true, "mit_smile_cert": "01900539-00001"}'::jsonb, false, 'pending'),
+   'threads_seed', 'verified', '{"mit_smile_listed": true, "mit_smile_cert": "01900539-00001", "verified_source": "mit_smile_registry"}'::jsonb, false, 'pending'),
   ('EYEGLAD', 'eyeglad', 'EYEGLAD 以簡約、舒適、時尚為目標 用無負擔的方式陪你走出戶外 把陽光帶進日常 折疊墨鏡與運動偏光眼鏡 為生活配上適量的陽光', 'Bags & Accessories', 'https://img.shoplineapp.com/media/image_clips/648177461e47ce001de0687f/original.png?1686206278',
    '{"sunglasses-polarized-foldable-sports-eyewear"}'::text[], '{"instagram": "@eyeglad__sunglasses", "threads": "@eyeglad__sunglasses"}'::jsonb, '[{"label": "Website", "url": "https://www.eyeglad.com.tw/"}, {"label": "Shop", "url": "https://www.eyeglad.com.tw/products"}]'::jsonb, '["https://shoplineimg.com/64795b0fa73b4200868db088/648177461e47ce001de0687f/1200x.webp?source_format=png、https://shoplineimg.com/64795b0fa73b4200868db088/6481775319cae1001a0a730c/450x.webp?source_format=png"]'::jsonb,
    'threads_seed', 'unverified', NULL, false, 'pending'),
@@ -215,7 +215,7 @@ INSERT INTO brands (
    'threads_seed', 'unverified', NULL, false, 'pending'),
   ('RAFAC', 'rafac', '專為兒童打造運動機能襪、不再只是大人的附屬、擁有以兒童為出發點設計的運動機能 採用永續紗線、更有酷圖騰伴隨、 為邁向踏險之路的小腳做好保護、是雙令人舒適且安心的冒險夥伴。陪伴野孩子們、無所畏懼的探索成長每一刻! Go adventure Give it a try', 'Fashion & Apparel', 'https://cdn-general.cybassets.com/media/W1siZiIsIjIzMzQ0L2F0dGFjaGVkX3Bob3Rvcy8xNjY2MDgwMTY0X0YtcmFmYWNfSUcg57ag5bqVLnBuZy5wbmciXV0.png?sha=511898db421cc9a7',
    '{"socks","athletic-socks","kids-socks"}'::text[], '{"instagram": "@rafacsocks", "threads": "@rafacsocks"}'::jsonb, '[{"label": "Website", "url": "https://rafac.com.tw"}, {"label": "Shop", "url": "https://rafac.cyberbiz.co/cart"}]'::jsonb, '["https://cdn-general.cybassets.com/media/W1siZiIsIjIzMzQ0L2F0dGFjaGVkX3Bob3Rvcy8xNjY4NDk3NTkxX1JBRkFDIOeZvUxPR08g5Yqg57KXLnBuZy5wbmciXV0.png?sha=c6ff35b22d2e1e4d", "https://cdn-general.cybassets.com/media/W1siZiIsIjIzMzQ0L2F0dGFjaGVkX3Bob3Rvcy8xNzczODIwNTYxXzIwMjYwMzE4IE9ETl_po7LmlpnlpJblpZdCYW5uZXJfT0ROLUJOMDIuanBnLmpwZWciXV0.jpeg?sha=743f984da473cb02", "https://cdn-general.cybassets.com/media/W1siZiIsIjIzMzQ0L2F0dGFjaGVkX3Bob3Rvcy8xNzMzNTA0MzAyX-WTgeeJjOWumOe2suaWsOS4iue3miAoMSkucG5nLnBuZyJdXQ.png?sha=cfe159861d233563"]'::jsonb,
-   'threads_seed', 'unverified', '{"mit_smile_listed": true, "mit_smile_cert": "01700577-00001"}'::jsonb, false, 'pending'),
+   'threads_seed', 'verified', '{"mit_smile_listed": true, "mit_smile_cert": "01700577-00001", "verified_source": "mit_smile_registry"}'::jsonb, false, 'pending'),
   ('S Y D N N I', 's-y-d-n-n-i', '每件衣物皆手工生產縫製、30年經驗裁縫師細心縫製、重視每個設計細節。', 'Fashion & Apparel', 'http://sydnni.com/cdn/shop/files/Banner_60658172-ac17-4a62-bc2a-15e3ce498c35.webp?v=1772086723',
    '{"designer-clothing","handmade","womenswear"}'::text[], '{"instagram": "@sydnni.co", "threads": "@sydnni.co"}'::jsonb, '[{"label": "Website", "url": "https://sydnni.com"}, {"label": "Shop", "url": "https://sydnni.com/collections/all-product"}]'::jsonb, '["https://sydnni.com/cdn/shop/files/SYDNNI_04125606.jpg?height=2048&v=1776667539", "https://sydnni.com/cdn/shop/files/SYDNNI_04125946.jpg?v=1778548857&width=1100", "https://sydnni.com/cdn/shop/files/SYDNNI_04126018.jpg?v=1776665726&width=1700"]'::jsonb,
    'threads_seed', 'unverified', NULL, false, 'pending'),
@@ -236,7 +236,7 @@ INSERT INTO brands (
    'threads_seed', 'unverified', NULL, false, 'pending'),
   ('可蘭霓 Clany', 'clany', '可蘭霓從1988陪妳到現在、來自台南的MIT台灣製專櫃內衣品牌、無鋼圈舒適、軟鋼圈溫柔支持、全台門市同步販售。', 'Fashion & Apparel', 'https://cms-static.cdn.91app.com/images/original/986/516e392b-b6e5-4da4-ac66-d60e555805a6-1751350713-eveuxou3vt_m_1280x720_1124x632_800x450_600x338_400x225.jpg',
    '{"lingerie-wireless-bra-mit-tainan"}'::text[], '{"instagram": "@missclany", "threads": "@missclany"}'::jsonb, '[{"label": "Website", "url": "https://www.clany.com.tw/"}, {"label": "Shop", "url": "https://www.clany.com.tw/"}]'::jsonb, '["https://cms-static.cdn.91app.com/images/original/986/17a6b841-b5ea-4b95-b565-15e2347cd1d2-1691551853-f1bn48bj9l_d.png | https://cms-static.cdn.91app.com/images/original/986/3270fee1-d527-4622-af1d-3020934e5264-1780562526-e97hht0qa4_d_1920x1054_1280x703_1124x617_800x439_600x329_400x220.jpg"]'::jsonb,
-   'threads_seed', 'unverified', '{"mit_smile_listed": true, "mit_smile_cert": "01200024-02134"}'::jsonb, false, 'pending'),
+   'threads_seed', 'verified', '{"mit_smile_listed": true, "mit_smile_cert": "01200024-02134", "verified_source": "mit_smile_registry"}'::jsonb, false, 'pending'),
   ('彼加 habit+', 'habit', '台灣製造 彼加工作室 預約制試穿 歡迎私訊預約', 'Fashion & Apparel', 'https://img.shoplineapp.com/media/image_clips/6582f61ca6b43e00110d2741/original.jpg?1703081500',
    '{"dresses","gauze-skirts","womenswear"}'::text[], '{"instagram": "@habitcombo", "threads": "@habitcombo"}'::jsonb, '[{"label": "Website", "url": "https://habitcombo.com"}, {"label": "Shop", "url": "https://www.habitcombo.com/products/{{item.product_id}}"}]'::jsonb, '["https://shoplineimg.com/654b501e736e0100605c4d5e/656a195a98bccc00232af493/1200x.png?", "https://www.habitcombo.com/{{ getImgSrc(item,", "https://www.habitcombo.com/{{ getImgSrc(addonItem,"]'::jsonb,
    'threads_seed', 'unverified', NULL, false, 'pending'),
@@ -424,3 +424,10 @@ INSERT INTO brands (
    '{"scissors-hand-tools-mit-military-style"}'::text[], '{"instagram": "@arsenal_tool_inc", "threads": "@arsenal_tool_inc"}'::jsonb, '[{"label": "Website", "url": "https://www.arsenaltoolinc.com/"}, {"label": "Shop", "url": "https://www.arsenaltoolinc.com/shopping.php?lang=tw"}]'::jsonb, '["https://www.arsenaltoolinc.com/archive/image/header_info/banner-001.jpg"]'::jsonb,
    'threads_seed', 'unverified', NULL, false, 'pending')
 ON CONFLICT (slug) DO NOTHING;
+
+UPDATE brands
+SET
+  mit_status = 'verified',
+  mit_verified_at = now(),
+  mit_evidence = coalesce(mit_evidence, '{}'::jsonb) || '{"verified_source": "mit_smile_registry"}'::jsonb
+WHERE slug IN ('entadar', 'rafac', 'clany');
