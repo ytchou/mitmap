@@ -1,11 +1,12 @@
-import { incrementView, incrementClick } from '@/lib/services/brand-analytics'
+import { incrementView, incrementClick, incrementLinkClick } from '@/lib/services/brand-analytics'
 
 export const runtime = 'nodejs'
 
-// In-memory rate limit: Map<`${ip}:${brandId}:${event}`, lastTimestamp>
+// In-memory rate limit: Map<`${ip}:${brandId}:${event}` | `${ip}:${brandId}:click:${destination}`, lastTimestamp>
 // Stale entries (older than RATE_LIMIT_MS) are purged on each write to prevent unbounded growth.
 const rateLimit = new Map<string, number>()
 const RATE_LIMIT_MS = 30 * 60 * 1000 // 30 minutes
+const DESTINATION_PATTERN = /^[a-z0-9_-]{1,32}$/
 
 function purgeStaleRateLimitEntries(now: number): void {
   for (const [key, ts] of rateLimit) {
@@ -27,7 +28,11 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400 })
   }
 
-  const { brandId, event } = body as { brandId?: unknown; event?: unknown }
+  const { brandId, event, destination } = body as {
+    brandId?: unknown
+    event?: unknown
+    destination?: unknown
+  }
 
   if (!brandId || typeof brandId !== 'string' || brandId.trim() === '') {
     return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400 })
@@ -39,7 +44,9 @@ export async function POST(request: Request): Promise<Response> {
 
   // Rate limiting
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown'
-  const rateLimitKey = `${ip}:${brandId}:${event}`
+  const destinationKey = typeof destination === 'string' ? destination : ''
+  const rateLimitKey =
+    event === 'click' ? `${ip}:${brandId}:click:${destinationKey}` : `${ip}:${brandId}:${event}`
   const lastTime = rateLimit.get(rateLimitKey)
   const now = Date.now()
   if (lastTime && now - lastTime < RATE_LIMIT_MS) {
@@ -53,6 +60,10 @@ export async function POST(request: Request): Promise<Response> {
       await incrementView(brandId)
     } else {
       await incrementClick(brandId)
+
+      if (typeof destination === 'string' && DESTINATION_PATTERN.test(destination)) {
+        await incrementLinkClick(brandId, destination)
+      }
     }
   } catch (err) {
     console.error('[analytics:track]', err)
