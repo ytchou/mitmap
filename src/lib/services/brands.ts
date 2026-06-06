@@ -163,10 +163,10 @@ export function brandToInsert(data: Partial<Brand>): Record<string, unknown> {
 // Service functions
 // ---------------------------------------------------------------------------
 
-const BRAND_SELECT =
-  '*, mit_status, mit_verified_at, mit_evidence, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)'
+export const BRAND_SELECT =
+  '*, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)'
 const VERIFIED_BRAND_SELECT =
-  '*, mit_status, mit_verified_at, mit_evidence, brand_taxonomy(taxonomy_tags(*)), brand_owners!inner(user_id)'
+  '*, brand_taxonomy(taxonomy_tags(*)), brand_owners!inner(user_id)'
 
 function formatInFilterValues(values: string[]): string {
   return `(${values.map((value) => `"${value}"`).join(',')})`

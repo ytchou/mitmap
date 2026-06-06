@@ -3,12 +3,13 @@ import type { Database } from '@/lib/supabase/database.types'
 import { NotFoundError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
 import { buildReviewUpdate } from './review-status'
-import { brandToDomain as mapBrandRowToDomain, type BrandRowWithJoins } from './brands'
+import {
+  BRAND_SELECT,
+  brandToDomain as mapBrandRowToDomain,
+  type BrandRowWithJoins,
+} from './brands'
 
 type BrandUpdate = Database['public']['Tables']['brands']['Update']
-
-const BRAND_SELECT =
-  '*, mit_status, mit_verified_at, mit_evidence, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)'
 
 function buildMitStatusUpdate(
   status: 'verified' | 'rejected',
@@ -43,14 +44,14 @@ async function updateMitStatus(brandId: string, update: BrandUpdate): Promise<Br
 
 export async function verifyMitStatus(
   brandId: string,
-  cert: string,
+  cert: string | null,
   reviewerId: string
 ): Promise<Brand> {
   return updateMitStatus(
     brandId,
     buildMitStatusUpdate('verified', {
       mit_smile_listed: true,
-      mit_smile_cert: cert,
+      ...(cert ? { mit_smile_cert: cert } : {}),
       verified_source: 'mit_smile_registry',
       verified_by: reviewerId,
     })
@@ -65,8 +66,8 @@ export async function rejectMitStatus(
   return updateMitStatus(
     brandId,
     buildMitStatusUpdate('rejected', {
-      rejected_reason: notes,
+      notes,
       verified_by: reviewerId,
-    } as NonNullable<Brand['mitEvidence']>)
+    })
   )
 }

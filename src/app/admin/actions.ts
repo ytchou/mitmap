@@ -241,7 +241,7 @@ export async function verifyMitAction(
       resolvedCert = claimRequest?.mit_smile_cert ?? null
     }
 
-    await verifyMitStatus(brandId, resolvedCert as string, auth.userId)
+    await verifyMitStatus(brandId, resolvedCert, auth.userId)
 
     revalidatePath('/admin/claim-requests')
     revalidatePath('/admin/brands')

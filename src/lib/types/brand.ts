@@ -26,6 +26,7 @@ export type RetailLocation = {
 export type MitEvidence = {
   mit_smile_listed?: boolean
   mit_smile_cert?: string
+  notes?: string
   verified_source?: string
   verified_by?: string
 }
