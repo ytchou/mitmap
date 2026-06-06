@@ -88,10 +88,12 @@ export async function updateBrandAction(
       const productPhotosRaw = formData.get('productPhotos')
       if (productPhotosRaw !== null) {
         const parsed = JSON.parse(String(productPhotosRaw))
-        if (!Array.isArray(parsed) || !parsed.every((value) => typeof value === 'string')) {
+        if (!Array.isArray(parsed)) {
           return { error: 'Invalid productPhotos payload' }
         }
         productPhotos = parsed
+          .filter((value): value is string => typeof value === 'string')
+          .slice(0, 6)
       }
     } catch {
       return { error: 'Invalid productPhotos payload' }

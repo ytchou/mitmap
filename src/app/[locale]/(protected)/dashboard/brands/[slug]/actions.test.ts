@@ -307,6 +307,27 @@ describe('updateBrandAction', () => {
     )
   })
 
+  it('caps submitted productPhotos to the first 6 entries', async () => {
+    const { updateBrandAction } = await import('./actions')
+    const productPhotos = Array.from({ length: 8 }, (_, index) => `${SUPA}/product-${index + 1}.webp`)
+
+    try {
+      await updateBrandAction(undefined, form({
+        brandSlug: 'test-brand',
+        productPhotos: JSON.stringify(productPhotos),
+      }))
+    } catch {
+      // redirect throws
+    }
+
+    expect(updateBrand).toHaveBeenCalledWith(
+      'brand-1',
+      expect.objectContaining({
+        productPhotos: productPhotos.slice(0, 6),
+      })
+    )
+  })
+
   it('does not let governed fields reach updateBrand', async () => {
     const { updateBrandAction } = await import('./actions')
 
