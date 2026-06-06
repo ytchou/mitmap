@@ -108,4 +108,24 @@ test.describe('Dashboard brand edit', () => {
       userPage.locator('textarea[name="description"]')
     ).toHaveValue(updatedDescription, { timeout: 5_000 });
   });
+
+  test('owner can edit brand highlights and change persists', async ({ userPage }) => {
+    const highlight = `[E2E-TEST] 亮點 ${Date.now()}`;
+
+    await userPage.goto(`/dashboard/brands/${brandSlug}/edit`);
+
+    const field = userPage.locator('textarea[name="brandHighlights"]');
+    await expect(field).toBeVisible({ timeout: 10_000 });
+    await field.fill(highlight);
+
+    await userPage.getByRole('button', { name: '儲存變更' }).click();
+    await userPage.waitForURL(`**\/dashboard\/brands\/${brandSlug}`, {
+      timeout: 15_000,
+    });
+
+    await userPage.goto(`/dashboard/brands/${brandSlug}/edit`);
+    await expect(
+      userPage.locator('textarea[name="brandHighlights"]')
+    ).toHaveValue(highlight, { timeout: 5_000 });
+  });
 });
