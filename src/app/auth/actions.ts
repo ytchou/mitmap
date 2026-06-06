@@ -3,7 +3,11 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { signInSchema, signUpSchema } from "@/lib/auth/validations";
+import {
+  isRelativeUrl,
+  signInSchema,
+  signUpSchema,
+} from "@/lib/auth/validations";
 
 export type AuthState = {
   error?: string;
@@ -94,7 +98,7 @@ export async function signInWithGoogle(
   if (claimToken) {
     params.set("claim", claimToken);
   }
-  if (next) {
+  if (next && isRelativeUrl(next)) {
     params.set("next", next);
   }
 
