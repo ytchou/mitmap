@@ -34,7 +34,7 @@ export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
         {/* Verified badge */}
         {brand.isVerified && (
           <span
-            title="This brand has been verified by its owner"
+            title={t('verifiedTitle')}
             className="flex items-center gap-1 rounded-full bg-verified-green-bg px-2.5 py-1 text-[11px] font-semibold text-verified-green"
           >
             <CheckCircle className="size-3" aria-hidden />

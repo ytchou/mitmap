@@ -113,8 +113,10 @@
     },
     "card": {
       "foundingYear": "Est. {year}",
-      "verifiedLabel": "Verified brand",
-      "verifiedBadge": "Verified",
+      "verifiedLabel": "Managed by the brand owner",
+      "verifiedBadge": "Brand",
+      "mitVerifiedLabel": "MIT Verified",
+      "mitVerifiedBadge": "MIT",
       "communityLabel": "Community"
     },
     "loadingAria": "Loading brands...",
@@ -125,7 +127,9 @@
       "fallbackDescription": "Explore {name}, a Made in Taiwan brand.",
       "notFoundTitle": "Brand Not Found"
     },
-    "verified": "Verified",
+    "verified": "Brand-managed",
+    "verifiedTitle": "Managed by the brand owner",
+    "mitVerified": "MIT Verified",
     "foundingYear": "Est. {year}",
     "actions": {
       "visitWebsite": "Visit Website",
@@ -476,6 +480,9 @@
       "brandNamePlaceholder": "e.g. Rain Boot Studio",
       "brandDescription": "Brand Description",
       "brandDescriptionPlaceholder": "Tell us about your brand...",
+      "mitSmileMarkNumber": "MIT Smile mark number (optional)",
+      "mitSmileMarkNumberPlaceholder": "例如 01200024-02134",
+      "mitSmileMarkNumberHelper": "Already certified by MIT Smile? Email ops@formoria.com to request verification.",
       "charCount": "{count} / {max} max characters",
       "photos": "Photos",
       "photosDragHint": "Drag to reorder. The first photo becomes the hero image.",

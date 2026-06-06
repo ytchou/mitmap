@@ -113,8 +113,10 @@
     },
     "card": {
       "foundingYear": "創立於 {year}",
-      "verifiedLabel": "已認證品牌",
-      "verifiedBadge": "已認證",
+      "verifiedLabel": "由品牌方經營管理",
+      "verifiedBadge": "品牌",
+      "mitVerifiedLabel": "MIT 已驗證",
+      "mitVerifiedBadge": "MIT",
       "communityLabel": "社群"
     },
     "loadingAria": "載入品牌中...",
@@ -125,7 +127,9 @@
       "fallbackDescription": "探索 {name}，台灣製造品牌。",
       "notFoundTitle": "找不到品牌"
     },
-    "verified": "已認證",
+    "verified": "品牌經營",
+    "verifiedTitle": "由品牌方經營管理",
+    "mitVerified": "MIT 已驗證",
     "foundingYear": "創立於 {year}",
     "actions": {
       "visitWebsite": "前往官網",
@@ -476,6 +480,9 @@
       "brandNamePlaceholder": "例：雨靴工作室",
       "brandDescription": "品牌描述",
       "brandDescriptionPlaceholder": "告訴我們關於您的品牌...",
+      "mitSmileMarkNumber": "MIT 微笑標章編號（選填）",
+      "mitSmileMarkNumberPlaceholder": "例如 01200024-02134",
+      "mitSmileMarkNumberHelper": "已通過 MIT 微笑標章？來信 ops@formoria.com 申請驗證。",
       "charCount": "{count} / {max} 個字元上限",
       "photos": "照片",
       "photosDragHint": "拖曳以排序。第一張照片將成為主圖。",
