@@ -6,6 +6,7 @@ import {
   getDailySeries,
   getLinkClickBreakdown,
   incrementLinkClick,
+  getSourceBreakdown,
 } from '../brand-analytics'
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -18,6 +19,7 @@ type BrandAnalyticsSeedRow = {
   date: string
   views: number
   clicks: number
+  source?: string
 }
 
 type BrandLinkClickSeedRow = {
@@ -78,6 +80,7 @@ async function seedBrandWithAnalytics(rows: BrandAnalyticsSeedRow[]): Promise<st
       date: row.date,
       views: row.views,
       clicks: row.clicks,
+      ...(row.source !== undefined ? { source: row.source } : {}),
     }))
   )
   return brandId
@@ -233,7 +236,28 @@ describe('incrementView', () => {
   it('calls rpc increment_brand_view with the brand id', async () => {
     const client = makeSupabaseClient()
     await incrementView('brand-1')
-    expect(client.rpc).toHaveBeenCalledWith('increment_brand_view', { p_brand_id: 'brand-1' })
+    expect(client.rpc).toHaveBeenCalledWith('increment_brand_view', {
+      p_brand_id: 'brand-1',
+      p_source: 'direct',
+    })
+  })
+
+  it('passes p_source to the increment_brand_view RPC', async () => {
+    const client = makeSupabaseClient()
+    await incrementView('brand-1', 'category')
+    expect(client.rpc).toHaveBeenCalledWith('increment_brand_view', {
+      p_brand_id: 'brand-1',
+      p_source: 'category',
+    })
+  })
+
+  it('defaults source to direct when omitted', async () => {
+    const client = makeSupabaseClient()
+    await incrementView('brand-1')
+    expect(client.rpc).toHaveBeenCalledWith('increment_brand_view', {
+      p_brand_id: 'brand-1',
+      p_source: 'direct',
+    })
   })
 
   it('does not throw on supabase error', async () => {
@@ -345,5 +369,37 @@ describe('incrementLinkClick', () => {
 
   it('never throws on RPC error (silent-fail)', async () => {
     await expect(incrementLinkClick('not-a-uuid', 'x')).resolves.toBeUndefined()
+  })
+})
+
+describe('getSourceBreakdown', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-20T00:00:00Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('aggregates views by source, sorted desc, excluding zero', async () => {
+    const brandId = await seedBrandWithAnalytics([
+      { date: today(0), views: 10, clicks: 0, source: 'direct' },
+      { date: today(-1), views: 5, clicks: 0, source: 'direct' },
+      { date: today(0), views: 20, clicks: 0, source: 'external_search' },
+      { date: today(0), views: 0, clicks: 0, source: 'social' },
+    ])
+
+    const result = await getSourceBreakdown(brandId, 30)
+
+    expect(result).toEqual([
+      { source: 'external_search', views: 20 },
+      { source: 'direct', views: 15 },
+    ])
+  })
+
+  it('returns [] on db error', async () => {
+    makeSupabaseClient({ queryError: { message: 'DB error' } })
+    expect(await getSourceBreakdown('brand-1', 30)).toEqual([])
   })
 })

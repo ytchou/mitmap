@@ -9,10 +9,8 @@ import {
   getAnalytics,
   getDailySeries,
   getLinkClickBreakdown,
+  getSourceBreakdown,
 } from "@/lib/services/brand-analytics";
-import { AnalyticsCards } from "@/components/dashboard/analytics-cards";
-import { AnalyticsChart } from "@/components/dashboard/analytics-chart";
-import { LinkBreakdown } from "@/components/dashboard/link-breakdown";
 import { BrandCompletenessCard } from "@/components/dashboard/brand-completeness-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +19,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AnalyticsCards } from "@/components/dashboard/analytics-cards";
+import { AnalyticsChart } from "@/components/dashboard/analytics-chart";
+import { LinkBreakdown } from "@/components/dashboard/link-breakdown";
+import { SourcesBreakdownCard } from "@/components/dashboard/sources-breakdown-card";
 
 export const metadata: Metadata = {
   title: "品牌管理",
@@ -45,10 +47,11 @@ export default async function BrandDashboardPage({ params }: Props) {
 
   if (!owner) redirect("/dashboard");
 
-  const [analytics, series, breakdown] = await Promise.all([
+  const [analytics, series, breakdown, sources] = await Promise.all([
     getAnalytics(brand.id, 30),
     getDailySeries(brand.id, 90),
     getLinkClickBreakdown(brand.id, 90),
+    getSourceBreakdown(brand.id, 30),
   ]);
 
   return (
@@ -67,7 +70,7 @@ export default async function BrandDashboardPage({ params }: Props) {
         </Link>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-6">
         <h2 className="mb-4 text-sm font-semibold uppercase text-muted-foreground">
           Analytics
         </h2>
@@ -77,6 +80,7 @@ export default async function BrandDashboardPage({ params }: Props) {
           viewTrend={analytics.viewTrend}
           clickTrend={analytics.clickTrend}
         />
+        <SourcesBreakdownCard sources={sources} />
       </div>
 
       <div className="mt-8">

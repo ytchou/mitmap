@@ -1,4 +1,5 @@
 import { incrementView, incrementClick, incrementLinkClick } from '@/lib/services/brand-analytics'
+import { normalizeSource } from '@/lib/analytics/source-bucket'
 
 export const runtime = 'nodejs'
 
@@ -28,10 +29,11 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400 })
   }
 
-  const { brandId, event, destination } = body as {
+  const { brandId, event, destination, source } = body as {
     brandId?: unknown
     event?: unknown
     destination?: unknown
+    source?: unknown
   }
 
   if (!brandId || typeof brandId !== 'string' || brandId.trim() === '') {
@@ -57,7 +59,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     if (event === 'view') {
-      await incrementView(brandId)
+      await incrementView(brandId, normalizeSource(source))
     } else {
       await incrementClick(brandId)
 
