@@ -555,7 +555,7 @@
       "brandDescriptionPlaceholder": "告訴我們關於您的品牌...",
       "mitSmileMarkNumber": "MIT 微笑標章編號（選填）",
       "mitSmileMarkNumberPlaceholder": "例如 01200024-02134",
-      "mitSmileMarkNumberHelper": "已通過 MIT 微笑標章？來信 op@formoria.com 申請驗證。",
+      "mitSmileMarkNumberHelper": "已通過 MIT 微笑標章？來信 ops@formoria.com 申請驗證。",
       "charCount": "{count} / {max} 個字元上限",
       "photos": "照片",
       "photosDragHint": "拖曳以排序。第一張照片將成為主圖。",

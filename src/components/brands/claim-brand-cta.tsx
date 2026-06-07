@@ -7,6 +7,7 @@ import { useRef, useState, useTransition, type FormEvent } from 'react'
 import { submitClaimAction } from '@/app/[locale]/brands/[slug]/actions'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { CONTACT_EMAILS } from '@/lib/constants'
 
 type ClaimBrandCtaProps = {
   brandId: string
@@ -61,7 +62,7 @@ export function ClaimBrandCta({ brandId }: ClaimBrandCtaProps) {
 
   const signInHref = `/auth/sign-in?next=${encodeURIComponent(pathname)}`
   const mitSmileMarkHelper = t('mitSmileMarkNumberHelper')
-  const mitSmileMarkSupportEmail = 'ops@formoria.com'
+  const mitSmileMarkSupportEmail = CONTACT_EMAILS.operations
   const [mitSmileMarkHelperBeforeEmail, mitSmileMarkHelperAfterEmail] =
     mitSmileMarkHelper.split(mitSmileMarkSupportEmail)
 

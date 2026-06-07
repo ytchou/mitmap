@@ -555,7 +555,7 @@
       "brandDescriptionPlaceholder": "Tell us about your brand...",
       "mitSmileMarkNumber": "MIT Smile mark number (optional)",
       "mitSmileMarkNumberPlaceholder": "例如 01200024-02134",
-      "mitSmileMarkNumberHelper": "Already certified by MIT Smile? Email op@formoria.com to request verification.",
+      "mitSmileMarkNumberHelper": "Already certified by MIT Smile? Email ops@formoria.com to request verification.",
       "charCount": "{count} / {max} max characters",
       "photos": "Photos",
       "photosDragHint": "Drag to reorder. The first photo becomes the hero image.",

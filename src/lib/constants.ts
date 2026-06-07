@@ -1,3 +1,3 @@
 export const CONTACT_EMAILS = {
-  operations: 'op@formoria.com',
+  operations: 'ops@formoria.com',
 } as const
