@@ -494,7 +494,7 @@ export function buildSyncedImagePatch(
   return patch
 }
 
-export async function syncBrandImages(brandId: string): Promise<void> {
+export async function syncBrandImages(brandId: string): Promise<{ synced: number; failed: number }> {
   const brand = await getBrandById(brandId)
 
   const syncableUrls = collectSyncableImageUrls({
@@ -503,7 +503,7 @@ export async function syncBrandImages(brandId: string): Promise<void> {
     productPhotos: brand.productPhotos,
   })
 
-  if (syncableUrls.length === 0) return
+  if (syncableUrls.length === 0) return { synced: 0, failed: 0 }
 
   const refs: ImageRef[] = []
 
@@ -520,13 +520,16 @@ export async function syncBrandImages(brandId: string): Promise<void> {
     }
   }
 
-  if (refs.length === 0) return
+  if (refs.length === 0) return { synced: 0, failed: 0 }
 
   const externalUrls = refs.map((r) => r.url)
   const storedUrls = await downloadAndStoreImages(externalUrls, brandId)
 
   const patch = buildSyncedImagePatch(refs, storedUrls, brand.productPhotos)
   await updateBrand(brandId, patch)
+
+  const failed = storedUrls.filter((u) => u == null).length
+  return { synced: storedUrls.length - failed, failed }
 }
 
 export async function completeBrandClaim({
