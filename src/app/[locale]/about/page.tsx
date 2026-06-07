@@ -9,7 +9,6 @@ import MissionPillars from '@/components/about/mission-pillars'
 import StatsBar from '@/components/about/stats-bar'
 import BrandShowcase from '@/components/shared/brand-showcase'
 import HowItWorks from '@/components/about/how-it-works'
-import TeamSection from '@/components/about/team-section'
 import AboutCta from '@/components/about/about-cta'
 import { getBrandStats, getRandomBrands } from '@/lib/services/brands'
 
@@ -44,24 +43,14 @@ export default async function AboutPage({ params }: PageProps) {
 
   return (
     <main>
-      <div className="py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <AboutHero
-            title={t('hero.title')}
-            subtitle={t('hero.subtitle')}
-          />
-        </div>
-      </div>
+      <AboutHero
+        brandCount={stats.brandCount}
+        categoryCount={stats.categoryCount}
+      />
 
       <div className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <OriginStory
-            heading={t('origin.heading')}
-            body1={t('origin.body1')}
-            body2={t('origin.body2')}
-            body3={t('origin.body3')}
-            body4={t('origin.body4')}
-          />
+          <OriginStory />
         </div>
       </div>
 
@@ -71,7 +60,6 @@ export default async function AboutPage({ params }: PageProps) {
             heading={t('whatIsMit.heading')}
             body1={t('whatIsMit.body1')}
             body2={t('whatIsMit.body2')}
-            body3={t('whatIsMit.body3')}
           />
         </div>
       </div>
@@ -80,11 +68,6 @@ export default async function AboutPage({ params }: PageProps) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <MissionPillars
             heading={t('mission.heading')}
-            pillars={[
-              { heading: t('mission.promote.heading'), description: t('mission.promote.body') },
-              { heading: t('mission.smallBusiness.heading'), description: t('mission.smallBusiness.body') },
-              { heading: t('mission.platform.heading'), description: t('mission.platform.body') },
-            ]}
           />
         </div>
       </div>
@@ -125,19 +108,7 @@ export default async function AboutPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <TeamSection
-            heading={t('team.heading')}
-            description={t('team.description')}
-          />
-        </div>
-      </div>
-
-      <AboutCta
-        primaryLabel={t('cta.primary')}
-        secondaryLabel={t('cta.secondary')}
-      />
+      <AboutCta />
     </main>
   )
 }
