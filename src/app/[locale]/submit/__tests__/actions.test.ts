@@ -180,7 +180,7 @@ describe('server action schema routing', () => {
     const schema = createSubmissionSchema(false)
     const communityPayload = {
       name: 'Test Brand',
-      description: 'Long enough description for the test',
+      description: 'Long enough description for the community submission test',
       category: 'fashion',
       tags: [],
       isOwner: false,
@@ -199,7 +199,7 @@ describe('server action schema routing', () => {
   it('omits the dormant brand column from the brand insert payload', async () => {
     await submitBrand({
       name: 'Test Brand',
-      description: 'Long enough description for the test',
+      description: 'Long enough description for the brand insert payload test',
       category: 'fashion',
       tags: [],
       logoUrl: 'https://example.com/logo.webp',
