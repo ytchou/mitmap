@@ -115,6 +115,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const categoryName = safeLocale === 'en' ? tag.name : tag.nameZh ?? tag.name
   const categoryDescription = safeLocale === 'en' ? tag.name.toLowerCase() : categoryName
   const shortDescription = t('description', { category: categoryDescription })
+  const hasEditorialDescription = t.has(`descriptions.${slug}`)
   const editorialDescription = resolveEditorialDescription(t, slug, shortDescription)
 
   // Pagination params (excluding page)
@@ -199,9 +200,11 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         <p className="mt-2 text-sm text-muted-foreground">
           {shortDescription}
         </p>
-        <p className="mt-3 mb-6 max-w-2xl text-left text-sm leading-[1.7] text-muted-foreground">
-          {editorialDescription}
-        </p>
+        {hasEditorialDescription && (
+          <p className="mt-3 mb-6 max-w-2xl text-left text-sm leading-[1.7] text-muted-foreground">
+            {editorialDescription}
+          </p>
+        )}
       </div>
 
       {/* Brand grid */}
