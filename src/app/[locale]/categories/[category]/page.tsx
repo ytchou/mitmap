@@ -29,6 +29,13 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
+type CategoriesTranslator = Awaited<ReturnType<typeof getTranslations>>
+
+function resolveEditorialDescription(t: CategoriesTranslator, slug: string, fallbackDescription: string) {
+  const descriptionKey = `descriptions.${slug}`
+  return t.has(descriptionKey) ? t(descriptionKey) : fallbackDescription
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, category: slug } = await params
   setRequestLocale(locale)
@@ -42,23 +49,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const displayName = safeLocale === 'en' ? tag.name : tag.nameZh ?? tag.name
     const title = t('metadata.title', { displayName })
-    const description = t('metadata.description', { displayName, name: tag.name })
+    const editorialDescription = resolveEditorialDescription(
+      t,
+      slug,
+      t('metadata.description', { displayName, name: tag.name }),
+    )
     const { canonical, languages } = buildAlternates(`/categories/${slug}`, safeLocale)
     const ogLocale = safeLocale === 'zh-TW' ? 'zh_TW' : 'en_US'
     const ogAlternateLocale = safeLocale === 'zh-TW' ? 'en_US' : 'zh_TW'
     return {
       title,
-      description,
+      description: editorialDescription,
       alternates: { canonical, languages },
       openGraph: {
         title,
-        description,
+        description: editorialDescription,
         locale: ogLocale,
         alternateLocale: [ogAlternateLocale],
       },
       twitter: {
         title,
-        description,
+        description: editorialDescription,
       },
     }
   } catch {
@@ -95,6 +106,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
 
   const categoryName = safeLocale === 'en' ? tag.name : tag.nameZh ?? tag.name
   const categoryDescription = safeLocale === 'en' ? tag.name.toLowerCase() : categoryName
+  const shortDescription = t('description', { category: categoryDescription })
+  const editorialDescription = resolveEditorialDescription(t, slug, shortDescription)
 
   // Pagination params (excluding page)
   const paginationParams: Record<string, string> = {}
@@ -131,7 +144,9 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildCategoryItemListJsonLd(categoryName, slug, brandSummaries, safeLocale)),
+          __html: JSON.stringify(
+            buildCategoryItemListJsonLd(categoryName, slug, brandSummaries, safeLocale, editorialDescription),
+          ),
         }}
       />
       <script
@@ -165,7 +180,10 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           </span>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          {t('description', { category: categoryDescription })}
+          {shortDescription}
+        </p>
+        <p className="mt-3 mb-6 max-w-2xl text-left text-sm leading-[1.7] text-muted-foreground">
+          {editorialDescription}
         </p>
       </div>
 
