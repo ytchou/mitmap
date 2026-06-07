@@ -7,7 +7,6 @@ import { getSubmission, approveSubmission, rejectSubmission } from '@/lib/servic
 import {
   approveClaimRequest,
   getClaimRequest,
-  getClaimRequestById,
   rejectClaimRequest,
 } from '@/lib/services/claim-requests'
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
@@ -187,12 +186,11 @@ export async function approveClaimAction(
     }
 
     try {
-      const claim = await getClaimRequestById(claimRequestId)
-      if (claim?.requesterEmail && claim.brandName && claim.brandSlug) {
+      if (claimRequest.requesterEmail && claimRequest.brandName && claimRequest.brandSlug) {
         await sendEmail(buildClaimApprovedEmail({
-          ownerEmail: claim.requesterEmail,
-          brandName: claim.brandName,
-          brandSlug: claim.brandSlug,
+          ownerEmail: claimRequest.requesterEmail,
+          brandName: claimRequest.brandName,
+          brandSlug: claimRequest.brandSlug,
           siteUrl,
         }))
       }
@@ -231,11 +229,10 @@ export async function rejectClaimAction(
     }
 
     try {
-      const claim = await getClaimRequestById(claimRequestId)
-      if (claim?.requesterEmail && claim.brandName) {
+      if (claimRequest.requesterEmail && claimRequest.brandName) {
         await sendEmail(buildClaimRejectedEmail({
-          ownerEmail: claim.requesterEmail,
-          brandName: claim.brandName,
+          ownerEmail: claimRequest.requesterEmail,
+          brandName: claimRequest.brandName,
           reviewerNotes: notes,
           siteUrl,
         }))
