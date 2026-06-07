@@ -92,8 +92,10 @@ export function buildCategoryItemListJsonLd(
   brands: Array<{ name: string; slug: string }>,
   locale: Locale = 'zh-TW',
   description?: string,
+  parentGroup?: string,
 ): JsonLdObject {
   const siteUrl = getSiteUrl()
+  const parentGroupName = parentGroup?.trim()
 
   const jsonLd: JsonLdObject = {
     '@context': 'https://schema.org',
@@ -108,6 +110,7 @@ export function buildCategoryItemListJsonLd(
       name: brand.name,
       url: `${siteUrl}/brands/${brand.slug}`,
     })),
+    ...(parentGroupName ? { about: { '@type': 'Thing', name: parentGroupName } } : {}),
   }
 
   if (description) jsonLd.description = description

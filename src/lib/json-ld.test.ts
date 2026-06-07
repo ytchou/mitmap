@@ -125,6 +125,34 @@ describe('buildCategoryItemListJsonLd', () => {
   })
 })
 
+describe('buildCategoryItemListJsonLd parentGroup', () => {
+  it('adds an about Thing when a parent group is provided', () => {
+    const result = buildCategoryItemListJsonLd(
+      '服飾',
+      'clothing',
+      [{ name: 'oqLiq', slug: 'oqliq' }],
+      'zh-TW',
+      'Taiwan clothing brands',
+      'Fashion',
+    )
+
+    expect(result.about).toEqual({ '@type': 'Thing', name: 'Fashion' })
+  })
+
+  it('omits about when no parent group is provided', () => {
+    const result = buildCategoryItemListJsonLd(
+      '服飾',
+      'clothing',
+      [{ name: 'oqLiq', slug: 'oqliq' }],
+      'zh-TW',
+      'Taiwan clothing brands',
+      undefined,
+    )
+
+    expect('about' in result).toBe(false)
+  })
+})
+
 describe('buildBreadcrumbJsonLd', () => {
   it('builds BreadcrumbList with correct positions', () => {
     const items = [
