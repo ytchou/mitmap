@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -110,7 +111,6 @@ function parseArgs(argv: string[]): CliOptions {
       process.exit(1)
     }
     // Synchronous read so we can exit early; readFileSync is fine in a CLI script
-    const { readFileSync } = require('node:fs') as typeof import('node:fs')
     let content: string
     try {
       content = readFileSync(filePath, 'utf8')
