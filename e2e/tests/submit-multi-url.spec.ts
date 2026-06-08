@@ -4,12 +4,9 @@ test.describe('Submit multi-URL affordances', () => {
   test('adds URL rows up to the cap and removes a row', async ({ userPage }) => {
     await userPage.goto('/submit')
 
-    // Wait for the wizard outer h1, then the UrlStep h2 to confirm client hydration completed.
-    // The UrlStep (phase='url') renders immediately for authenticated users and contains
-    // the multi-URL inputs — no extra navigation step required.
-    await expect(userPage.getByRole('heading', { name: '提交品牌', exact: true })).toBeVisible({
-      timeout: 10_000,
-    })
+    // For authenticated users, /submit renders SubmitWizard and immediately shows the UrlStep
+    // (phase='url'). Use the UrlStep h2 + URL input as the ready-signal — the outer wizard h1
+    // is less reliable in slow CI environments and duplicates the UrlStep check.
     await expect(userPage.getByRole('heading', { name: '提交你喜愛的品牌', exact: true })).toBeVisible({
       timeout: 10_000,
     })

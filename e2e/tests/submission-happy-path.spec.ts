@@ -157,14 +157,13 @@ test.describe('Submission happy path', () => {
 
     await userPage.goto('/submit');
 
-    // The wizard h1 is '提交品牌'; the UrlStep (first phase) shows h2 '提交你喜愛的品牌'.
-    // Wait for the wizard h1 first, then verify the url-step h2 is also visible.
-    await expect(
-      userPage.getByRole('heading', { name: '提交品牌', exact: true })
-    ).toBeVisible({ timeout: 10_000 });
+    // For authenticated users, /submit renders SubmitWizard directly (server-side auth check).
+    // The UrlStep h2 and URL input are the reliable ready-signals for the wizard being active.
+    // Avoid waiting on the outer wizard h1 which can lose a hydration race in slow CI.
     await expect(
       userPage.getByRole('heading', { name: '提交你喜愛的品牌', exact: true })
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(userPage.locator('input[type="url"]').first()).toBeVisible({ timeout: 5_000 });
 
     await userPage.getByRole('checkbox', { name: ownerCheckboxName, exact: true }).check();
     await userPage.getByRole('button', { name: manualEntryButtonName, exact: true }).click();

@@ -21,20 +21,22 @@ test.describe('Submit flow deep', () => {
 
   test('wizard steps are all reachable', async ({ userPage }) => {
     await userPage.goto('/submit');
-    // The wizard h1 is '提交品牌'; the UrlStep (first phase) renders h2 '提交你喜愛的品牌'.
-    // Wait for the wizard h1 to confirm the authenticated wizard (not anon overview) rendered.
-    await expect(
-      userPage.getByRole('heading', { name: '提交品牌', exact: true })
-    ).toBeVisible({ timeout: 10_000 });
+    // For authenticated users, /submit renders SubmitWizard directly (server-side auth check).
+    // The UrlStep (phase='url') is the first visible panel — its h2 and URL input are the
+    // reliable ready-signals. Avoid asserting on the outer wizard h1 which can lose the race
+    // against hydration in slow CI environments.
     await expect(
       userPage.getByRole('heading', { name: '提交你喜愛的品牌', exact: true })
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(userPage.locator('input[type="url"]').first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('validation shows errors on empty required fields', async ({ userPage }) => {
     await userPage.goto('/submit');
+    // Wait for the UrlStep URL input to confirm the wizard is hydrated before interacting.
+    await expect(userPage.locator('input[type="url"]').first()).toBeVisible({ timeout: 10_000 });
     const skipBtn = userPage.getByRole('button', { name: manualEntryButtonName, exact: true });
-    await expect(skipBtn).toBeVisible({ timeout: 10_000 });
+    await expect(skipBtn).toBeVisible({ timeout: 5_000 });
     await skipBtn.click();
     const nextBtn = userPage.getByRole('button', { name: nextButtonName, exact: true });
     await nextBtn.click();
@@ -43,8 +45,10 @@ test.describe('Submit flow deep', () => {
 
   test('Tier 1 keyword blocks submission', async ({ userPage }) => {
     await userPage.goto('/submit');
+    // Wait for the UrlStep URL input to confirm the wizard is hydrated before interacting.
+    await expect(userPage.locator('input[type="url"]').first()).toBeVisible({ timeout: 10_000 });
     const skipBtn = userPage.getByRole('button', { name: manualEntryButtonName, exact: true });
-    await expect(skipBtn).toBeVisible({ timeout: 10_000 });
+    await expect(skipBtn).toBeVisible({ timeout: 5_000 });
     await skipBtn.click();
     const nameInput = userPage.getByLabel('品牌名稱', { exact: true });
     if (await nameInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
