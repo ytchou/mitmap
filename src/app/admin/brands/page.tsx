@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default async function BrandsPage() {
   const [{ brands }, untaggedBrands, allTags] = await Promise.all([
-    getBrands(),
+    getBrands({ includeTestBrands: true }),
     getUntaggedBrands(),
     getTags(),
   ])

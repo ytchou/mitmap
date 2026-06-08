@@ -204,6 +204,39 @@ describeWithDb('getBrands — verificationFilter', () => {
   })
 })
 
+describeWithDb('getBrands — test brand exclusion', () => {
+  const TEST_BRAND_SLUG = 'zzz-e2e-test-exclusion-itest'
+  const TEST_BRAND_NAME = '[E2E-TEST] Exclusion Integration Test Brand'
+
+  beforeAll(async () => {
+    const client = createTestClient()
+    const { error } = await client.from('brands').insert({
+      name: TEST_BRAND_NAME,
+      slug: TEST_BRAND_SLUG,
+      description: 'Throwaway brand for [E2E-TEST] exclusion integration test',
+      status: 'approved',
+    })
+    if (error) throw new Error(`Failed to insert test brand: ${error.message}`)
+  })
+
+  afterAll(async () => {
+    const client = createTestClient()
+    await client.from('brands').delete().eq('slug', TEST_BRAND_SLUG)
+  })
+
+  it('excludes [E2E-TEST] brands from getBrands by default', async () => {
+    const { brands } = await getBrands({ status: 'approved' })
+    const slugs = brands.map((b) => b.slug)
+    expect(slugs).not.toContain(TEST_BRAND_SLUG)
+  })
+
+  it('includes [E2E-TEST] brands when includeTestBrands is true', async () => {
+    const { brands } = await getBrands({ status: 'approved', includeTestBrands: true })
+    const slugs = brands.map((b) => b.slug)
+    expect(slugs).toContain(TEST_BRAND_SLUG)
+  })
+})
+
 describeWithDb('searchBrands — ranking order', () => {
   it('ranks an exact 2-char CJK name first', async () => {
     const results = await searchBrands('遮日', 10)

@@ -30,8 +30,28 @@ test.describe('Admin smoke', () => {
   });
 
   test.afterAll(async () => {
-    if (testSubmissionId && supabaseAdmin) {
+    if (!supabaseAdmin) return;
+
+    // Resolve the approved brand by name (may not exist if the approval test was skipped/failed)
+    let approvedBrandId: string | null = null;
+    if (testBrandName) {
+      const { data: brandRow } = await supabaseAdmin
+        .from('brands')
+        .select('id')
+        .eq('name', testBrandName)
+        .maybeSingle();
+      approvedBrandId = brandRow?.id ?? null;
+    }
+
+    // Delete submission first — brand_submissions.brand_id FK has no ON DELETE CASCADE,
+    // so the submission must be gone before we can delete the brand.
+    if (testSubmissionId) {
       await supabaseAdmin.from('brand_submissions').delete().eq('id', testSubmissionId);
+    }
+
+    // Delete the approved brand (cascades to brand_owners, brand_taxonomy, etc.)
+    if (approvedBrandId) {
+      await supabaseAdmin.from('brands').delete().eq('id', approvedBrandId);
     }
   });
 

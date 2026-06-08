@@ -19,7 +19,7 @@ export default async function AdminPage() {
   const [pendingSubmissions, { totalCount: brandCount }, tags, pendingReports] =
     await Promise.all([
       getSubmissions("pending"),
-      getBrands(),
+      getBrands({ includeTestBrands: true }),
       getTags(),
       getPendingReports().catch(() => [] as Awaited<ReturnType<typeof getPendingReports>>),
     ]);

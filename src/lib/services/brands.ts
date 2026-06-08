@@ -231,6 +231,9 @@ export async function getBrands(
       }
     }
 
+    if (!filters.includeTestBrands) {
+      query = query.not('name', 'like', '[E2E-TEST]%')
+    }
     if (filters.status) {
       query = query.eq('status', filters.status)
     }
@@ -269,6 +272,9 @@ export async function getBrands(
     }
   }
 
+  if (!filters?.includeTestBrands) {
+    query = query.not('name', 'like', '[E2E-TEST]%')
+  }
   if (filters?.status) {
     query = query.eq('status', filters.status)
   }
