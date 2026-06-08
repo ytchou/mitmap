@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { trackCategoryFilterApplied } from '@/lib/analytics'
 
 interface NavCategoryTabsProps {
@@ -12,6 +13,7 @@ function NavCategoryTabsInner({ categories }: NavCategoryTabsProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
+  const t = useTranslations('nav')
 
   const isBrandsPage = pathname === '/brands'
   const activeCategory = isBrandsPage ? (searchParams.get('category') ?? '') : ''
@@ -49,7 +51,7 @@ function NavCategoryTabsInner({ categories }: NavCategoryTabsProps) {
               : 'text-sm text-muted-foreground hover:text-foreground whitespace-nowrap px-3 py-2 transition-colors'
           }
         >
-          全部品牌
+          {t('allBrands')}
         </button>
         {categories.map((cat) => {
           const isActive = activeCategory === cat.slug

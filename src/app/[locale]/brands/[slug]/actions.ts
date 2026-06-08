@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { createInMemoryRateLimiter } from '@/lib/security/rate-limiter'
 import { createClaimRequest } from '@/lib/services/claim-requests'
@@ -35,7 +36,7 @@ export type RequestBrandRemovalResult = { ok: true } | { error: string }
 
 const reportRateLimiter = createInMemoryRateLimiter()
 
-async function requireClaimUser(): Promise<{ userId: string } | { error: string }> {
+async function requireClaimUser(t: Awaited<ReturnType<typeof getTranslations<'brandDetail.claim.errors'>>>): Promise<{ userId: string } | { error: string }> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -43,24 +44,25 @@ async function requireClaimUser(): Promise<{ userId: string } | { error: string 
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    return { error: '請先登入後再提交認領申請 / Please sign in to submit a claim.' }
+    return { error: t('notLoggedIn') }
   }
 
   return { userId: user.id }
 }
 
 export async function submitClaimAction(input: SubmitClaimInput): Promise<SubmitClaimResult> {
+  const t = await getTranslations('brandDetail.claim.errors')
   try {
-    const auth = await requireClaimUser()
+    const auth = await requireClaimUser(t)
     if ('error' in auth) return auth
 
     const brandId = input.brandId.trim()
     if (!brandId) {
-      return { error: '缺少品牌 ID / Missing brand ID.' }
+      return { error: t('missingBrandId') }
     }
 
     if (!CLAIM_PROOF_TYPES.includes(input.proofType)) {
-      return { error: '請選擇有效的認領證明類型 / Please choose a valid proof type.' }
+      return { error: t('invalidProofType') }
     }
 
     const proofUrl = input.proofUrl?.trim()
@@ -83,13 +85,11 @@ export async function submitClaimAction(input: SubmitClaimInput): Promise<Submit
     console.error('[brands:submitClaim]', err)
 
     if ((err as { code?: string }).code === '23505') {
-      return {
-        error: '你已提交過這個品牌的認領申請 / You have already submitted a claim for this brand.',
-      }
+      return { error: t('duplicate') }
     }
 
     return {
-      error: err instanceof Error ? err.message : '提交失敗，請稍後再試。 / Something went wrong. Please try again.',
+      error: err instanceof Error ? err.message : t('unknown'),
     }
   }
 }
@@ -97,15 +97,16 @@ export async function submitClaimAction(input: SubmitClaimInput): Promise<Submit
 export async function requestBrandRemovalAction(
   input: RequestBrandRemovalInput
 ): Promise<RequestBrandRemovalResult> {
+  const t = await getTranslations('brandDetail.removal.errors')
   try {
     const brandId = input.brandId.trim()
     if (!brandId) {
-      return { error: '缺少品牌 ID / Missing brand ID.' }
+      return { error: t('missingBrandId') }
     }
 
     const message = input.message?.trim()
     if (message && message.length > 1000) {
-      return { error: '補充說明不得超過 1000 字 / Message must be 1000 characters or fewer.' }
+      return { error: t('notesTooLong') }
     }
 
     const h = await headers()
@@ -113,7 +114,7 @@ export async function requestBrandRemovalAction(
 
     const rl = reportRateLimiter.check(`removal:${ip}`, 60_000, 3)
     if (!rl.allowed) {
-      return { error: '檢舉次數過多，請稍後再試。' }
+      return { error: t('rateLimited') }
     }
 
     await requestBrandRemoval({
@@ -128,25 +129,26 @@ export async function requestBrandRemovalAction(
   } catch (err) {
     console.error('[brands:requestRemoval]', err)
     return {
-      error: err instanceof Error ? err.message : '提交失敗，請稍後再試。 / Something went wrong. Please try again.',
+      error: err instanceof Error ? err.message : t('unknown'),
     }
   }
 }
 
-export async function submitReportAction(prevState: ReportState, formData: FormData): Promise<ReportState> {
+export async function submitReportAction(_prevState: ReportState, formData: FormData): Promise<ReportState> {
+  const t = await getTranslations('brandDetail.report.errors')
   try {
     const brandId = formData.get('brandId') as string | null
-    if (!brandId) return { error: '缺少品牌 ID' }
+    if (!brandId) return { error: t('missingBrandId') }
 
     const reason = formData.get('reason') as string | null
     if (!reason || !REPORT_REASONS.includes(reason as SubmitReportReason)) {
-      return { error: '請選擇有效的檢舉原因' }
+      return { error: t('invalidReason') }
     }
 
     const notesRaw = formData.get('notes') as string | null
     const notes = notesRaw?.trim() || null
     if (notes && notes.length > 1000) {
-      return { error: '補充說明不得超過 1000 字' }
+      return { error: t('notesTooLong') }
     }
 
     const h = await headers()
@@ -154,7 +156,7 @@ export async function submitReportAction(prevState: ReportState, formData: FormD
 
     const rl = reportRateLimiter.check(`report:${ip}`, 60_000, 3)
     if (!rl.allowed) {
-      return { error: '檢舉次數過多，請稍後再試。' }
+      return { error: t('rateLimited') }
     }
 
     await createReport({ brandId, reason: reason as SubmitReportReason, notes })
@@ -162,7 +164,7 @@ export async function submitReportAction(prevState: ReportState, formData: FormD
     revalidatePath('/admin')
     return { success: true }
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '發生未知錯誤'
+    const message = err instanceof Error ? err.message : t('unknown')
     console.error('[brands:submitReport]', err)
     return { error: message }
   }

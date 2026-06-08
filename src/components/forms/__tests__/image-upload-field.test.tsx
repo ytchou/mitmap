@@ -1,8 +1,18 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render as rtlRender, screen, waitFor } from '@testing-library/react'
+import { type ReactElement } from 'react'
 import userEvent from '@testing-library/user-event'
+import { NextIntlClientProvider } from 'next-intl'
+import enMessages from '../../../../messages/en.json'
 import { ImageUploadField } from '../image-upload-field'
+
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      {ui}
+    </NextIntlClientProvider>,
+  )
 
 describe('ImageUploadField', () => {
   it('renders a file input and upload label', () => {

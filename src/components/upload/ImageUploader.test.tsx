@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render as rtlRender, screen, fireEvent } from '@testing-library/react'
+import { type ReactElement } from 'react'
+import { NextIntlClientProvider } from 'next-intl'
+import enMessages from '../../../messages/en.json'
 import { ImageUploader } from './ImageUploader'
+
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      {ui}
+    </NextIntlClientProvider>,
+  )
 
 vi.mock('./useImageUpload', () => ({
   useImageUpload: () => ({

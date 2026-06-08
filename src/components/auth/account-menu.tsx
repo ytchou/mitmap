@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 import { signOut } from '@/app/auth/actions'
 import { useUser } from '@/lib/auth/use-user'
@@ -24,14 +24,14 @@ export function AccountMenu() {
   const t = useTranslations()
 
   if (loading) {
-    return <div data-account-menu-placeholder className="h-9 w-[88px]" aria-hidden />
+    return <div data-account-menu-placeholder className="h-9 w-12" aria-hidden />
   }
 
   if (!user) {
     return (
       <Link
         href="/auth/sign-in"
-        className="inline-flex h-9 w-[88px] items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="inline-flex h-9 items-center justify-center rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         {t('nav.signIn')}
       </Link>
@@ -49,6 +49,12 @@ export function AccountMenu() {
         {initial}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40 min-w-40">
+        <DropdownMenuItem
+          render={<Link href="/my-submissions" />}
+        >
+          {t('nav.mySubmissions')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           render={<Link href="/dashboard" />}
         >

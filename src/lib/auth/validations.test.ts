@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { signInSchema, signUpSchema, isRelativeUrl } from "./validations";
+import { getSignInSchema, getSignUpSchema, isRelativeUrl } from "./validations";
+
+// Minimal translator that returns the key suffix as-is (we only test
+// pass/fail shape here, not the message strings).
+const t = (key: string) => key;
+const signInSchema = getSignInSchema(t);
+const signUpSchema = getSignUpSchema(t);
 
 describe("signInSchema", () => {
   it("accepts valid email and password", () => {

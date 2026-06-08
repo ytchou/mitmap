@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBrandBySlug } from "@/lib/services/brands";
 import { computeBrandCompleteness } from "@/lib/services/brand-completeness";
@@ -25,13 +26,15 @@ import { AnalyticsChart } from "@/components/dashboard/analytics-chart";
 import { LinkBreakdown } from "@/components/dashboard/link-breakdown";
 import { SourcesBreakdownCard } from "@/components/dashboard/sources-breakdown-card";
 
-export const metadata: Metadata = {
-  title: "品牌管理",
+type Props = {
+  params: Promise<{ slug: string; locale: string }>;
 };
 
-type Props = {
-  params: Promise<{ slug: string }>;
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "dashboard.manage" });
+  return { title: t("metaTitle") };
+}
 
 export default async function BrandDashboardPage({ params }: Props) {
   const { slug } = await params;
@@ -55,6 +58,8 @@ export default async function BrandDashboardPage({ params }: Props) {
     getSourceBreakdown(brand.id, 30),
   ]);
 
+  const t = await getTranslations("dashboard.manage");
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="flex items-center justify-between">
@@ -63,17 +68,17 @@ export default async function BrandDashboardPage({ params }: Props) {
             {brand.name}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            管理您的品牌頁面
+            {t("subtitle")}
           </p>
         </div>
         <Link href={`/dashboard/brands/${slug}/edit`}>
-          <Button>編輯品牌</Button>
+          <Button>{t("editButton")}</Button>
         </Link>
       </div>
 
       <div className="mt-8 space-y-6">
         <h2 className="mb-4 text-sm font-semibold uppercase text-muted-foreground">
-          Analytics
+          {t("analyticsHeading")}
         </h2>
         <AnalyticsCards
           totalViews={analytics.totalViews}
@@ -101,40 +106,40 @@ export default async function BrandDashboardPage({ params }: Props) {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Details
+              {t("detailsCardTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <p className="text-xs font-medium uppercase text-muted-foreground">
-                Description
+                {t("descriptionLabel")}
               </p>
               <p className="mt-1 text-sm">
-                {brand.description ?? "尚未填寫介紹"}
+                {brand.description ?? t("noDescription")}
               </p>
             </div>
 
             <div>
               <p className="text-xs font-medium uppercase text-muted-foreground">
-                Category
+                {t("categoryLabel")}
               </p>
               <p className="mt-1 text-sm">
-                {brand.category ?? "未分類"}
+                {brand.category ?? t("noCategory")}
               </p>
             </div>
 
             <div>
               <p className="text-xs font-medium uppercase text-muted-foreground">
-                Website
+                {t("websiteLabel")}
               </p>
               <p className="mt-1 text-sm">
-                {brand.socialLinks.officialWebsite ?? "未設定"}
+                {brand.socialLinks.officialWebsite ?? t("noWebsite")}
               </p>
             </div>
 
             <div>
               <p className="text-xs font-medium uppercase text-muted-foreground">
-                Social Links
+                {t("socialLinksLabel")}
               </p>
               <div className="mt-1 space-y-1 text-sm">
                 {brand.socialLinks.instagram && (
@@ -148,7 +153,7 @@ export default async function BrandDashboardPage({ params }: Props) {
                 )}
                 {!brand.socialLinks.instagram &&
                   !brand.socialLinks.threads &&
-                  !brand.socialLinks.facebook && <p>None set</p>}
+                  !brand.socialLinks.facebook && <p>{t("socialLinksNone")}</p>}
               </div>
             </div>
           </CardContent>
@@ -157,7 +162,7 @@ export default async function BrandDashboardPage({ params }: Props) {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Public Page
+              {t("publicPageCardTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -165,7 +170,7 @@ export default async function BrandDashboardPage({ params }: Props) {
               href={`/${slug}`}
               className="text-sm text-primary hover:underline"
             >
-              在 Formoria 查看您的品牌
+              {t("viewOnFormoria")}
             </Link>
           </CardContent>
         </Card>
@@ -176,7 +181,7 @@ export default async function BrandDashboardPage({ params }: Props) {
           href="/dashboard"
           className="text-sm text-muted-foreground hover:underline"
         >
-          返回品牌管理
+          {t("backToDashboard")}
         </Link>
       </div>
     </div>

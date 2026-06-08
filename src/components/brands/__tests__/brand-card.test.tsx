@@ -60,9 +60,9 @@ describe('BrandCard — verified badge', () => {
     expect(screen.queryByText('Community')).not.toBeInTheDocument()
   })
 
-  it('renders a community label when isVerified is false', () => {
+  it('renders no owner or community badge when isVerified is false', () => {
     renderWithProvider(<BrandCard brand={makeBrand({ isVerified: false })} />)
     expect(screen.queryByLabelText('Managed by the brand owner')).not.toBeInTheDocument()
-    expect(screen.getByText('Community')).toBeInTheDocument()
+    expect(screen.queryByText('Community')).not.toBeInTheDocument()
   })
 })

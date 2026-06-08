@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBrandBySlug } from "@/lib/services/brands";
 import { isOwnerOf } from "@/lib/services/brand-owners";
 import { BrandEditForm } from "./brand-edit-form";
 
-export const metadata: Metadata = {
-  title: "編輯品牌",
+type Props = {
+  params: Promise<{ slug: string; locale: string }>;
 };
 
-type Props = {
-  params: Promise<{ slug: string }>;
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "dashboard.edit" });
+  return { title: t("metaTitle") };
+}
 
 export default async function BrandEditPage({ params }: Props) {
   const { slug } = await params;
@@ -27,13 +30,15 @@ export default async function BrandEditPage({ params }: Props) {
 
   if (!owner) redirect("/dashboard");
 
+  const t = await getTranslations("dashboard.edit");
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <h1 className="font-heading text-2xl font-bold tracking-tight">
-        Edit {brand.name}
+        {t("pageHeading", { name: brand.name })}
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Update your brand listing details
+        {t("pageSubheading")}
       </p>
 
       <div className="mt-8">

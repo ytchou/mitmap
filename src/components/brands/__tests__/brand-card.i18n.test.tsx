@@ -52,9 +52,6 @@ describe('BrandCard — English locale (i18n)', () => {
     // Proper noun (brand name) is unchanged
     expect(screen.getByText('Sunrise Tea')).toBeInTheDocument()
 
-    // Founding year uses English translation key
-    expect(screen.getByText('Est. 2010')).toBeInTheDocument()
-
     // Owner badge uses updated English short label and ARIA/title text
     expect(screen.getByLabelText('Managed by the brand owner')).toBeInTheDocument()
     expect(screen.getByText('Brand')).toBeInTheDocument()

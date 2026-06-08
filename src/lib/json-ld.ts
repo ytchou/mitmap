@@ -128,7 +128,6 @@ export function buildWebSiteJsonLd(locale: Locale = 'zh-TW'): JsonLdObject {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Formoria',
-    alternateName: '島藏',
     url: siteUrl,
     inLanguage: toInLanguage(locale),
     potentialAction: {
@@ -153,12 +152,11 @@ export function buildOrganizationJsonLd(locale?: string): JsonLdObject {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Formoria',
-    alternateName: '島藏',
     url: siteUrl,
     logo: `${siteUrl}/images/formoria-mark.png`,
     description:
       inLanguage === 'zh-TW'
-        ? '島藏是介紹台灣品牌與在地製造的品牌目錄。'
+        ? 'Formoria 是介紹台灣品牌與在地製造的品牌目錄。'
         : 'Formoria is a directory for discovering Taiwanese brands and makers.',
     inLanguage,
     ...(FORMORIA_SOCIALS.length > 0 ? { sameAs: FORMORIA_SOCIALS } : {}),
@@ -206,7 +204,7 @@ export function buildDefinedTermSetJsonLd(
   return {
     '@context': 'https://schema.org',
     '@type': 'DefinedTermSet',
-    name: inLanguage === 'zh-TW' ? '島藏詞彙表' : 'Formoria Glossary',
+    name: inLanguage === 'zh-TW' ? 'Formoria 詞彙表' : 'Formoria Glossary',
     inLanguage,
     hasDefinedTerm: terms.map((term) => ({
       '@type': 'DefinedTerm',

@@ -1,19 +1,22 @@
 import { useTranslations } from 'next-intl'
-import { MapPin } from 'lucide-react'
+import { ExternalLink, MapPin } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { Brand } from '@/lib/types'
+import { MIT_SMILE_REGISTRY_URL } from '@/lib/constants'
 import { MitVerifiedBadge, OwnerVerifiedBadge } from './brand-verification-badges'
 
 interface BrandHeaderProps {
   brand: Brand
+  categoryLabel?: string | null
   actionsSlot?: ReactNode
 }
 
-export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
+export function BrandHeader({ brand, categoryLabel, actionsSlot }: BrandHeaderProps) {
   const t = useTranslations('brandDetail')
   const locationName = brand.retailLocations[0]?.name
   const hasMitVerifiedBadge = brand.mitVerified === true
   const hasOwnerVerifiedBadge = brand.isVerified
+  const mitSmileCert = hasMitVerifiedBadge ? brand.mitEvidence?.mit_smile_cert : undefined
 
   return (
     <div className="space-y-3">
@@ -28,9 +31,9 @@ export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
       {/* Meta row */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         {/* Category pill */}
-        {brand.category && (
+        {(categoryLabel ?? brand.category) && (
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground">
-            {brand.category}
+            {categoryLabel ?? brand.category}
           </span>
         )}
 
@@ -43,6 +46,19 @@ export function BrandHeader({ brand, actionsSlot }: BrandHeaderProps) {
               <OwnerVerifiedBadge label={t('verified')} title={t('verifiedTitle')} />
             )}
           </div>
+        )}
+
+        {/* MIT Smile registry proof link */}
+        {mitSmileCert && (
+          <a
+            href={MIT_SMILE_REGISTRY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-warm-caption underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            {t('mitProofLink', { cert: mitSmileCert })}
+            <ExternalLink className="size-3" aria-hidden />
+          </a>
         )}
 
         {/* Founding year */}

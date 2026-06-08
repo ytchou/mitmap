@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useImageUpload } from '@/components/upload/useImageUpload'
 import { Label } from '@/components/ui/label'
 
@@ -20,6 +21,7 @@ export function ImageUploadField({
   brandId,
   currentUrl,
 }: ImageUploadFieldProps) {
+  const t = useTranslations('forms.imageUpload')
   const inputId = `image-upload-${name}`
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -58,7 +60,7 @@ export function ImageUploadField({
       setSizeError(null)
 
       if (file.size > MAX_FILE_SIZE) {
-        setSizeError('File too large — maximum 5MB')
+        setSizeError(t('fileTooLarge'))
         e.target.value = ''
         return
       }
@@ -138,18 +140,18 @@ export function ImageUploadField({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={status === 'uploading'}
-            aria-label={localPreview ? 'Replace image' : 'Upload image'}
+            aria-label={localPreview ? t('ariaReplace') : t('ariaUpload')}
             className="inline-flex min-h-[48px] items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
             {status === 'uploading' ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin text-cta" />
-                上傳中…
+                {t('uploading')}
               </>
             ) : localPreview ? (
-              '更換'
+              t('replace')
             ) : (
-              'Upload'
+              t('upload')
             )}
           </button>
 
@@ -157,10 +159,10 @@ export function ImageUploadField({
             <button
               type="button"
               onClick={handleRemove}
-              aria-label="Remove image"
+              aria-label={t('ariaRemove')}
               className="inline-flex min-h-[48px] items-center rounded-lg px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
-              移除
+              {t('remove')}
             </button>
           )}
         </div>

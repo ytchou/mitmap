@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { updateBrandAction } from "../actions";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ type BrandEditFormProps = {
 
 export function BrandEditForm({ brand }: BrandEditFormProps) {
   const [state, action, pending] = useActionState(updateBrandAction, undefined);
+  const t = useTranslations("dashboard.edit");
 
   return (
     <div className="space-y-10">
@@ -32,11 +34,11 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
         {/* Basic Info */}
         <section id="basic-info" className="space-y-4">
           <h2 className="font-heading text-base font-bold text-foreground border-b border-border pb-2">
-            Basic Info
+            {t("sectionBasicInfo")}
           </h2>
 
           <div className="space-y-2">
-            <Label htmlFor="name">品牌名稱</Label>
+            <Label htmlFor="name">{t("fieldBrandName")}</Label>
             <Input
               id="name"
               name="name"
@@ -49,7 +51,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("fieldDescription")}</Label>
             <textarea
               id="description"
               name="description"
@@ -64,7 +66,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="brandHighlights">品牌亮點</Label>
+            <Label htmlFor="brandHighlights">{t("fieldBrandHighlights")}</Label>
             <textarea
               id="brandHighlights"
               name="brandHighlights"
@@ -72,7 +74,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
               className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               defaultValue={brand.brandHighlights ?? ""}
             />
-            <p className="text-xs text-muted-foreground">最多 300 字</p>
+            <p className="text-xs text-muted-foreground">{t("fieldHighlightsHint")}</p>
             {state?.fieldErrors?.brandHighlights && (
               <p className="text-xs text-destructive">
                 {state.fieldErrors.brandHighlights}
@@ -81,7 +83,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="foundingYear">Founding Year</Label>
+            <Label htmlFor="foundingYear">{t("fieldFoundingYear")}</Label>
             <Input
               id="foundingYear"
               name="foundingYear"
@@ -96,7 +98,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
         {/* Media */}
         <section id="media" className="space-y-4">
           <h2 className="font-heading text-base font-bold text-foreground border-b border-border pb-2">
-            Media
+            {t("sectionMedia")}
           </h2>
 
           <ImageUploadField
@@ -114,7 +116,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
           />
 
           <div className="space-y-2">
-            <Label htmlFor="productPhotos">產品照片</Label>
+            <Label htmlFor="productPhotos">{t("fieldProductPhotos")}</Label>
             <ProductPhotosField
               name="productPhotos"
               brandId={brand.id}
@@ -126,11 +128,11 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
         {/* Links */}
         <section id="links" className="space-y-4">
           <h2 className="font-heading text-base font-bold text-foreground border-b border-border pb-2">
-            Links
+            {t("sectionLinks")}
           </h2>
 
           <div className="space-y-2">
-            <Label htmlFor="websiteUrl">Official Website</Label>
+            <Label htmlFor="websiteUrl">{t("fieldOfficialWebsite")}</Label>
             <Input
               id="websiteUrl"
               name="websiteUrl"
@@ -171,32 +173,32 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Purchase Links</Label>
+            <Label>{t("fieldPurchaseLinks")}</Label>
             <DynamicArrayField
               initialItems={brand.purchaseLinks}
               createItem={() => ({ platform: "", url: "", label: "" })}
-              addLabel="Add purchase link"
+              addLabel={t("addPurchaseLink")}
               renderItem={(item, index, onRemove) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
                     name={`purchaseLinks[${index}].platform`}
-                    placeholder="Platform"
+                    placeholder={t("fieldPlatformPlaceholder")}
                     defaultValue={(item as { platform: string }).platform}
                     className="w-32"
                   />
                   <Input
                     name={`purchaseLinks[${index}].url`}
-                    placeholder="URL"
+                    placeholder={t("fieldUrlPlaceholder")}
                     defaultValue={(item as { url: string }).url}
                   />
                   <Input
                     name={`purchaseLinks[${index}].label`}
-                    placeholder="Label"
+                    placeholder={t("fieldLabelPlaceholder")}
                     defaultValue={(item as { label?: string }).label ?? ""}
                     className="w-32"
                   />
                   <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-                    Remove
+                    {t("removeItem")}
                   </Button>
                 </div>
               )}
@@ -207,27 +209,27 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
         {/* Locations */}
         <section id="locations" className="space-y-4">
           <h2 className="font-heading text-base font-bold text-foreground border-b border-border pb-2">
-            Locations
+            {t("sectionLocations")}
           </h2>
 
           <DynamicArrayField
             initialItems={brand.retailLocations}
             createItem={() => ({ name: "", address: "" })}
-            addLabel="Add retail location"
+            addLabel={t("addRetailLocation")}
             renderItem={(item, index, onRemove) => (
               <div key={index} className="flex items-center gap-2">
                 <Input
                   name={`retailLocations[${index}].name`}
-                  placeholder="Store name"
+                  placeholder={t("fieldStoreName")}
                   defaultValue={(item as { name: string }).name}
                 />
                 <Input
                   name={`retailLocations[${index}].address`}
-                  placeholder="Address"
+                  placeholder={t("fieldAddress")}
                   defaultValue={(item as { address: string }).address}
                 />
                 <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-                  Remove
+                  {t("removeItem")}
                 </Button>
               </div>
             )}
@@ -236,11 +238,11 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
 
         <div className="flex gap-4">
           <Button type="submit" disabled={pending}>
-            {pending ? "儲存中..." : "儲存變更"}
+            {pending ? t("saving") : t("save")}
           </Button>
           <Link href={`/dashboard/brands/${brand.slug}`}>
             <Button type="button" variant="outline">
-              取消
+              {t("cancel")}
             </Button>
           </Link>
         </div>

@@ -74,7 +74,7 @@ export default async function OgImage() {
                 lineHeight: 1.1,
               }}
             >
-              島藏
+              Formoria
             </div>
 
             <div

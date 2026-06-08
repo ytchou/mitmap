@@ -4,7 +4,7 @@ export const underConstructionHtml = `<!doctype html>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
-    <title>Formoria 島藏 | Under construction</title>
+    <title>Formoria | Under construction</title>
     <style>
       :root {
         color-scheme: light;
@@ -131,9 +131,8 @@ export const underConstructionHtml = `<!doctype html>
   <body>
     <main>
       <section class="wrap" aria-labelledby="page-title">
-        <div class="brand" aria-label="Formoria 島藏">
+        <div class="brand" aria-label="Formoria">
           <span class="brand-primary">Formoria</span>
-          <span class="brand-secondary">島藏</span>
         </div>
         <div class="divider"></div>
         <h1 id="page-title">

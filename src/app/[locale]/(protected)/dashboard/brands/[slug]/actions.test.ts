@@ -1,4 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import zhMessages from '../../../../../../../messages/zh-TW.json'
+
+function makeT(messages: Record<string, unknown>, namespace: string) {
+  return (key: string) => {
+    const parts = `${namespace}.${key}`.split('.')
+    let current: unknown = messages
+    for (const part of parts) {
+      if (typeof current !== 'object' || current === null) return key
+      current = (current as Record<string, unknown>)[part]
+    }
+    return typeof current === 'string' ? current : key
+  }
+}
+
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn().mockImplementation(async (namespace: string) =>
+    makeT(zhMessages as unknown as Record<string, unknown>, namespace)
+  ),
+}))
 
 const getUser = vi.fn().mockResolvedValue({
   data: { user: { id: 'user-1', email: 'owner@example.com' } },

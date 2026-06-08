@@ -19,6 +19,7 @@ vi.mock('@/i18n/navigation', () => ({
     </a>
   ),
   usePathname: () => '/',
+  useRouter: () => ({ replace: () => {}, push: () => {}, refresh: () => {} }),
 }))
 
 vi.mock('next-intl', () => ({
@@ -68,13 +69,11 @@ describe('MainNav brand', () => {
 })
 
 describe('MainNav', () => {
-  it('renders navigation links', async () => {
+  it('renders Submit a Brand CTA link', async () => {
     const { MainNav } = await import('./main-nav')
     render(<MainNav categories={mockCategories} />)
-    expect(screen.getByRole('link', { name: /品牌目錄/ })).toHaveAttribute(
-      'href',
-      '/brands'
-    )
+    const submitLinks = screen.getAllByRole('link', { name: '提交品牌' })
+    expect(submitLinks[0]).toHaveAttribute('href', '/submit')
   })
 
   it('renders Submit a Brand CTA', async () => {
@@ -86,13 +85,11 @@ describe('MainNav', () => {
     )
   })
 
-  it('renders My Submissions nav link', async () => {
+  it('does not render removed nav links (brandDirectory, mySubmissions)', async () => {
     const { MainNav } = await import('./main-nav')
     render(<MainNav categories={mockCategories} />)
-    expect(screen.getAllByRole('link', { name: '我的提交' })[0]).toHaveAttribute(
-      'href',
-      '/my-submissions'
-    )
+    expect(screen.queryByRole('link', { name: /品牌目錄/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /我的提交/ })).not.toBeInTheDocument()
   })
 
   it('renders mobile menu button on small screens', async () => {

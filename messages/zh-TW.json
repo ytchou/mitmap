@@ -1,6 +1,6 @@
 {
   "common": {
-    "brandName": "島藏",
+    "brandName": "Formoria",
     "exploreBrands": "探索品牌",
     "browseAllBrands": "瀏覽全部品牌 →",
     "submitBrand": "提交品牌",
@@ -30,7 +30,7 @@
     "about": "關於我們",
     "terms": "服務條款",
     "contact": "聯絡我們",
-    "copyright": "© {year} 島藏",
+    "copyright": "© {year} Formoria",
     "tagline": "讓台灣品牌被世界看見。",
     "discoverHeading": "探索",
     "directory": "品牌目錄",
@@ -68,8 +68,9 @@
     },
     "manifesto": {
       "headline": "讓台灣品牌被世界看見",
-      "body1": "台灣製造不只是一個標籤，而是一份對品質的堅持。從在地食材到設計選品，台灣有太多默默耕耘的品牌，等待被看見。",
-      "body2": "Formoria 想成為這些品牌與世界之間的橋樑——讓每一個用心做好產品的人，都有機會被發現。",
+      "body1": "台灣製造，不只是產地標籤，更是對品質的堅持。",
+      "body2": "太多用心的品牌，仍默默耕耘、等待被看見。",
+      "body3": "Formoria 想成為他們與世界之間的橋樑。",
       "cta": "了解我們的故事"
     },
     "submitBand": {
@@ -118,8 +119,7 @@
       "verifiedLabel": "由品牌方經營管理",
       "verifiedBadge": "品牌",
       "mitVerifiedLabel": "MIT 已驗證",
-      "mitVerifiedBadge": "MIT",
-      "communityLabel": "社群"
+      "mitVerifiedBadge": "MIT"
     },
     "verificationFilter": {
       "all": "全部",
@@ -161,6 +161,7 @@
     "verifiedTitle": "由品牌方經營管理",
     "mitVerified": "MIT 已驗證",
     "mitVerifiedTitle": "已通過 MIT 微笑標章登錄驗證",
+    "mitProofLink": "查看 MIT 微笑標章驗證（證號 {cert}）",
     "foundingYear": "創立於 {year}",
     "actions": {
       "visitWebsite": "前往官網",
@@ -188,10 +189,67 @@
       "reasonInappropriate": "不當內容",
       "notesPlaceholder": "補充說明（選填）",
       "submitting": "送出中...",
-      "submit": "送出檢舉"
+      "submit": "送出檢舉",
+      "errors": {
+        "missingBrandId": "缺少品牌 ID",
+        "invalidReason": "請選擇有效的檢舉原因",
+        "notesTooLong": "補充說明不得超過 1000 字",
+        "rateLimited": "檢舉次數過多，請稍後再試。",
+        "unknown": "發生未知錯誤"
+      }
     },
     "breadcrumb": {
       "directory": "品牌目錄"
+    },
+    "sections": {
+      "about": "關於",
+      "tags": "標籤",
+      "highlights": "品牌亮點",
+      "photos": "照片",
+      "locations": "據點"
+    },
+    "gallery": {
+      "viewer": "照片檢視",
+      "close": "關閉",
+      "previous": "上一張",
+      "next": "下一張",
+      "photoAlt": "產品照片 {n}",
+      "viewPhoto": "檢視第 {n} 張照片"
+    },
+    "locations": {
+      "mapTitle": "{name} 地圖"
+    },
+    "moreInCategory": {
+      "heading": "更多{category}",
+      "subtext": "此分類還有 {count} 個品牌"
+    },
+    "removal": {
+      "trigger": "要求移除",
+      "title": "要求移除此品牌頁",
+      "description": "如果這個社群品牌頁不應繼續公開，我們可以交由管理員審核移除。",
+      "label": "補充說明",
+      "labelOptional": "選填",
+      "placeholder": "可補充品牌關係、原因或希望我們知道的背景資訊",
+      "cancel": "取消",
+      "submit": "確認要求移除",
+      "submitting": "提交中",
+      "successMessage": "我們已收到移除請求，會交由管理員審核。",
+      "errorMessage": "提交失敗，請稍後再試。",
+      "errors": {
+        "missingBrandId": "缺少品牌 ID",
+        "notesTooLong": "補充說明不得超過 1000 字",
+        "rateLimited": "檢舉次數過多，請稍後再試。",
+        "unknown": "提交失敗，請稍後再試。"
+      }
+    },
+    "claim": {
+      "errors": {
+        "notLoggedIn": "請先登入後再提交認領申請",
+        "missingBrandId": "缺少品牌 ID",
+        "invalidProofType": "請選擇有效的認領證明類型",
+        "duplicate": "你已提交過這個品牌的認領申請",
+        "unknown": "提交失敗，請稍後再試。"
+      }
     }
   },
   "categories": {
@@ -217,7 +275,7 @@
     "index": {
       "metadata": {
         "title": "依類別瀏覽 — 台灣製造品牌",
-        "description": "在島藏探索所有台灣製造品牌的類別，涵蓋食品、時尚、設計等多元品項。"
+        "description": "在 Formoria 探索所有台灣製造品牌的類別，涵蓋食品、時尚、設計等多元品項。"
       },
       "heading": "依類別瀏覽",
       "subheading": "探索各類別的台灣在地品牌"
@@ -387,31 +445,33 @@
     "support": {
       "metadata": {
         "title": "支持 Formoria",
-        "description": "Formoria 是一個由社群驅動的開放平台，完全免費。如果這個專案對你有幫助，歡迎請我們喝杯咖啡！"
+        "description": "Formoria 是一個獨立經營的台灣製造品牌目錄，沒有廣告、不收上架費。如果這裡對你有幫助，歡迎請我喝杯咖啡。"
       },
-      "title": "支持 Formoria",
-      "intro1": "Formoria 是一個由社群驅動的專案，完全免費，沒有廣告，沒有付費牆。所有的功能開發與維護都靠熱情與志願者的時間支撐。",
-      "intro2": "如果 Formoria 對你有幫助，或你認同我們推廣台灣品牌的使命，歡迎請我們喝杯咖啡，讓這個專案可以繼續成長。",
-      "coffee": {
-        "heading": "請我們喝杯咖啡",
-        "body": "你的支持是我們繼續前進的動力。每一杯咖啡都代表著對台灣品牌推廣的認同。"
+      "hero": {
+        "title": "讓更多台灣品牌被看見",
+        "body": "Formoria 是一個獨立經營的台灣製造品牌目錄。沒有廣告、不收上架費，排序只看內容、不看付費。如果這裡對你有幫助，歡迎請我喝杯咖啡，讓它繼續走下去。"
       },
+      "cta": "☕ 請我喝咖啡",
       "usage": {
-        "heading": "你的支持用在哪裡？",
-        "server": {
-          "heading": "伺服器費用",
-          "body": "維持平台穩定運行，讓每位使用者都能快速瀏覽台灣品牌目錄。"
+        "heading": "你的支持會用在",
+        "discover": {
+          "title": "發掘與查證品牌",
+          "body": "親手蒐集、整理每一個品牌的資料，讓目錄保持真實又完整。"
         },
-        "development": {
-          "heading": "功能開發",
-          "body": "持續改善平台功能，讓品牌展示與探索體驗更加完善。"
+        "hosting": {
+          "title": "維持網站運作",
+          "body": "支付主機、圖片儲存與網域等開銷，讓網站穩定又免費。"
         },
-        "community": {
-          "heading": "社群推廣",
-          "body": "幫助更多人認識台灣製造品牌，擴大平台的影響力與覆蓋範圍。"
+        "neutral": {
+          "title": "保持中立、無廣告",
+          "body": "不放廣告、不收上架費，把空間留給真正的好品牌。"
         }
       },
-      "widgetDescription": "支持 Formoria 繼續成長！"
+      "otherWays": {
+        "heading": "其他支持方式",
+        "submit": "推薦一個你喜歡的台灣品牌",
+        "share": "把 Formoria 分享給朋友"
+      }
     }
   },
   "faq": {
@@ -458,7 +518,7 @@
       "description": "Formoria 透過社群嚴選的品牌目錄，幫助優質台灣製造品牌被看見，讓世界認識台灣的設計、工藝與用心。"
     },
     "hero": {
-      "eyebrow": "Formoria · 島藏",
+      "eyebrow": "Formoria",
       "title": "把台灣最好的品牌，帶向世界。",
       "subtitle": "一個社群嚴選的台灣製造品牌目錄，讓人們從日常選物到設計好物，都能找到值得認識的台灣品牌。",
       "statSuffix": "，持續增加中",
@@ -541,6 +601,12 @@
     }
   },
   "auth": {
+    "validation": {
+      "emailInvalid": "請輸入有效的電子郵件地址",
+      "passwordRequired": "請輸入密碼",
+      "passwordMinLength": "密碼至少需要 8 個字元",
+      "passwordMismatch": "密碼不一致"
+    },
     "signIn": {
       "heading": "登入",
       "subheading": "請輸入您的電子郵件和密碼以繼續",
@@ -574,7 +640,48 @@
     "dashboard": "管理後台",
     "signOut": "登出"
   },
+  "forms": {
+    "imageUpload": {
+      "fileTooLarge": "檔案過大，上限 5MB",
+      "uploading": "上傳中…",
+      "replace": "更換",
+      "upload": "上傳",
+      "remove": "移除",
+      "ariaReplace": "更換圖片",
+      "ariaUpload": "上傳圖片",
+      "ariaRemove": "移除圖片"
+    },
+    "photos": {
+      "reorderHint": "拖曳可重新排序，第一張會作為封面。",
+      "cover": "封面",
+      "ariaRemove": "移除照片"
+    },
+    "uploader": {
+      "uploading": "上傳中…",
+      "clickOrDrag": "點擊上傳或拖曳檔案",
+      "imageAlt": "上傳 {n}",
+      "ariaRemove": "移除圖片 {n}"
+    }
+  },
   "dashboard": {
+    "sources": {
+      "title": "流量來源",
+      "last30Days": "最近 30 天",
+      "views": "{n} 次瀏覽",
+      "noDataTitle": "尚無流量資料",
+      "noDataBody": "訪客進入品牌頁面後，此處將顯示各流量來源的數據。",
+      "labels": {
+        "direct": "直接進入",
+        "search": "站內搜尋",
+        "category": "分類瀏覽",
+        "directory": "品牌目錄",
+        "recommendation": "推薦連結",
+        "external_search": "外部搜尋",
+        "social": "社群媒體",
+        "external": "外部連結",
+        "unknown": "其他"
+      }
+    },
     "metadata": {
       "title": "品牌管理"
     },
@@ -671,6 +778,57 @@
       "invalidClaim": "認領連結無效或已過期，請聯繫客服。",
       "emailMismatch": "您登入的電子郵件與認領邀請不符，請使用正確的電子郵件登入。",
       "claimFailed": "此品牌已被認領。若您認為有誤，請聯繫客服。"
+    },
+    "manage": {
+      "metaTitle": "品牌管理",
+      "subtitle": "管理您的品牌頁面",
+      "editButton": "編輯品牌",
+      "analyticsHeading": "Analytics",
+      "detailsCardTitle": "Details",
+      "descriptionLabel": "Description",
+      "categoryLabel": "Category",
+      "websiteLabel": "Website",
+      "socialLinksLabel": "Social Links",
+      "socialLinksNone": "None set",
+      "publicPageCardTitle": "Public Page",
+      "viewOnFormoria": "在 Formoria 查看您的品牌",
+      "backToDashboard": "返回品牌管理",
+      "noDescription": "尚未填寫介紹",
+      "noCategory": "未分類",
+      "noWebsite": "未設定"
+    },
+    "edit": {
+      "metaTitle": "編輯品牌",
+      "pageHeading": "Edit {name}",
+      "pageSubheading": "Update your brand listing details",
+      "sectionBasicInfo": "Basic Info",
+      "sectionMedia": "Media",
+      "sectionLinks": "Links",
+      "sectionLocations": "Locations",
+      "fieldBrandName": "品牌名稱",
+      "fieldDescription": "Description",
+      "fieldBrandHighlights": "品牌亮點",
+      "fieldHighlightsHint": "最多 300 字",
+      "fieldFoundingYear": "Founding Year",
+      "fieldProductPhotos": "產品照片",
+      "fieldOfficialWebsite": "Official Website",
+      "fieldPurchaseLinks": "Purchase Links",
+      "addPurchaseLink": "Add purchase link",
+      "fieldPlatformPlaceholder": "Platform",
+      "fieldUrlPlaceholder": "URL",
+      "fieldLabelPlaceholder": "Label",
+      "removeItem": "Remove",
+      "addRetailLocation": "Add retail location",
+      "fieldStoreName": "Store name",
+      "fieldAddress": "Address",
+      "saving": "儲存中...",
+      "save": "儲存變更",
+      "cancel": "取消",
+      "errors": {
+        "notLoggedIn": "請先登入才能編輯品牌",
+        "forbidden": "您沒有權限編輯此品牌",
+        "unknown": "發生預期外的錯誤，請再試一次。"
+      }
     }
   },
   "errors": {
@@ -798,6 +956,7 @@
       "highlights": "亮點",
       "photoCount": "{count} 張照片已上傳",
       "photoCountSingular": "1 張照片已上傳",
+      "brandLogoAlt": "品牌標誌",
       "pdpaConsent": "我同意依據<privacyPolicy>隱私政策</privacyPolicy>收集和使用我的個人資料（PDPA 合規）。"
     },
     "confirmation": {
@@ -825,6 +984,21 @@
         "explore": "探索 Formoria 目錄",
         "submitAnother": "再提交一個品牌"
       }
+    },
+    "validation": {
+      "nameMinLength": "品牌名稱至少需要 2 個字元",
+      "descriptionMinLength": "品牌介紹至少需要 40 個字元",
+      "categoryRequired": "請選擇分類",
+      "tagsMax": "最多可選擇 5 個標籤",
+      "logoRequired": "請上傳品牌標誌",
+      "photosMax": "最多可上傳 6 張照片",
+      "platformRequired": "請選擇平台",
+      "urlInvalid": "請輸入有效的網址",
+      "locationNameRequired": "請輸入地點名稱",
+      "addressRequired": "請輸入地址",
+      "purchaseLinksMin": "請提供至少一個購買連結",
+      "pdpaRequired": "請同意隱私政策",
+      "turnstileRequired": "請完成驗證"
     },
     "errors": {
       "notAuthenticated": "請先登入才能提交品牌",

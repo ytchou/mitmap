@@ -222,7 +222,7 @@ describe('buildWebSiteJsonLd', () => {
     expect(jsonLd['@context']).toBe('https://schema.org')
     expect(jsonLd['@type']).toBe('WebSite')
     expect(jsonLd.name).toBe('Formoria')
-    expect(jsonLd.alternateName).toBe('島藏')
+    expect(jsonLd.alternateName).toBeUndefined()
     expect(jsonLd.url).toBeDefined()
     expect(jsonLd.url).toContain('localhost:3000')
     expect(jsonLd.url).not.toContain('mitmap')
@@ -235,12 +235,6 @@ describe('buildWebSiteJsonLd', () => {
     expect(jsonLd.potentialAction['query-input']).toContain(
       'search_term_string'
     )
-  })
-
-  it('includes Chinese alternate name', () => {
-    const jsonLd = buildWebSiteJsonLd()
-    expect(jsonLd.alternateName).toBeDefined()
-    expect(typeof jsonLd.alternateName).toBe('string')
   })
 
   it('SearchAction targets /brands?search= not /?search=', () => {

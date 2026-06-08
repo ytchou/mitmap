@@ -54,10 +54,10 @@ export default function FilterableBrandShowcase({
     <section>
       <h2 className="font-heading text-2xl font-bold">{t('heading')}</h2>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+          className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-colors ${
             !selectedCategory
               ? 'border border-transparent bg-primary text-primary-foreground'
               : 'border border-border bg-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground'
@@ -69,7 +69,7 @@ export default function FilterableBrandShowcase({
           <button
             key={cat.slug}
             onClick={() => setSelectedCategory(cat.slug)}
-            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-colors ${
               selectedCategory === cat.slug
                 ? 'border border-transparent bg-primary text-primary-foreground'
                 : 'border border-border bg-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground'

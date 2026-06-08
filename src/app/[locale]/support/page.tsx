@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import { buildAlternates } from '@/lib/seo/alternates'
 import type { Locale } from '@/lib/seo/alternates'
 
@@ -31,79 +31,79 @@ export default async function SupportPage({ params }: PageProps) {
       <div className="space-y-16">
         {/* Hero */}
         <section className="space-y-4">
-          <h1 className="font-heading text-[26px] font-bold text-foreground">{t('title')}</h1>
+          <h1 className="font-heading text-[26px] font-bold text-foreground">
+            {t('hero.title')}
+          </h1>
           <p className="font-sans text-sm text-muted-foreground leading-[1.7] max-w-2xl">
-            {t('intro1')}
+            {t('hero.body')}
           </p>
-          <p className="font-sans text-sm text-muted-foreground leading-[1.7] max-w-2xl">
-            {t('intro2')}
-          </p>
+          <div className="pt-2">
+            <a
+              href="https://buymeacoffee.com/ytchou"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {t('cta')}
+            </a>
+          </div>
         </section>
 
-        {/* Buy Me a Coffee */}
-        <section className="space-y-4 border-t border-border pt-12">
-          <h2 className="font-heading text-xl font-bold text-foreground">{t('coffee.heading')}</h2>
-          <p className="font-sans text-sm text-muted-foreground leading-[1.7]">
-            {t('coffee.body')}
-          </p>
-          <a
-            href="https://buymeacoffee.com/ytchou"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-              alt="Buy Me A Coffee"
-              width={217}
-              height={60}
-            />
-          </a>
-        </section>
-
-        {/* How it helps */}
-        <section className="space-y-4 border-t border-border pt-12">
-          <h2 className="font-heading text-xl font-bold text-foreground">{t('usage.heading')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Where support goes */}
+        <section className="space-y-6 border-t border-border pt-12">
+          <h2 className="font-heading text-xl font-bold text-foreground">
+            {t('usage.heading')}
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-6 space-y-3">
               <h3 className="font-heading text-base font-bold text-foreground">
-                {t('usage.server.heading')}
+                {t('usage.discover.title')}
               </h3>
               <p className="font-sans text-sm text-muted-foreground leading-relaxed">
-                {t('usage.server.body')}
+                {t('usage.discover.body')}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-6 space-y-3">
               <h3 className="font-heading text-base font-bold text-foreground">
-                {t('usage.development.heading')}
+                {t('usage.hosting.title')}
               </h3>
               <p className="font-sans text-sm text-muted-foreground leading-relaxed">
-                {t('usage.development.body')}
+                {t('usage.hosting.body')}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-6 space-y-3">
               <h3 className="font-heading text-base font-bold text-foreground">
-                {t('usage.community.heading')}
+                {t('usage.neutral.title')}
               </h3>
               <p className="font-sans text-sm text-muted-foreground leading-relaxed">
-                {t('usage.community.body')}
+                {t('usage.neutral.body')}
               </p>
             </div>
           </div>
         </section>
-      </div>
 
-      <Script
-        src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
-        data-name="BMC-Widget"
-        data-id="ytchou"
-        data-description={t('widgetDescription')}
-        data-color="#40DCA5"
-        data-position="Right"
-        data-x_margin="18"
-        data-y_margin="18"
-        strategy="lazyOnload"
-      />
+        {/* Other ways to help */}
+        <section className="space-y-4 border-t border-border pt-12">
+          <h2 className="font-heading text-xl font-bold text-foreground">
+            {t('otherWays.heading')}
+          </h2>
+          <ul className="space-y-3">
+            <li>
+              <Link
+                href="/submit"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
+              >
+                {t('otherWays.submit')}
+              </Link>
+            </li>
+            <li>
+              <span className="text-sm text-muted-foreground">
+                {t('otherWays.share')}
+              </span>
+            </li>
+          </ul>
+        </section>
+      </div>
     </main>
   )
 }

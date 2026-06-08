@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { safeImageSrc } from '@/lib/images/allowed-image-hosts'
 
 interface ImageCarouselProps {
@@ -11,6 +12,7 @@ interface ImageCarouselProps {
 }
 
 export function ImageCarousel({ images, alt }: ImageCarouselProps) {
+  const t = useTranslations('brandDetail')
   const validImages = images.flatMap((image) => {
     const safeSrc = safeImageSrc(image)
     return safeSrc ? [safeSrc] : []
@@ -56,7 +58,7 @@ export function ImageCarousel({ images, alt }: ImageCarouselProps) {
         ) : (
           <Image
             src={validImages[current]}
-            alt={`${alt} — photo ${current + 1}`}
+            alt={t('gallery.photoAlt', { n: current + 1 })}
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 100vw, 580px"
@@ -72,7 +74,7 @@ export function ImageCarousel({ images, alt }: ImageCarouselProps) {
               type="button"
               className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-accent/80 p-2 text-accent-foreground backdrop-blur-sm transition-colors hover:bg-accent"
               onClick={() => goTo(current - 1)}
-              aria-label="Previous image"
+              aria-label={t('gallery.previous')}
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -82,7 +84,7 @@ export function ImageCarousel({ images, alt }: ImageCarouselProps) {
               type="button"
               className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-accent/80 p-2 text-accent-foreground backdrop-blur-sm transition-colors hover:bg-accent"
               onClick={() => goTo(current + 1)}
-              aria-label="Next image"
+              aria-label={t('gallery.next')}
             >
               <ChevronRight className="size-5" />
             </button>
@@ -108,7 +110,7 @@ export function ImageCarousel({ images, alt }: ImageCarouselProps) {
                   ? 'ring-2 ring-primary ring-offset-2'
                   : 'opacity-70 hover:opacity-100'
               }`}
-              aria-label={`View photo ${i + 1}`}
+              aria-label={t('gallery.viewPhoto', { n: i + 1 })}
             >
               {brokenImages.has(i) ? (
                 <div className="flex h-full items-center justify-center bg-muted">
@@ -119,7 +121,7 @@ export function ImageCarousel({ images, alt }: ImageCarouselProps) {
               ) : (
                 <Image
                   src={src}
-                  alt={`${alt} thumbnail ${i + 1}`}
+                  alt={t('gallery.photoAlt', { n: i + 1 })}
                   fill
                   className="object-cover"
                   sizes="64px"

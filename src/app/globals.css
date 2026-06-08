@@ -185,18 +185,3 @@
   }
 }
 
-/* Masonry grid (react-masonry-css) */
-.masonry-grid {
-  display: flex;
-  margin-left: -20px;
-  width: auto;
-}
-
-.masonry-grid_column {
-  padding-left: 20px;
-  background-clip: padding-box;
-}
-
-.masonry-grid_column > * {
-  margin-bottom: 20px;
-}

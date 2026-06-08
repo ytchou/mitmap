@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { BrandHighlights } from './brand-highlights'
-import { describe, it, expect } from 'vitest'
 import type { Brand } from '@/lib/types'
+
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn().mockResolvedValue((key: string) => key),
+}))
 
 function makeBrand(overrides: Partial<Brand> = {}): Brand {
   return {
@@ -33,15 +37,20 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
 }
 
 describe('BrandHighlights', () => {
-  it('renders highlights text when present', () => {
+  it('renders highlights text when present', async () => {
     const brand = makeBrand({ brandHighlights: 'Made in Tainan since 1992' })
-    render(<BrandHighlights brand={brand} />)
+    render(await BrandHighlights({ brand }))
     expect(screen.getByText('Made in Tainan since 1992')).toBeInTheDocument()
   })
 
-  it('renders nothing when brandHighlights is null', () => {
+  it('renders nothing when brandHighlights is null', async () => {
     const brand = makeBrand({ brandHighlights: null })
-    const { container } = render(<BrandHighlights brand={brand} />)
+    const result = await BrandHighlights({ brand })
+    if (result === null) {
+      expect(true).toBe(true)
+      return
+    }
+    const { container } = render(result)
     expect(container).toBeEmptyDOMElement()
   })
 })

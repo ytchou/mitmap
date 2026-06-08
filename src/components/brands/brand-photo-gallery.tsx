@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { trackGalleryPhotoView } from '@/lib/analytics'
 import { safeImageSrc } from '@/lib/images/allowed-image-hosts'
 import {
@@ -17,6 +18,7 @@ interface BrandPhotoGalleryProps {
 }
 
 export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps) {
+  const t = useTranslations('brandDetail')
   const validPhotos = photos.flatMap((photo) => {
     const safeSrc = safeImageSrc(photo)
     return safeSrc ? [safeSrc] : []
@@ -48,7 +50,7 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
   return (
     <section>
       <h2 className="mb-3 font-[family-name:var(--font-heading)] text-lg font-bold text-foreground">
-        Photos
+        {t('sections.photos')}
       </h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {validPhotos.map((photo, i) => (
@@ -63,7 +65,7 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
           >
             <Image
               src={photo}
-              alt={`Product photo ${i + 1}`}
+              alt={t('gallery.photoAlt', { n: i + 1 })}
               fill
               sizes="(max-width: 640px) 50vw, 33vw"
               className="object-cover transition-opacity duration-300"
@@ -82,7 +84,7 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
           className="max-w-4xl border-0 bg-black/95 p-0 ring-0"
           showCloseButton={false}
         >
-          <DialogTitle className="sr-only">Photo viewer</DialogTitle>
+          <DialogTitle className="sr-only">{t('gallery.viewer')}</DialogTitle>
 
           {selectedIndex !== null && (
             <div className="relative flex items-center justify-center">
@@ -90,14 +92,14 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
                 type="button"
                 onClick={() => setSelectedIndex(null)}
                 className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
-                aria-label="Close photo viewer"
+                aria-label={t('gallery.close')}
               >
                 <X className="size-5" />
               </button>
               <div className="relative h-[80vh] w-full">
                 <Image
                   src={validPhotos[selectedIndex]}
-                  alt={`Product photo ${selectedIndex + 1}`}
+                  alt={t('gallery.photoAlt', { n: selectedIndex + 1 })}
                   fill
                   className="object-contain"
                   sizes="100vw"
@@ -112,7 +114,7 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
                     setSelectedIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : prev))
                   }}
                   className="absolute left-2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
-                  aria-label="Previous photo"
+                  aria-label={t('gallery.previous')}
                 >
                   <ChevronLeft className="size-6" />
                 </button>
@@ -125,7 +127,7 @@ export function BrandPhotoGallery({ photos, brandSlug }: BrandPhotoGalleryProps)
                     setSelectedIndex((prev) => (prev !== null && prev < total - 1 ? prev + 1 : prev))
                   }}
                   className="absolute right-2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
-                  aria-label="Next photo"
+                  aria-label={t('gallery.next')}
                 >
                   <ChevronRight className="size-6" />
                 </button>
