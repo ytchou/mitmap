@@ -17,13 +17,13 @@ describe('MasonryGrid', () => {
     expect(screen.getByTestId('item-3')).toBeInTheDocument()
   })
 
-  it('renders with masonry container class', async () => {
+  it('renders children in a grid container', async () => {
     const { MasonryGrid } = await import('./masonry-grid')
     const { container } = render(
       <MasonryGrid>
         <div>Item</div>
       </MasonryGrid>
     )
-    expect(container.querySelector('.masonry-grid')).toBeInTheDocument()
+    expect(container.querySelector('.grid')).toBeInTheDocument()
   })
 })

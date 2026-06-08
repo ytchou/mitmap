@@ -1,18 +1,23 @@
+import { getTranslations } from 'next-intl/server'
 import type { Brand } from '@/lib/types'
 import { BrandCard } from './brand-card'
 
 interface RelatedBrandsProps {
   brands: Brand[]
   categoryName: string
+  categoryLabel?: string | null
 }
 
-export function RelatedBrands({ brands, categoryName }: RelatedBrandsProps) {
+export async function RelatedBrands({ brands, categoryName, categoryLabel }: RelatedBrandsProps) {
   if (brands.length === 0) return null
+
+  const t = await getTranslations('brandDetail')
+  const displayLabel = categoryLabel ?? categoryName
 
   return (
     <section className="mt-16 border-t border-border pt-8">
       <h2 className="mb-6 font-heading text-xl font-bold text-foreground">
-        More in {categoryName}
+        {t('moreInCategory.heading', { category: displayLabel })}
       </h2>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {brands.map((brand) => (

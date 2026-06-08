@@ -12,11 +12,11 @@ import { ProductsStep } from './ProductsStep'
 import { LinksStep } from './LinksStep'
 import { ReviewStep } from './ReviewStep'
 import {
-  brandInfoSchema,
-  productsSchema,
-  linksSchema,
-  reviewSchema,
-  fullSubmissionSchema,
+  getBrandInfoSchema,
+  getProductsSchema,
+  getLinksSchema,
+  getReviewSchema,
+  getFullSubmissionSchema,
   type SubmissionFormData,
 } from '@/lib/validations/submission'
 import { useRouter } from '@/i18n/navigation'
@@ -33,8 +33,6 @@ import type { ScrapedBrandData, PhotoItem } from '@/lib/types/scraper'
 import type { SourceAttribution } from '@/lib/types/submission'
 
 const STEP_COUNT = 4
-
-const STEP_SCHEMAS = [brandInfoSchema, productsSchema, linksSchema, reviewSchema]
 
 const STEP_FIELDS: (keyof SubmissionFormData)[][] = [
   [
@@ -91,6 +89,22 @@ function mapScrapedToPhotos(data: ScrapedBrandData): PhotoItem[] {
 export function SubmitWizard({ categories, source = 'hero_cta' }: SubmitWizardProps) {
   const t = useTranslations('submit')
   const router = useRouter()
+
+  // Wrap to satisfy the plain (key: string) => string Translator contract
+  const tSchema = useMemo(
+    () => (key: string) => t(key as Parameters<typeof t>[0]),
+    [t]
+  )
+
+  const stepSchemas = useMemo(
+    () => [
+      getBrandInfoSchema(tSchema),
+      getProductsSchema(tSchema),
+      getLinksSchema(tSchema),
+      getReviewSchema(tSchema),
+    ],
+    [tSchema]
+  )
   const [phase, setPhase] = useState<WizardPhase>('url')
   const [currentStep, setCurrentStep] = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -123,8 +137,10 @@ export function SubmitWizard({ categories, source = 'hero_cta' }: SubmitWizardPr
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [completed])
 
+  const fullSchema = useMemo(() => getFullSubmissionSchema(tSchema), [tSchema])
+
   const methods = useForm<SubmissionFormData>({
-    resolver: zodResolver(fullSubmissionSchema) as Resolver<SubmissionFormData>,
+    resolver: zodResolver(fullSchema) as Resolver<SubmissionFormData>,
     defaultValues: {
       name: '',
       description: '',
@@ -174,7 +190,7 @@ export function SubmitWizard({ categories, source = 'hero_cta' }: SubmitWizardPr
   }, [])
 
   const handleNext = async () => {
-    const schema = STEP_SCHEMAS[currentStep]
+    const schema = stepSchemas[currentStep]
     const currentValues = methods.getValues()
 
     const result = schema.safeParse(currentValues)

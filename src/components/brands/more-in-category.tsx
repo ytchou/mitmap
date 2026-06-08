@@ -1,13 +1,18 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import { ChevronRight } from 'lucide-react'
 
 interface MoreInCategoryProps {
   category: string | null
+  categoryLabel?: string | null
   count: number
 }
 
-export function MoreInCategory({ category, count }: MoreInCategoryProps) {
+export async function MoreInCategory({ category, categoryLabel, count }: MoreInCategoryProps) {
   if (!category || count <= 0) return null
+
+  const t = await getTranslations('brandDetail')
+  const displayLabel = categoryLabel ?? category
 
   return (
     <Link
@@ -16,10 +21,10 @@ export function MoreInCategory({ category, count }: MoreInCategoryProps) {
     >
       <div className="space-y-0.5">
         <p className="text-sm font-semibold text-foreground">
-          More in {category}
+          {t('moreInCategory.heading', { category: displayLabel })}
         </p>
         <p className="text-xs text-muted-foreground">
-          {count} other {count === 1 ? 'brand' : 'brands'} in this category
+          {t('moreInCategory.subtext', { count })}
         </p>
       </div>
       <ChevronRight className="size-4 text-muted-foreground" />

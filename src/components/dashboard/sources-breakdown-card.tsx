@@ -1,6 +1,7 @@
 'use client'
 
 import { ChartNoAxesColumn } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/card'
 import type { SourceBucket } from '@/lib/analytics/source-bucket'
 
@@ -11,21 +12,10 @@ type SourcesBreakdownCardProps = {
   }>
 }
 
-const LABELS: Record<SourceBucket | 'unknown', string> = {
-  direct: 'Direct',
-  search: 'Internal search',
-  category: 'Category',
-  directory: 'Directory',
-  recommendation: 'Recommendation',
-  external_search: 'External search',
-  social: 'Social',
-  external: 'External',
-  unknown: 'Other',
-}
-
 export function SourcesBreakdownCard({
   sources,
 }: SourcesBreakdownCardProps) {
+  const t = useTranslations('dashboard.sources')
   const total = sources.reduce((sum, { views }) => sum + views, 0)
   const isEmpty = total === 0
 
@@ -35,16 +25,16 @@ export function SourcesBreakdownCard({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-0.5">
             <h3 className="font-heading text-[15px] font-bold text-[#1C1C1C]">
-              Traffic Sources
+              {t('title')}
             </h3>
-            <p className="text-[12px] text-[#7C7570]">Last 30 days</p>
+            <p className="text-[12px] text-[#7C7570]">{t('last30Days')}</p>
           </div>
           <p
             className={`text-[13px] font-medium ${
               isEmpty ? 'text-[#9E9893]' : 'text-[#6B6B6B]'
             }`}
           >
-            {total} views
+            {t('views', { n: total })}
           </p>
         </div>
       </div>
@@ -56,14 +46,10 @@ export function SourcesBreakdownCard({
             aria-hidden="true"
           />
           <h4 className="font-heading text-[15px] font-semibold text-[#9E9893]">
-            No traffic data yet
+            {t('noDataTitle')}
           </h4>
           <p className="max-w-[320px] text-[13px] leading-relaxed text-[#B0AAA4]">
-            When visitors reach your brand page, you&apos;ll see a breakdown by
-            traffic source here.
-          </p>
-          <p className="max-w-[320px] text-[12px] leading-[1.7] text-[#C8C3BC]">
-            訪客進入品牌頁面後，此處將顯示各流量來源的數據。
+            {t('noDataBody')}
           </p>
         </div>
       ) : (
@@ -79,7 +65,7 @@ export function SourcesBreakdownCard({
                   className="flex w-full items-center gap-3 px-5 py-2.5"
                 >
                   <div className="w-[140px] truncate text-[13px] font-medium text-[#1C1C1C]">
-                    {LABELS[source]}
+                    {t(`labels.${source}`)}
                   </div>
                   <div className="relative h-2 flex-1 rounded-full bg-[#F0ECE4]">
                     <div

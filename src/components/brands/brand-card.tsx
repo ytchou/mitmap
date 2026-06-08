@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import type { Brand } from '@/lib/types'
 import { trackBrandCardClicked } from '@/lib/analytics'
 import { safeImageSrc } from '@/lib/images/allowed-image-hosts'
+import { getBrandCategoryLabel } from '@/lib/brands/category-label'
 
 interface BrandCardProps {
   brand: Brand
@@ -27,7 +28,10 @@ export function BrandCard({ brand, position = 0, priority = false }: BrandCardPr
   const t = useTranslations('brands')
   const tDetail = useTranslations('brandDetail')
   const [imgError, setImgError] = useState(false)
-  const imageSrc = safeImageSrc(brand.heroImageUrl ?? brand.logoUrl)
+  const imageSrc =
+    [brand.heroImageUrl, ...brand.productPhotos, brand.logoUrl]
+      .map((url) => safeImageSrc(url))
+      .find((src): src is string => src !== null) ?? null
   const showImage = imageSrc !== null && !imgError
   const badges = [
     brand.mitVerified === true
@@ -49,6 +53,14 @@ export function BrandCard({ brand, position = 0, priority = false }: BrandCardPr
         }
       : null,
   ].filter((badge): badge is BrandCardBadge => badge !== null)
+
+  const categoryLabel = getBrandCategoryLabel(brand)
+  const primaryCategoryTag = brand.tags.find((tag) => tag.category === 'product_type' && (
+    tag.name === brand.category || tag.nameZh === brand.category
+  )) ?? brand.tags.find((tag) => tag.category === 'product_type')
+  const valueTags = brand.tags
+    .filter((tag) => tag.id !== primaryCategoryTag?.id)
+    .slice(0, 3)
 
   return (
     <Link
@@ -106,41 +118,27 @@ export function BrandCard({ brand, position = 0, priority = false }: BrandCardPr
               })}
             </div>
           )}
-          {badges.length === 0 && (
-            <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
-              {t('card.communityLabel')}
+        </div>
+        <p className="mt-1.5 min-h-[2.625rem] text-[13px] leading-relaxed text-muted-foreground line-clamp-2">
+          {brand.description ?? ' '}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {/* Category — primary classification (filled) */}
+          {categoryLabel && (
+            <span className="inline-block rounded-full bg-secondary px-3 py-1 text-[11px] font-medium text-foreground">
+              {categoryLabel}
             </span>
           )}
+          {/* Tags — value classification (outlined) */}
+          {valueTags.map((tag) => (
+            <span
+              key={tag.id}
+              className="inline-block rounded-full border border-border bg-transparent px-3 py-1 text-[11px] font-medium text-warm-caption"
+            >
+              {tag.nameZh ?? tag.name}
+            </span>
+          ))}
         </div>
-        {brand.description && (
-          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground line-clamp-2">
-            {brand.description}
-          </p>
-        )}
-        {brand.foundingYear && (
-          <p className="mt-2 text-xs text-warm-caption">
-            {t('card.foundingYear', { year: brand.foundingYear })}
-          </p>
-        )}
-        {(brand.category || brand.tags.length > 0) && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {/* Category — primary classification (filled) */}
-            {brand.category && (
-              <span className="inline-block rounded-full bg-secondary px-3 py-1 text-[11px] font-medium text-foreground">
-                {brand.category}
-              </span>
-            )}
-            {/* Tags — value classification (outlined) */}
-            {brand.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-block rounded-full border border-border bg-transparent px-3 py-1 text-[11px] font-medium text-warm-caption"
-              >
-                {tag.nameZh ?? tag.name}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </Link>
   )

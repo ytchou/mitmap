@@ -8,6 +8,10 @@ vi.mock('next/headers', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn().mockImplementation(async () => (key: string) => key),
+}))
+
 vi.mock('@/lib/services/reports', () => ({
   createReport: vi.fn().mockResolvedValue(undefined),
 }))

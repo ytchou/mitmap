@@ -23,6 +23,7 @@ import { BrandLocations } from '@/components/brands/brand-locations'
 import { MoreInCategory } from '@/components/brands/more-in-category'
 import { RelatedBrands } from '@/components/brands/related-brands'
 import { safeImageSrc } from '@/lib/images/allowed-image-hosts'
+import { getBrandCategoryLabel } from '@/lib/brands/category-label'
 
 // 60s ISR: ownership/verified-state changes propagate within ~a minute; route still statically served between regenerations
 export const revalidate = 60
@@ -119,10 +120,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
   // Breadcrumb items for JSON-LD
   const tBrandDetail = await getTranslations('brandDetail')
   const directoryLabel = tBrandDetail('breadcrumb.directory')
-  const productTypeTag = brand.tags.find((tag) => tag.category === 'product_type')
-  const categoryLabel = productTypeTag
-    ? (safeLocale === 'zh-TW' ? (productTypeTag.nameZh ?? productTypeTag.name) : productTypeTag.name)
-    : brand.category
+  const categoryLabel = getBrandCategoryLabel(brand)
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: directoryLabel, href: '/brands' },
@@ -147,7 +145,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
       />
 
       {/* Breadcrumb */}
-      <BrandBreadcrumb category={brand.category} brandName={brand.name} />
+      <BrandBreadcrumb category={brand.category} categoryLabel={categoryLabel || null} brandName={brand.name} />
 
       {/* Two-column layout */}
       <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
@@ -162,6 +160,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
         <div className="min-w-0 flex-1 space-y-6">
           <BrandHeader
             brand={brand}
+            categoryLabel={categoryLabel || null}
             actionsSlot={<BrandActions websiteUrl={visitUrl ?? null} brandSlug={brand.slug} brandId={brand.id} />}
           />
 
@@ -188,14 +187,14 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
           <BrandLocations brand={brand} />
 
           {brand.category && (
-            <MoreInCategory category={brand.category} count={categoryCount} />
+            <MoreInCategory category={brand.category} categoryLabel={categoryLabel || null} count={categoryCount} />
           )}
         </div>
       </div>
 
       {/* Related brands */}
       {brand.category && (
-        <RelatedBrands brands={relatedBrands} categoryName={brand.category} />
+        <RelatedBrands brands={relatedBrands} categoryName={brand.category} categoryLabel={categoryLabel || null} />
       )}
     </main>
   )

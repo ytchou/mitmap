@@ -21,11 +21,14 @@ export async function submitBrand(
   data: SubmitBrandInput
 ): Promise<{ error: string } | undefined> {
   const t = await getTranslations('submit.errors')
+  const tSubmit = await getTranslations('submit')
+  // Wrap to satisfy the plain (key: string) => string Translator contract
+  const tValidation = (key: string) => tSubmit(key as Parameters<typeof tSubmit>[0])
 
   try {
     // Server-side validation — schema switches based on isOwner flag
     const isOwner = data.isOwner ?? false
-    const schema = createSubmissionSchema(isOwner)
+    const schema = createSubmissionSchema(isOwner, tValidation)
     const parsed = schema.parse(data)
 
     // Get authenticated user

@@ -25,7 +25,7 @@ vi.mock('next-intl', () => ({
       connectHeading: '聯絡',
       contact: '聯絡我們',
       tagline: '讓台灣品牌被世界看見。',
-      copyright: `© ${params?.year ?? new Date().getFullYear()} 島藏`,
+      copyright: `© ${params?.year ?? new Date().getFullYear()} Formoria`,
     }
     return map[key] ?? key
   },
@@ -53,8 +53,8 @@ describe('Footer', () => {
     expect(link.getAttribute('href')).toMatch(/^mailto:/)
   })
 
-  it('renders copyright text containing 島藏', () => {
+  it('renders copyright text containing Formoria', () => {
     render(<Footer />)
-    expect(screen.getByText(/島藏/)).toBeInTheDocument()
+    expect(screen.getByText(/Formoria/)).toBeInTheDocument()
   })
 })

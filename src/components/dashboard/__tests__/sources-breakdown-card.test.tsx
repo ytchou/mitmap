@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { type ReactElement } from 'react'
 import { describe, expect, it } from 'vitest'
+import { NextIntlClientProvider } from 'next-intl'
+import enMessages from '../../../../messages/en.json'
 import { SourcesBreakdownCard } from '../sources-breakdown-card'
+
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      {ui}
+    </NextIntlClientProvider>,
+  )
 
 describe('SourcesBreakdownCard', () => {
   it('renders a row per source with percentage of total', () => {

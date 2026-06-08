@@ -2,6 +2,7 @@
 
 import { useRef, useCallback, useEffect } from 'react'
 import { Upload, X, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useImageUpload } from './useImageUpload'
 
 type ImageUploaderProps = {
@@ -23,6 +24,7 @@ export function ImageUploader({
   onRemove,
   maxFiles = 6,
 }: ImageUploaderProps) {
+  const t = useTranslations('forms.uploader')
   const inputRef = useRef<HTMLInputElement>(null)
   const { status, url, error, upload, reset } = useImageUpload({ bucket, path })
 
@@ -83,14 +85,14 @@ export function ImageUploader({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imgUrl}
-                alt={`Upload ${index + 1}`}
+                alt={t('imageAlt', { n: index + 1 })}
                 className="h-20 w-20 rounded-lg object-cover"
               />
               {onRemove && (
                 <button
                   type="button"
                   onClick={() => onRemove(index)}
-                  aria-label={`Remove image ${index + 1}`}
+                  aria-label={t('ariaRemove', { n: index + 1 })}
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-white opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <X className="h-3 w-3" />
@@ -121,8 +123,8 @@ export function ImageUploader({
           )}
           <span className="text-sm text-[#7C7570]">
             {status === 'uploading'
-              ? 'Uploading...'
-              : 'Click to upload or drag and drop'}
+              ? t('uploading')
+              : t('clickOrDrag')}
           </span>
         </div>
       )}

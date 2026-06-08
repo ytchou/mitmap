@@ -1,10 +1,20 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { type ReactElement } from 'react'
+import { NextIntlClientProvider } from 'next-intl'
+import enMessages from '@/../messages/en.json'
 import { BrandEditForm } from '../brand-edit-form'
 import type { Brand } from '@/lib/types'
 
 vi.mock('../actions', () => ({ updateBrandAction: vi.fn() }))
+
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      {ui}
+    </NextIntlClientProvider>,
+  )
 
 function makeBrand(overrides: Partial<Brand> = {}): Brand {
   return {

@@ -1,18 +1,20 @@
+import { getTranslations } from 'next-intl/server'
 import type { Brand } from '@/lib/types'
 
 interface BrandAboutProps {
   brand: Brand
 }
 
-export function BrandAbout({ brand }: BrandAboutProps) {
+export async function BrandAbout({ brand }: BrandAboutProps) {
   if (!brand.description) return null
 
+  const t = await getTranslations('brandDetail')
   const paragraphs = brand.description.split('\n\n')
 
   return (
     <section>
       <h2 className="mb-3 font-[family-name:var(--font-heading)] text-sm font-semibold text-foreground">
-        About
+        {t('sections.about')}
       </h2>
       <div className="space-y-3">
         {paragraphs.map((paragraph, i) => (

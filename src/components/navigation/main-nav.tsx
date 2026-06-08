@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Link, usePathname } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 import { Menu } from 'lucide-react'
 import {
   Sheet,
@@ -21,13 +21,8 @@ interface MainNavProps {
 }
 
 export function MainNav({ categories }: MainNavProps) {
-  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const t = useTranslations('nav')
-
-  function isActive(href: string) {
-    return pathname.startsWith(href)
-  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background">
@@ -48,46 +43,6 @@ export function MainNav({ categories }: MainNavProps) {
 
         {/* Right actions (desktop) */}
         <div className="hidden items-center gap-4 md:flex">
-          <Link
-            href="/brands"
-            className={`text-sm transition-colors ${
-              isActive('/brands')
-                ? 'font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t('brandDirectory')}
-          </Link>
-          <Link
-            href="/faq"
-            className={`text-sm transition-colors ${
-              isActive('/faq')
-                ? 'font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t('faq')}
-          </Link>
-          <Link
-            href="/support"
-            className={`text-sm transition-colors ${
-              isActive('/support')
-                ? 'font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t('support')}
-          </Link>
-          <Link
-            href="/my-submissions"
-            className={`text-sm transition-colors ${
-              isActive('/my-submissions')
-                ? 'font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t('mySubmissions')}
-          </Link>
           <Link
             href="/submit"
             className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -119,50 +74,6 @@ export function MainNav({ categories }: MainNavProps) {
                   <NavSearchInput />
                 </div>
 
-                <Link
-                  href="/brands"
-                  className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive('/brands')
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-secondary'
-                  }`}
-                  onClick={() => setOpen(false)}
-                >
-                  {t('brandDirectory')}
-                </Link>
-                <Link
-                  href="/faq"
-                  className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive('/faq')
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-secondary'
-                  }`}
-                  onClick={() => setOpen(false)}
-                >
-                  {t('faq')}
-                </Link>
-                <Link
-                  href="/support"
-                  className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive('/support')
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-secondary'
-                  }`}
-                  onClick={() => setOpen(false)}
-                >
-                  {t('support')}
-                </Link>
-                <Link
-                  href="/my-submissions"
-                  className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive('/my-submissions')
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-secondary'
-                  }`}
-                  onClick={() => setOpen(false)}
-                >
-                  {t('mySubmissions')}
-                </Link>
                 <Link
                   href="/submit"
                   className="block rounded-full bg-primary px-5 py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

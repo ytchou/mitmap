@@ -1,6 +1,6 @@
 import Image from 'next/image'
-import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 
 export default async function Manifesto() {
   const t = await getTranslations('landing.manifesto')
@@ -23,6 +23,9 @@ export default async function Manifesto() {
         </p>
         <p className="mt-3 text-lg leading-relaxed text-white/80">
           {t('body2')}
+        </p>
+        <p className="mt-3 text-lg leading-relaxed text-white/80">
+          {t('body3')}
         </p>
         <Link
           href="/about"

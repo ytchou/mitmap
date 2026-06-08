@@ -99,7 +99,7 @@ export function ReviewStep({ onEditStep }: ReviewStepProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={formData.logoUrl}
-                alt="Brand logo"
+                alt={t('brandLogoAlt')}
                 className="h-16 w-16 rounded-lg object-cover"
               />
             </div>

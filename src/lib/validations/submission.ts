@@ -1,6 +1,8 @@
 import { z } from 'zod/v3'
 import { SOURCE_ATTRIBUTION_VALUES } from '@/lib/types/submission'
 
+type Translator = (key: string) => string
+
 const httpsUrl = z.string().url().max(2048).startsWith('https://')
 
 export const scrapeUrlSchema = z.object({
@@ -11,59 +13,117 @@ export const scrapeUrlSchema = z.object({
     .pipe(z.array(httpsUrl).max(3)),
 })
 
-const nameField = z.string().min(2, '品牌名稱至少需要 2 個字元').max(100)
-export const descriptionField = z.string().min(40, '品牌介紹至少需要 40 個字元').max(2000)
-const categoryField = z.string().min(1, '請選擇分類')
-const tagsField = z.array(z.string()).max(5, '最多可選擇 5 個標籤')
+function buildFieldSchemas(t: Translator) {
+  const nameField = z.string().min(2, t('validation.nameMinLength')).max(100)
+  const descriptionField = z
+    .string()
+    .min(40, t('validation.descriptionMinLength'))
+    .max(2000)
+  const categoryField = z.string().min(1, t('validation.categoryRequired'))
+  const tagsField = z.array(z.string()).max(5, t('validation.tagsMax'))
 
-export const brandInfoSchema = z.object({
-  name: nameField,
-  description: descriptionField,
-  category: categoryField,
-  tags: tagsField,
-  logoUrl: z.string().url('請上傳品牌標誌').min(1, '請上傳品牌標誌'),
-})
+  const purchaseLinkSchema = z.object({
+    platform: z.string().min(1, t('validation.platformRequired')),
+    url: z.string().url(t('validation.urlInvalid')),
+  })
 
-export const productsSchema = z.object({
-  productPhotos: z.array(z.string()).max(6, '最多可上傳 6 張照片'),
-  brandHighlights: z.string().max(300).optional().default(''),
-})
+  const socialLinksSchema = z.object({
+    instagram: z.string(),
+    threads: z.string(),
+    facebook: z.string(),
+    website: z.string(),
+  })
 
-const purchaseLinkSchema = z.object({
-  platform: z.string().min(1, '請選擇平台'),
-  url: z.string().url('請輸入有效的網址'),
-})
+  const retailLocationSchema = z.object({
+    name: z.string().min(1, t('validation.locationNameRequired')),
+    address: z.string().min(1, t('validation.addressRequired')),
+  })
 
-const socialLinksSchema = z.object({
-  instagram: z.string(),
-  threads: z.string(),
-  facebook: z.string(),
-  website: z.string(),
-})
+  return {
+    nameField,
+    descriptionField,
+    categoryField,
+    tagsField,
+    purchaseLinkSchema,
+    socialLinksSchema,
+    retailLocationSchema,
+  }
+}
 
-const retailLocationSchema = z.object({
-  name: z.string().min(1, '請輸入地點名稱'),
-  address: z.string().min(1, '請輸入地址'),
-})
+export function getBrandInfoSchema(t: Translator) {
+  const { nameField, descriptionField, categoryField, tagsField } =
+    buildFieldSchemas(t)
+  return z.object({
+    name: nameField,
+    description: descriptionField,
+    category: categoryField,
+    tags: tagsField,
+    logoUrl: z.string().url(t('validation.logoRequired')).min(1, t('validation.logoRequired')),
+  })
+}
 
-export const linksSchema = z.object({
-  purchaseLinks: z
-    .array(purchaseLinkSchema)
-    .min(1, '請提供至少一個購買連結'),
-  socialLinks: socialLinksSchema,
-  retailLocations: z.array(retailLocationSchema),
-})
+export function getProductsSchema(_t: Translator) {
+  return z.object({
+    productPhotos: z.array(z.string()).max(6),
+    brandHighlights: z.string().max(300).optional().default(''),
+  })
+}
 
-export const reviewSchema = z.object({
-  pdpaConsent: z.boolean().refine((v) => v === true, {
-    message: '請同意隱私政策',
-  }),
-})
+export function getLinksSchema(t: Translator) {
+  const { purchaseLinkSchema, socialLinksSchema, retailLocationSchema } =
+    buildFieldSchemas(t)
+  return z.object({
+    purchaseLinks: z
+      .array(purchaseLinkSchema)
+      .min(1, t('validation.purchaseLinksMin')),
+    socialLinks: socialLinksSchema,
+    retailLocations: z.array(retailLocationSchema),
+  })
+}
 
-export const botDetectionSchema = z.object({
-  turnstileToken: z.string().min(1, '請完成驗證'),
-  _honeypot: z.string().max(0).optional(),
-})
+export function getReviewSchema(t: Translator) {
+  return z.object({
+    pdpaConsent: z.boolean().refine((v) => v === true, {
+      message: t('validation.pdpaRequired'),
+    }),
+  })
+}
+
+export function getBotDetectionSchema(t: Translator) {
+  return z.object({
+    turnstileToken: z.string().min(1, t('validation.turnstileRequired')),
+    _honeypot: z.string().max(0).optional(),
+  })
+}
+
+// ---- Static fallback schemas (zh-TW hardcoded) for server contexts that
+// cannot easily obtain a request-scoped translator. Prefer the factory
+// variants (get*Schema) in all new call sites. ----
+const zhT = (key: string): string => {
+  const map: Record<string, string> = {
+    'validation.nameMinLength': '品牌名稱至少需要 2 個字元',
+    'validation.descriptionMinLength': '品牌介紹至少需要 40 個字元',
+    'validation.categoryRequired': '請選擇分類',
+    'validation.tagsMax': '最多可選擇 5 個標籤',
+    'validation.logoRequired': '請上傳品牌標誌',
+    'validation.photosMax': '最多可上傳 6 張照片',
+    'validation.platformRequired': '請選擇平台',
+    'validation.urlInvalid': '請輸入有效的網址',
+    'validation.locationNameRequired': '請輸入地點名稱',
+    'validation.addressRequired': '請輸入地址',
+    'validation.purchaseLinksMin': '請提供至少一個購買連結',
+    'validation.pdpaRequired': '請同意隱私政策',
+    'validation.turnstileRequired': '請完成驗證',
+  }
+  return map[key] ?? key
+}
+
+export const brandInfoSchema = getBrandInfoSchema(zhT)
+export const descriptionField = z.string().min(40, zhT('validation.descriptionMinLength')).max(2000)
+export const productsSchema = getProductsSchema(zhT)
+export const linksSchema = getLinksSchema(zhT)
+export const reviewSchema = getReviewSchema(zhT)
+export const botDetectionSchema = getBotDetectionSchema(zhT)
 
 const sourceAttributionEnum = z.enum(SOURCE_ATTRIBUTION_VALUES)
 
@@ -76,31 +136,49 @@ const ownerFields = z.object({
  * Schema factory for brand submission validation.
  * - isOwner=true: logoUrl and at least one purchaseLink are required
  * - isOwner=false: logoUrl and purchaseLinks are optional; sourceAttribution accepted
+ *
+ * Accepts an optional translator so Zod error messages can be localised.
+ * Falls back to zh-TW strings when no translator is provided (server actions
+ * that call getTranslations should pass the result here).
  */
-export function createSubmissionSchema(isOwner: boolean) {
+export function createSubmissionSchema(isOwner: boolean, t: Translator = zhT) {
+  const { nameField, descriptionField: descField, categoryField, tagsField, purchaseLinkSchema, socialLinksSchema, retailLocationSchema } =
+    buildFieldSchemas(t)
+
   const brandInfoBase = z.object({
     name: nameField,
-    description: descriptionField,
+    description: descField,
     category: categoryField,
     tags: tagsField,
     logoUrl: isOwner
-      ? z.string().url('請上傳品牌標誌').min(1, '請上傳品牌標誌')
+      ? z.string().url(t('validation.logoRequired')).min(1, t('validation.logoRequired'))
       : z.string().url().optional().or(z.literal('')),
   })
 
   const linksBase = z.object({
     purchaseLinks: isOwner
-      ? z.array(purchaseLinkSchema).min(1, '請提供至少一個購買連結')
+      ? z.array(purchaseLinkSchema).min(1, t('validation.purchaseLinksMin'))
       : z.array(purchaseLinkSchema).optional().default([]),
     socialLinks: socialLinksSchema,
     retailLocations: z.array(retailLocationSchema),
   })
 
+  const reviewBase = z.object({
+    pdpaConsent: z.boolean().refine((v) => v === true, {
+      message: t('validation.pdpaRequired'),
+    }),
+  })
+
+  const botDetectionBase = z.object({
+    turnstileToken: z.string().min(1, t('validation.turnstileRequired')),
+    _honeypot: z.string().max(0).optional(),
+  })
+
   return brandInfoBase
-    .merge(productsSchema)
+    .merge(getProductsSchema(t))
     .merge(linksBase)
-    .merge(reviewSchema)
-    .merge(botDetectionSchema)
+    .merge(reviewBase)
+    .merge(botDetectionBase)
     .merge(ownerFields)
 }
 
@@ -111,5 +189,13 @@ export const fullSubmissionSchema = brandInfoSchema
   .merge(linksSchema)
   .merge(reviewSchema)
   .merge(botDetectionSchema)
+
+export function getFullSubmissionSchema(t: Translator) {
+  return getBrandInfoSchema(t)
+    .merge(getProductsSchema(t))
+    .merge(getLinksSchema(t))
+    .merge(getReviewSchema(t))
+    .merge(getBotDetectionSchema(t))
+}
 
 export type SubmissionFormData = z.infer<typeof fullSubmissionSchema>

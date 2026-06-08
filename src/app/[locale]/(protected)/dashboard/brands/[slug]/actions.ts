@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { isOwnerOf } from '@/lib/services/brand-owners'
 import { getBrandBySlug, updateBrand } from '@/lib/services/brands'
@@ -45,6 +46,7 @@ export async function updateBrandAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  const t = await getTranslations('dashboard.edit.errors')
   const brandSlug = formData.get('brandSlug') as string
   if (!brandSlug) {
     return { error: 'Missing brand slug' }
@@ -57,14 +59,14 @@ export async function updateBrandAction(
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return { error: '請先登入才能編輯品牌' }
+      return { error: t('notLoggedIn') }
     }
 
     const brand = await getBrandBySlug(brandSlug)
     const owner = await isOwnerOf(user.id, brand.id)
 
     if (!owner) {
-      return { error: '您沒有權限編輯此品牌' }
+      return { error: t('forbidden') }
     }
 
     // Extract basic fields
@@ -203,7 +205,7 @@ export async function updateBrandAction(
   } catch (err) {
     console.error('[brand:updateBrandAction]', err)
     return {
-      error: err instanceof Error ? err.message : '發生預期外的錯誤，請再試一次。',
+      error: err instanceof Error ? err.message : t('unknown'),
     }
   }
 

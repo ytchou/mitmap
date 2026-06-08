@@ -5,8 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   isRelativeUrl,
-  signInSchema,
-  signUpSchema,
+  getSignInSchema,
+  getSignUpSchema,
 } from "@/lib/auth/validations";
 import { getSiteUrl } from "@/lib/auth/site-url";
 
@@ -19,11 +19,15 @@ export async function signIn(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  const tAuth = await getTranslations("auth");
+  // Wrap to satisfy the plain (key: string) => string Translator contract
+  const t = (key: string) => tAuth(key as Parameters<typeof tAuth>[0]);
   const raw = {
     email: formData.get("email"),
     password: formData.get("password"),
   };
 
+  const signInSchema = getSignInSchema(t);
   const parsed = signInSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -53,12 +57,16 @@ export async function signUp(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  const tAuth = await getTranslations("auth");
+  // Wrap to satisfy the plain (key: string) => string Translator contract
+  const t = (key: string) => tAuth(key as Parameters<typeof tAuth>[0]);
   const raw = {
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   };
 
+  const signUpSchema = getSignUpSchema(t);
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -84,7 +92,6 @@ export async function signUp(
     return { error: error.message };
   }
 
-  const t = await getTranslations("auth");
   redirect(`/auth/sign-in?message=${encodeURIComponent(t("confirmEmail"))}`);
 }
 

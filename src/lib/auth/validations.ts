@@ -1,20 +1,29 @@
 import { z } from "zod";
 
-export const signInSchema = z.object({
-  email: z.string().email("請輸入有效的電子郵件地址"),
-  password: z.string().min(1, "請輸入密碼"),
-});
+type Translator = (key: string) => string;
 
-export const signUpSchema = z
-  .object({
-    email: z.string().email("請輸入有效的電子郵件地址"),
-    password: z.string().min(8, "密碼至少需要 8 個字元"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "密碼不一致",
-    path: ["confirmPassword"],
+export function getSignInSchema(t: Translator) {
+  return z.object({
+    email: z.email(t("validation.emailInvalid")),
+    password: z.string().min(1, t("validation.passwordRequired")),
   });
+}
+
+export function getSignUpSchema(t: Translator) {
+  return z
+    .object({
+      email: z.email(t("validation.emailInvalid")),
+      password: z.string().min(8, t("validation.passwordMinLength")),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("validation.passwordMismatch"),
+      path: ["confirmPassword"],
+    });
+}
+
+export type SignInValues = z.infer<ReturnType<typeof getSignInSchema>>;
+export type SignUpValues = z.infer<ReturnType<typeof getSignUpSchema>>;
 
 export function isRelativeUrl(url: string): boolean {
   if (!url) return false;

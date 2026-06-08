@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { MapPin } from 'lucide-react'
 import type { Brand } from '@/lib/types'
 
@@ -5,13 +6,14 @@ interface BrandLocationsProps {
   brand: Brand
 }
 
-export function BrandLocations({ brand }: BrandLocationsProps) {
+export async function BrandLocations({ brand }: BrandLocationsProps) {
   if (brand.retailLocations.length === 0) return null
+  const t = await getTranslations('brandDetail')
 
   return (
     <section>
       <h2 className="mb-3 font-[family-name:var(--font-heading)] text-lg font-bold text-foreground">
-        Locations
+        {t('sections.locations')}
       </h2>
       <div className="space-y-6">
         {brand.retailLocations.slice(0, 3).map((location, i) => (
@@ -34,7 +36,7 @@ export function BrandLocations({ brand }: BrandLocationsProps) {
               src={`https://maps.google.com/maps?q=${encodeURIComponent(location.address)}&output=embed`}
               loading="lazy"
               className="mt-3 h-44 w-full rounded-xl border-0"
-              title={`${location.name} map`}
+              title={t('locations.mapTitle', { name: location.name })}
               allowFullScreen={false}
               referrerPolicy="no-referrer-when-downgrade"
             />

@@ -68,8 +68,9 @@
     },
     "manifesto": {
       "headline": "Putting Taiwanese Brands on the World Map",
-      "body1": "Made in Taiwan is more than a label — it's a commitment to quality. From local ingredients to thoughtfully designed goods, Taiwan is home to countless brands quietly doing exceptional work, waiting to be discovered.",
-      "body2": "Formoria is the bridge between these brands and the world — so that everyone who puts care into their craft has a chance to be found.",
+      "body1": "Made in Taiwan isn't just a label. It's a commitment to quality.",
+      "body2": "Too many remarkable brands work in quiet, waiting to be found.",
+      "body3": "Formoria is the bridge between them and the world.",
       "cta": "Learn Our Story"
     },
     "submitBand": {
@@ -118,8 +119,7 @@
       "verifiedLabel": "Managed by the brand owner",
       "verifiedBadge": "Brand",
       "mitVerifiedLabel": "MIT Verified",
-      "mitVerifiedBadge": "MIT",
-      "communityLabel": "Community"
+      "mitVerifiedBadge": "MIT"
     },
     "verificationFilter": {
       "all": "All",
@@ -161,6 +161,7 @@
     "verifiedTitle": "Managed by the brand owner",
     "mitVerified": "MIT Verified",
     "mitVerifiedTitle": "Verified against the MIT Smile registry",
+    "mitProofLink": "View MIT Smile listing (cert. {cert})",
     "foundingYear": "Est. {year}",
     "actions": {
       "visitWebsite": "Visit Website",
@@ -188,10 +189,67 @@
       "reasonInappropriate": "Inappropriate content",
       "notesPlaceholder": "Additional notes (optional)",
       "submitting": "Submitting...",
-      "submit": "Submit Report"
+      "submit": "Submit Report",
+      "errors": {
+        "missingBrandId": "Missing brand ID",
+        "invalidReason": "Please select a valid report reason",
+        "notesTooLong": "Additional notes must be 1000 characters or fewer",
+        "rateLimited": "Too many reports. Please try again later.",
+        "unknown": "An unknown error occurred"
+      }
     },
     "breadcrumb": {
       "directory": "Brands"
+    },
+    "sections": {
+      "about": "About",
+      "tags": "Tags",
+      "highlights": "Brand Highlights",
+      "photos": "Photos",
+      "locations": "Locations"
+    },
+    "gallery": {
+      "viewer": "Photo viewer",
+      "close": "Close photo viewer",
+      "previous": "Previous photo",
+      "next": "Next photo",
+      "photoAlt": "Product photo {n}",
+      "viewPhoto": "View photo {n}"
+    },
+    "locations": {
+      "mapTitle": "{name} map"
+    },
+    "moreInCategory": {
+      "heading": "More in {category}",
+      "subtext": "{count} other brands in this category"
+    },
+    "removal": {
+      "trigger": "Request removal",
+      "title": "Request removal of this brand page",
+      "description": "If this community listing should not remain public, submit a removal request for review.",
+      "label": "Message",
+      "labelOptional": "optional",
+      "placeholder": "Add any context that helps review this request.",
+      "cancel": "Cancel",
+      "submit": "Confirm removal request",
+      "submitting": "Submitting",
+      "successMessage": "Your removal request has been submitted for review.",
+      "errorMessage": "Something went wrong. Please try again.",
+      "errors": {
+        "missingBrandId": "Missing brand ID",
+        "notesTooLong": "Message must be 1000 characters or fewer",
+        "rateLimited": "Too many requests. Please try again later.",
+        "unknown": "Something went wrong. Please try again."
+      }
+    },
+    "claim": {
+      "errors": {
+        "notLoggedIn": "Please sign in to submit a claim",
+        "missingBrandId": "Missing brand ID",
+        "invalidProofType": "Please choose a valid proof type",
+        "duplicate": "You have already submitted a claim for this brand",
+        "unknown": "Something went wrong. Please try again."
+      }
     }
   },
   "categories": {
@@ -387,31 +445,33 @@
     "support": {
       "metadata": {
         "title": "Support Formoria",
-        "description": "Formoria is a community-driven open platform, completely free to use. If this project has been helpful to you, consider buying us a coffee!"
+        "description": "Formoria is an independently run directory of Made-in-Taiwan brands. No ads, no listing fees. If it is useful to you, consider buying me a coffee."
       },
-      "title": "Support Formoria",
-      "intro1": "Formoria is a community-driven project — completely free, no ads, no paywalls. All development and maintenance is sustained by passion and volunteer time.",
-      "intro2": "If Formoria has been useful to you, or if you believe in our mission to promote Taiwanese brands, consider buying us a coffee to help this project keep growing.",
-      "coffee": {
-        "heading": "Buy Us a Coffee",
-        "body": "Your support keeps us going. Every coffee is a vote for Taiwanese brands getting the visibility they deserve."
+      "hero": {
+        "title": "Help more Taiwan brands get found",
+        "body": "Formoria is an independently run directory of Made-in-Taiwan brands. No ads, no listing fees, ranked by content and never by payment. If it's useful to you, a coffee helps keep it going."
       },
+      "cta": "☕ Buy me a coffee",
       "usage": {
-        "heading": "Where Your Support Goes",
-        "server": {
-          "heading": "Server Costs",
-          "body": "Keeping the platform running smoothly so every visitor can browse the Taiwanese brand directory quickly."
+        "heading": "Where your support goes",
+        "discover": {
+          "title": "Finding & verifying brands",
+          "body": "Sourcing and curating each brand by hand so the directory stays real and complete."
         },
-        "development": {
-          "heading": "Feature Development",
-          "body": "Continuously improving the platform to make brand discovery and showcase even better."
+        "hosting": {
+          "title": "Keeping the site running",
+          "body": "Covering hosting, image storage, and domains so it stays fast and free."
         },
-        "community": {
-          "heading": "Community Outreach",
-          "body": "Helping more people discover Made in Taiwan brands and expanding the platform's reach and impact."
+        "neutral": {
+          "title": "Staying neutral & ad-free",
+          "body": "No ads and no listing fees, so the space stays for genuinely good brands."
         }
       },
-      "widgetDescription": "Support Formoria to keep growing!"
+      "otherWays": {
+        "heading": "Other ways to help",
+        "submit": "Recommend a Taiwan brand you love",
+        "share": "Share Formoria with a friend"
+      }
     }
   },
   "faq": {
@@ -458,7 +518,7 @@
       "description": "Formoria helps quality Made-in-Taiwan brands get found through a community-curated directory built for discovery, craft, and care."
     },
     "hero": {
-      "eyebrow": "Formoria · 島藏",
+      "eyebrow": "Formoria",
       "title": "Putting Taiwan's best brands on the world map.",
       "subtitle": "A community-curated directory for discovering quality Made-in-Taiwan brands, from everyday staples to thoughtful design.",
       "statSuffix": " — and growing",
@@ -541,6 +601,12 @@
     }
   },
   "auth": {
+    "validation": {
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Please enter your password",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordMismatch": "Passwords do not match"
+    },
     "signIn": {
       "heading": "Sign In",
       "subheading": "Enter your email and password to continue",
@@ -574,7 +640,48 @@
     "dashboard": "Dashboard",
     "signOut": "Sign out"
   },
+  "forms": {
+    "imageUpload": {
+      "fileTooLarge": "File too large (max 5MB)",
+      "uploading": "Uploading...",
+      "replace": "Replace",
+      "upload": "Upload",
+      "remove": "Remove",
+      "ariaReplace": "Replace image",
+      "ariaUpload": "Upload image",
+      "ariaRemove": "Remove image"
+    },
+    "photos": {
+      "reorderHint": "Drag to reorder photos. The first image is saved as the cover.",
+      "cover": "Cover",
+      "ariaRemove": "Remove photo"
+    },
+    "uploader": {
+      "uploading": "Uploading...",
+      "clickOrDrag": "Click to upload or drag and drop",
+      "imageAlt": "Upload {n}",
+      "ariaRemove": "Remove image {n}"
+    }
+  },
   "dashboard": {
+    "sources": {
+      "title": "Traffic Sources",
+      "last30Days": "Last 30 days",
+      "views": "{n} views",
+      "noDataTitle": "No traffic data yet",
+      "noDataBody": "When visitors reach your brand page, you'll see a breakdown by traffic source here.",
+      "labels": {
+        "direct": "Direct",
+        "search": "Internal search",
+        "category": "Category",
+        "directory": "Directory",
+        "recommendation": "Recommendation",
+        "external_search": "External search",
+        "social": "Social",
+        "external": "External",
+        "unknown": "Other"
+      }
+    },
     "metadata": {
       "title": "Brand Management"
     },
@@ -671,6 +778,57 @@
       "invalidClaim": "The claim link is invalid or has expired. Please contact support.",
       "emailMismatch": "The email you signed in with does not match the claim invitation. Please sign in with the correct email.",
       "claimFailed": "This brand has already been claimed. If you believe this is an error, please contact support."
+    },
+    "manage": {
+      "metaTitle": "Brand Management",
+      "subtitle": "Manage your brand page",
+      "editButton": "Edit brand",
+      "analyticsHeading": "Analytics",
+      "detailsCardTitle": "Details",
+      "descriptionLabel": "Description",
+      "categoryLabel": "Category",
+      "websiteLabel": "Website",
+      "socialLinksLabel": "Social Links",
+      "socialLinksNone": "None set",
+      "publicPageCardTitle": "Public Page",
+      "viewOnFormoria": "View your brand on Formoria",
+      "backToDashboard": "Back to brand management",
+      "noDescription": "No description yet",
+      "noCategory": "Uncategorized",
+      "noWebsite": "Not set"
+    },
+    "edit": {
+      "metaTitle": "Edit brand",
+      "pageHeading": "Edit {name}",
+      "pageSubheading": "Update your brand listing details",
+      "sectionBasicInfo": "Basic Info",
+      "sectionMedia": "Media",
+      "sectionLinks": "Links",
+      "sectionLocations": "Locations",
+      "fieldBrandName": "Brand name",
+      "fieldDescription": "Description",
+      "fieldBrandHighlights": "Brand highlights",
+      "fieldHighlightsHint": "Max 300 characters",
+      "fieldFoundingYear": "Founding Year",
+      "fieldProductPhotos": "Product photos",
+      "fieldOfficialWebsite": "Official Website",
+      "fieldPurchaseLinks": "Purchase Links",
+      "addPurchaseLink": "Add purchase link",
+      "fieldPlatformPlaceholder": "Platform",
+      "fieldUrlPlaceholder": "URL",
+      "fieldLabelPlaceholder": "Label",
+      "removeItem": "Remove",
+      "addRetailLocation": "Add retail location",
+      "fieldStoreName": "Store name",
+      "fieldAddress": "Address",
+      "saving": "Saving...",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "errors": {
+        "notLoggedIn": "Please sign in to edit this brand",
+        "forbidden": "You do not have permission to edit this brand",
+        "unknown": "An unexpected error occurred. Please try again."
+      }
     }
   },
   "errors": {
@@ -798,6 +956,7 @@
       "highlights": "Highlights",
       "photoCount": "{count} photos uploaded",
       "photoCountSingular": "1 photo uploaded",
+      "brandLogoAlt": "Brand logo",
       "pdpaConsent": "I agree to the collection and use of my personal data in accordance with the <privacyPolicy>Privacy Policy</privacyPolicy> (PDPA compliance)."
     },
     "confirmation": {
@@ -825,6 +984,21 @@
         "explore": "Explore the Formoria Directory",
         "submitAnother": "Submit Another Brand"
       }
+    },
+    "validation": {
+      "nameMinLength": "Brand name must be at least 2 characters",
+      "descriptionMinLength": "Brand description must be at least 40 characters",
+      "categoryRequired": "Please select a category",
+      "tagsMax": "You can select up to 5 tags",
+      "logoRequired": "Please upload a brand logo",
+      "photosMax": "You can upload up to 6 photos",
+      "platformRequired": "Please select a platform",
+      "urlInvalid": "Please enter a valid URL",
+      "locationNameRequired": "Please enter a location name",
+      "addressRequired": "Please enter an address",
+      "purchaseLinksMin": "Please provide at least one purchase link",
+      "pdpaRequired": "Please agree to the privacy policy",
+      "turnstileRequired": "Please complete verification"
     },
     "errors": {
       "notAuthenticated": "Please sign in before submitting a brand",

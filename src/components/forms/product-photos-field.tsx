@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   DndContext,
   closestCenter,
@@ -36,6 +37,7 @@ function SortablePhoto({
   isCover: boolean
   onRemove: () => void
 }) {
+  const t = useTranslations('forms.photos')
   const {
     attributes,
     listeners,
@@ -73,7 +75,7 @@ function SortablePhoto({
 
         {isCover && (
           <span className="absolute left-3 top-3 inline-flex min-h-6 items-center rounded-full bg-cta px-2.5 py-1 text-[11px] font-semibold text-cta-foreground">
-            封面
+            {t('cover')}
           </span>
         )}
 
@@ -84,7 +86,7 @@ function SortablePhoto({
             onRemove()
           }}
           className="absolute right-2 top-2 flex h-12 w-12 items-center justify-center rounded-full bg-card text-destructive transition-colors hover:bg-secondary"
-          aria-label="Remove photo"
+          aria-label={t('ariaRemove')}
         >
           <X className="h-5 w-5" />
         </button>
@@ -98,6 +100,7 @@ export function ProductPhotosField({
   brandId,
   defaultPhotos,
 }: ProductPhotosFieldProps) {
+  const t = useTranslations('forms.photos')
   const [photos, setPhotos] = useState<ProductPhoto[]>(() =>
     defaultPhotos.map((url) => ({
       id: crypto.randomUUID(),
@@ -139,7 +142,7 @@ export function ProductPhotosField({
       />
 
       <p className="text-sm text-muted-foreground">
-        Drag to reorder photos. The first image is saved as the cover.
+        {t('reorderHint')}
       </p>
 
       {photos.length > 0 && (

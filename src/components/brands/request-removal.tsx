@@ -1,6 +1,7 @@
 'use client'
 
-import { useRef, useState, useTransition, type FormEvent } from 'react'
+import React, { useRef, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   requestBrandRemovalAction,
   type RequestBrandRemovalResult,
@@ -32,6 +33,7 @@ function getErrorMessage(result: RequestBrandRemovalResult): string | null {
 }
 
 export function RequestRemoval({ brandId }: RequestRemovalProps) {
+  const t = useTranslations('brandDetail')
   const formRef = useRef<HTMLFormElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackState>({ type: 'idle' })
@@ -45,7 +47,7 @@ export function RequestRemoval({ brandId }: RequestRemovalProps) {
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
@@ -71,12 +73,12 @@ export function RequestRemoval({ brandId }: RequestRemovalProps) {
           setIsOpen(false)
           setFeedback({
             type: 'success',
-            message: '我們已收到移除請求，會交由管理員審核。 / Your removal request has been submitted for review.',
+            message: t('removal.successMessage'),
           })
         } catch {
           setFeedback({
             type: 'error',
-            message: '提交失敗，請稍後再試。 / Something went wrong. Please try again.',
+            message: t('removal.errorMessage'),
           })
         }
       })()
@@ -89,28 +91,27 @@ export function RequestRemoval({ brandId }: RequestRemovalProps) {
         <DialogTrigger
           className="inline-flex min-h-12 items-center justify-start rounded-md px-0 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
-          要求移除 / Request removal
+          {t('removal.trigger')}
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>要求移除此品牌頁</DialogTitle>
+            <DialogTitle>{t('removal.title')}</DialogTitle>
             <DialogDescription>
-              如果這個社群品牌頁不應繼續公開，我們可以交由管理員審核移除。
-              If this community listing should not remain public, submit a removal request for review.
+              {t('removal.description')}
             </DialogDescription>
           </DialogHeader>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="request-removal-message" className="block text-sm font-medium text-foreground">
-                補充說明
-                <span className="ml-1 text-xs font-normal text-muted-foreground">Message (optional)</span>
+                {t('removal.label')}
+                <span className="ml-1 text-xs font-normal text-muted-foreground">{t('removal.labelOptional')}</span>
               </label>
               <Textarea
                 id="request-removal-message"
                 name="message"
                 maxLength={1000}
-                placeholder="可補充品牌關係、原因或希望我們知道的背景資訊 / Add any context that helps review this request."
+                placeholder={t('removal.placeholder')}
                 className="min-h-28 bg-card px-3.5 py-2.5 text-sm"
               />
             </div>
@@ -126,14 +127,14 @@ export function RequestRemoval({ brandId }: RequestRemovalProps) {
                 disabled={isPending}
                 render={<Button type="button" variant="outline" className="h-12 w-full sm:w-auto" />}
               >
-                取消 / Cancel
+                {t('removal.cancel')}
               </DialogClose>
               <Button
                 type="submit"
                 disabled={isPending}
                 className="h-12 w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
               >
-                {isPending ? '提交中 / Submitting' : '確認要求移除 / Confirm removal request'}
+                {isPending ? t('removal.submitting') : t('removal.submit')}
               </Button>
             </DialogFooter>
           </form>
