@@ -238,12 +238,14 @@ describe('getBrands — search uses search_brands RPC', () => {
       is_demo: false,
     }
 
-    const mockIn = vi.fn().mockReturnValue({
+    const mockInChain: Record<string, unknown> = {
       eq: vi.fn().mockReturnValue({
         order: vi.fn().mockResolvedValue({ data: [fakeBrandRow], error: null, count: 1 }),
       }),
       order: vi.fn().mockResolvedValue({ data: [fakeBrandRow], error: null, count: 1 }),
-    })
+    }
+    mockInChain.not = vi.fn(() => mockInChain)
+    const mockIn = vi.fn().mockReturnValue(mockInChain)
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnValue({ in: mockIn }),
     })

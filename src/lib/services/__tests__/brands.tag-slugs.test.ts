@@ -17,7 +17,7 @@ import { getBrands } from '../brands'
 function createMockChain(options?: { count?: number }) {
   const chain: Record<string, unknown> = {}
   const methods = [
-    'select', 'eq', 'or', 'contains', 'overlaps', 'in',
+    'select', 'eq', 'or', 'not', 'contains', 'overlaps', 'in',
     'order', 'limit', 'range', 'single', 'maybeSingle',
   ]
   methods.forEach((m) => {

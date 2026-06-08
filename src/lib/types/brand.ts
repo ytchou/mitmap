@@ -69,4 +69,5 @@ export type BrandFilters = {
   sort?: BrandSortOption
   limit?: number
   offset?: number
+  includeTestBrands?: boolean
 }
