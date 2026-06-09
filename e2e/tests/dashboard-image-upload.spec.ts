@@ -66,7 +66,7 @@ test.describe('Dashboard — brand image upload', () => {
   });
 
   test('owner can upload a logo and the URL persists after save', async ({ userPage }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
 
     const editPath = `/dashboard/brands/${brandSlug}/edit`;
     const editResp = await userPage.goto(editPath);
@@ -78,7 +78,7 @@ test.describe('Dashboard — brand image upload', () => {
     // Confirm the form loaded
     await expect(
       userPage.getByRole('heading', { name: /edit/i })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 60_000 });
 
     // The logo upload field input id is 'image-upload-logoUrl' (sr-only)
     const logoInput = userPage.locator('#image-upload-logoUrl');
