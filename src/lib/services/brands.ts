@@ -212,9 +212,9 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
         slug: t.slug,
         // taxonomy_tags.category is text in the DB — cast to TagCategory at the boundary
         category: t.category as TaxonomyTag['category'],
-        isActive: t.is_active,
+        isActive: t.is_active ?? true,
         suggestedBy: t.suggested_by ?? null,
-        createdAt: t.created_at,
+        createdAt: t.created_at ?? '',
       }
     })
 
@@ -243,10 +243,10 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
     contactEmail: row.contact_email ?? null,
     brandHighlights: row.brand_highlights ?? null,
     tags,
-    submittedAt: row.submitted_at,
+    submittedAt: row.submitted_at ?? '',
     approvedAt: row.approved_at ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.created_at ?? '',
+    updatedAt: row.updated_at ?? '',
   }
 }
 
