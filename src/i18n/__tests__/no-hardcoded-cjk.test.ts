@@ -53,6 +53,7 @@ const ALLOWLIST = [
   'lib/validations/submission.ts',
   // Microsite is intentionally ZH-TW-only (v1 single-locale surface, DEV-767).
   'components/microsite/',
+  'app/(microsite)/',
 ]
 
 function isAllowlisted(relPath: string): boolean {
