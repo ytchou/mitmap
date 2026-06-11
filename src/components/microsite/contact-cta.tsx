@@ -6,7 +6,7 @@ type ContactCtaProps = {
 }
 
 export function ContactCta({ brand, siteContent }: ContactCtaProps) {
-  const email = siteContent.ctaValue ?? brand.contactEmail ?? ''
+  const email = siteContent.ctaValue ?? brand.contactEmail
 
   return (
     <section id="contact" className="px-6 py-12 md:px-10 md:py-16" aria-labelledby="contact-title">
@@ -21,12 +21,14 @@ export function ContactCta({ brand, siteContent }: ContactCtaProps) {
                 歡迎洽詢商品、合作與客製需求。
               </p>
             </div>
-            <a
-              href={`mailto:${email}`}
-              className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-[var(--brand-accent-foreground)] transition-transform active:scale-[0.98]"
-            >
-              聯絡品牌
-            </a>
+            {email && (
+              <a
+                href={`mailto:${email}`}
+                className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-[var(--brand-accent-foreground)] transition-transform active:scale-[0.98]"
+              >
+                聯絡品牌
+              </a>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import Link from 'next/link'
 import type { Brand, SiteProduct } from '@/lib/types/brand'
 
 type ProductGridProps = {
@@ -50,12 +49,14 @@ export function ProductGrid({ brand, products }: ProductGridProps) {
                 </div>
 
                 {product.url && (
-                  <Link
+                  <a
                     href={product.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] active:scale-[0.98]"
                   >
                     查看商品
-                  </Link>
+                  </a>
                 )}
               </div>
             </article>
