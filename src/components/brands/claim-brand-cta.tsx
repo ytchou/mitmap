@@ -15,7 +15,7 @@ import {
   CLAIM_PROOF_TYPES,
   PROOF_TYPE_I18N_KEYS,
   type ClaimProofType,
-} from '@/lib/services/claim-requests'
+} from '@/lib/services/claim-proofs'
 import { cn } from '@/lib/utils'
 
 type ClaimBrandCtaProps = {

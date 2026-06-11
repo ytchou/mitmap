@@ -20,11 +20,8 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  PROOF_TYPE_I18N_KEYS,
-  type ClaimRequest,
-  type ProofEvidence,
-} from '@/lib/services/claim-requests'
+import { PROOF_TYPE_I18N_KEYS, type ProofEvidence } from '@/lib/services/claim-proofs'
+import type { ClaimRequest } from '@/lib/services/claim-requests'
 
 type TabValue = 'all' | ClaimRequest['status']
 type SignedProofEvidence = ProofEvidence & { signedUrl?: string }

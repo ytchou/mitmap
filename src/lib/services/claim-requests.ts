@@ -1,30 +1,16 @@
 import type { Database, Json } from '@/lib/supabase/database.types'
 import { NotFoundError, ValidationError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
+import { CLAIM_PROOF_TYPES } from './claim-proofs'
+import type { ClaimProofType, ProofEvidence } from './claim-proofs'
+
+export { CLAIM_PROOF_TYPES, PROOF_TYPE_I18N_KEYS } from './claim-proofs'
+export type { ClaimProofType, ProofEvidence } from './claim-proofs'
 
 type BrandRow = Database['public']['Tables']['brands']['Row']
 type BrandOwnerRow = Database['public']['Tables']['brand_owners']['Row']
 
 type ClaimRequestStatus = 'pending' | 'approved' | 'rejected'
-export const CLAIM_PROOF_TYPES = [
-  'domain_email',
-  'social_dm',
-  'backend_screenshot',
-  'business_doc',
-] as const
-export type ClaimProofType = (typeof CLAIM_PROOF_TYPES)[number]
-export type ProofEvidence = {
-  type: ClaimProofType
-  url?: string
-  imageKey?: string
-  note?: string
-}
-export const PROOF_TYPE_I18N_KEYS: Record<ClaimProofType, string> = {
-  domain_email: 'domainEmail',
-  social_dm: 'socialDm',
-  backend_screenshot: 'backendScreenshot',
-  business_doc: 'businessDoc',
-}
 const MAX_PROOF_URL_LENGTH = 2048
 const CLAIM_PROOF_BUCKET = 'claim-proofs'
 const CLAIM_PROOF_BUCKET_PREFIX = `${CLAIM_PROOF_BUCKET}/`
