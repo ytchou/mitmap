@@ -20,9 +20,11 @@ vi.mock('@/lib/security/image-processor', () => ({
 }))
 
 const mockUploadProcessedImage = vi.fn()
+const mockGetUploadImageProcessingConfig = vi.fn().mockReturnValue({})
 vi.mock('@/lib/services/image-upload', () => ({
   ALLOWED_UPLOAD_BUCKETS: ['brand-images'],
   uploadProcessedImage: mockUploadProcessedImage,
+  getUploadImageProcessingConfig: mockGetUploadImageProcessingConfig,
 }))
 
 // Import route AFTER mocks are registered
