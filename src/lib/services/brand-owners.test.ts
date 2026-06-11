@@ -16,20 +16,22 @@ describe('brand-owners service', () => {
 
       mockFrom.mockReturnValue({
         select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({
-            data: [
-              {
-                brand_id: 'brand-1',
-                claimed_at: '2026-05-19T00:00:00Z',
-                brands: {
-                  id: 'brand-1',
-                  name: 'Dachun Soap',
-                  slug: 'dachun-soap',
-                  logo_url: null,
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({
+              data: [
+                {
+                  brand_id: 'brand-1',
+                  claimed_at: '2026-05-19T00:00:00Z',
+                  brands: {
+                    id: 'brand-1',
+                    name: 'Dachun Soap',
+                    slug: 'dachun-soap',
+                    logo_url: null,
+                  },
                 },
-              },
-            ],
-            error: null,
+              ],
+              error: null,
+            }),
           }),
         }),
       })
@@ -46,9 +48,11 @@ describe('brand-owners service', () => {
 
       mockFrom.mockReturnValue({
         select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({
-            data: [],
-            error: null,
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({
+              data: [],
+              error: null,
+            }),
           }),
         }),
       })
