@@ -239,7 +239,7 @@ export function BrandList({ brands }: { brands: Brand[] }) {
                           編輯
                         </Button>
                         <Link
-                          href={`/${routing.defaultLocale}/dashboard/brands/${brand.slug}`}
+                          href={`/${routing.defaultLocale}/dashboard?tab=${brand.slug}`}
                           className={buttonVariants({ variant: 'ghost', size: 'sm' })}
                         >
                           以擁有者身分檢視

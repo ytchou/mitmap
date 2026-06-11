@@ -95,6 +95,21 @@ it('requires a valid email for domain email proof', () => {
   expect(screen.getByRole('button', { name: /送出認領申請/ })).toBeDisabled()
 })
 
+it('always enables domain email proof regardless of whether the brand has a website', () => {
+  renderCta()
+  fireEvent.click(screen.getByText('認領這個品牌'))
+
+  expect(screen.getByLabelText('品牌網域信箱')).toBeEnabled()
+  expect(screen.queryByText('此品牌尚未登錄官網，無法使用 Email 驗證，請改用商業登記文件。')).not.toBeInTheDocument()
+
+  fireEvent.click(screen.getByLabelText('品牌網域信箱'))
+  const emailInput = document.querySelector<HTMLInputElement>('#claim-domain_email-email')
+  expect(emailInput).not.toBeNull()
+
+  fireEvent.change(emailInput!, { target: { value: 'owner@gmail.com' } })
+  expect(screen.getByRole('button', { name: /送出認領申請/ })).toBeEnabled()
+})
+
 it('does not render the removed 備註 field or the MIT email line', () => {
   renderCta()
   fireEvent.click(screen.getByText('認領這個品牌'))

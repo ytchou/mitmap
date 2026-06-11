@@ -69,7 +69,7 @@ describe('AccountMenu', () => {
     expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument()
   })
 
-  it('shows My Submissions, Dashboard, and Sign out when logged in', async () => {
+  it('shows Dashboard and Sign out when logged in', async () => {
     const user = userEvent.setup()
 
     ;(useUser as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -80,17 +80,13 @@ describe('AccountMenu', () => {
 
     await user.click(screen.getByRole('button', { name: 'Account' }))
 
+    expect(screen.queryByText('My Submissions')).not.toBeInTheDocument()
+
     // Base UI renders menu items with role="menuitem" (and duplicates them across an
     // inert layer), so query the underlying anchor/text directly.
-    await screen.findAllByText('My Submissions')
-    const mySubmissionsLink = Array.from(document.querySelectorAll('a')).find((a) =>
-      a.textContent?.includes('My Submissions'),
-    )
-    expect(mySubmissionsLink).toHaveAttribute('href', '/my-submissions')
-
-    await screen.findAllByText('Dashboard')
+    await screen.findAllByText('Owner Dashboard')
     const dashboardLink = Array.from(document.querySelectorAll('a')).find((a) =>
-      a.textContent?.includes('Dashboard'),
+      a.textContent?.includes('Owner Dashboard'),
     )
     expect(dashboardLink).toHaveAttribute('href', '/dashboard')
 

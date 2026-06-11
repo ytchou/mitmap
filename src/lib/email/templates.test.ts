@@ -3,6 +3,7 @@ import {
   buildApprovalEmail,
   buildRejectionEmail,
   buildClaimEmail,
+  buildClaimEmailVerificationEmail,
   buildClaimApprovedEmail,
   buildClaimRejectedEmail,
   buildIncompleteSubmissionEmail,
@@ -80,6 +81,38 @@ describe('buildClaimEmail', () => {
   })
 })
 
+describe('buildClaimEmailVerificationEmail', () => {
+  it('builds localized verification email fields', () => {
+    const result = buildClaimEmailVerificationEmail({
+      recipientEmail: 'owner@brand.com',
+      brandName: 'Test Brand',
+      verifyUrl: 'https://formoria.com/api/claim/verify-email?token=abc',
+      siteUrl: 'https://formoria.com',
+      locale: 'en',
+    })
+
+    expect(result.to).toBe('owner@brand.com')
+    expect(result.from).toBe('Formoria <noreply@formoria.com>')
+    expect(result.subject).toBe('Verify your claim email — Formoria')
+    expect(result.html).toContain('Test Brand')
+    expect(result.html).toContain('https://formoria.com/api/claim/verify-email?token=abc')
+    expect(result.html).toContain('expires in 7 days')
+  })
+
+  it('escapes HTML in verification email interpolations', () => {
+    const result = buildClaimEmailVerificationEmail({
+      recipientEmail: 'owner@brand.com',
+      brandName: '<script>alert("xss")</script>',
+      verifyUrl: 'https://formoria.com/api/claim/verify-email?token=<bad>',
+      siteUrl: 'https://formoria.com',
+    })
+
+    expect(result.html).not.toContain('<script>')
+    expect(result.html).toContain('&lt;script&gt;')
+    expect(result.html).toContain('token=&lt;bad&gt;')
+  })
+})
+
 describe('buildIncompleteSubmissionEmail', () => {
   it('lists missing fields in the email body', () => {
     const email = buildIncompleteSubmissionEmail({
@@ -118,7 +151,7 @@ describe('buildClaimApprovedEmail', () => {
     expect(msg.html).toMatch(/[一-鿿]/)
     expect(msg.html).toMatch(/[A-Za-z]{3,}/)
     expect(msg.html).toContain(
-      'https://formoria.com/dashboard/brands/island-workshop'
+      'https://formoria.com/dashboard?tab=island-workshop'
     )
   })
 })
