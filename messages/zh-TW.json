@@ -164,6 +164,7 @@
       "pendingTitle": "認領申請已送出",
       "pendingBody": "我們會盡快審核你的證明並通知你",
       "mitCertLabel": "MIT 微笑標章編號（選填）",
+      "socialDisabledHint": "官方社群私訊尚未開放",
       "proofTypes": {
         "domainEmail": {
           "label": "品牌網域信箱",
@@ -187,7 +188,7 @@
       "notesPlaceholder": "可補充品牌身份、角色或相關說明",
       "signIn": "立即登入",
       "submitting": "提交中…",
-      "submit": "提交認領",
+      "submit": "送出認領申請",
       "cancel": "取消",
       "whyClaim": "為什麼要認領？了解好處"
     },

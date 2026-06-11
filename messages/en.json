@@ -164,6 +164,7 @@
       "pendingTitle": "Claim submitted",
       "pendingBody": "We'll review your proof and get back to you soon",
       "mitCertLabel": "MIT Smile Mark number (optional)",
+      "socialDisabledHint": "Official social DMs are not available yet.",
       "proofTypes": {
         "domainEmail": {
           "label": "Brand domain email",
@@ -187,7 +188,7 @@
       "notesPlaceholder": "Add any helpful context.",
       "signIn": "Sign in",
       "submitting": "Submitting claim...",
-      "submit": "Submit claim",
+      "submit": "Submit claim request",
       "cancel": "Cancel",
       "whyClaim": "Why claim? See the benefits"
     },
