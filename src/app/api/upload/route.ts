@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { processImage } from '@/lib/security/image-processor'
+import { createInMemoryRateLimiter } from '@/lib/security/rate-limiter'
 import {
   uploadProcessedImage,
   ALLOWED_UPLOAD_BUCKETS,
+  getUploadImageProcessingConfig,
   type AllowedUploadBucket,
 } from '@/lib/services/image-upload'
+
+const uploadRateLimiter = createInMemoryRateLimiter()
+const UPLOAD_RATE_LIMIT_WINDOW_MS = 60_000
+const UPLOAD_RATE_LIMIT_MAX_REQUESTS = 10
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +24,15 @@ export async function POST(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const rateResult = uploadRateLimiter.check(
+      user.id,
+      UPLOAD_RATE_LIMIT_WINDOW_MS,
+      UPLOAD_RATE_LIMIT_MAX_REQUESTS
+    )
+    if (!rateResult.allowed) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
     }
 
     // Parse form data
@@ -50,7 +65,7 @@ export async function POST(request: Request) {
 
     let processed
     try {
-      processed = await processImage(buffer)
+      processed = await processImage(buffer, getUploadImageProcessingConfig(bucket))
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : 'Image processing failed' },
@@ -69,8 +84,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       url: result.url,
-      width: result.width,
-      height: result.height,
+      key: result.key,
+      width: processed.width,
+      height: processed.height,
     })
   } catch (error) {
     console.error('Upload API error:', error)
