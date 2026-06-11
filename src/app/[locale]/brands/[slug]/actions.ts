@@ -5,7 +5,11 @@ import { revalidatePath } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod/v3'
 import { requireClaimUser } from '@/lib/auth/claim-user'
+import { getSiteUrl } from '@/lib/auth/site-url'
+import { sendEmail } from '@/lib/email/send'
+import { buildClaimEmailVerificationEmail } from '@/lib/email/templates'
 import { createInMemoryRateLimiter } from '@/lib/security/rate-limiter'
+import { getBrandById } from '@/lib/services/brands'
 import {
   CLAIM_PROOF_TYPES,
   createClaimRequest,
@@ -23,9 +27,12 @@ export type SubmitClaimInput = {
   brandId: string
   proofs: ProofEvidence[]
   mitSmileCert?: string
+  locale?: 'zh-TW' | 'en'
 }
 
-export type SubmitClaimResult = { ok: true } | { error: string }
+export type SubmitClaimResult =
+  | { ok: true; domainEmailVerificationSentTo?: string }
+  | { error: string }
 
 const reportRateLimiter = createInMemoryRateLimiter()
 
@@ -65,6 +72,7 @@ function buildFieldSchemas(t: Translator) {
     brandId: z.string().trim().min(1, t('missingBrandId')),
     proofs: z.array(proofSchema).min(1, t('proofsMin')),
     mitSmileCert: z.string().trim().optional(),
+    locale: z.enum(['zh-TW', 'en']).optional(),
   }
 }
 
@@ -92,16 +100,48 @@ export async function submitClaimAction(input: SubmitClaimInput): Promise<Submit
       return { error: t('invalidImageKey') }
     }
 
-    await createClaimRequest({
+    const brand = await getBrandById(parsed.data.brandId)
+
+    const claimRequest = await createClaimRequest({
       userId: user.id,
       brandId: parsed.data.brandId,
       proofEvidence: parsed.data.proofs,
       mitSmileCert: parsed.data.mitSmileCert || undefined,
     })
 
+    const locale = parsed.data.locale ?? 'zh-TW'
+    const siteUrl = getSiteUrl().replace(/\/$/, '')
+
+    for (const verification of claimRequest.emailVerificationTokens) {
+      const params = new URLSearchParams({
+        cr: claimRequest.id,
+        i: String(verification.proofIndex),
+        token: verification.token,
+        locale,
+      })
+      const verifyUrl = `${siteUrl}/api/claim/verify-email?${params.toString()}`
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[claim-email-verification]', verifyUrl)
+      }
+
+      sendEmail(buildClaimEmailVerificationEmail({
+        recipientEmail: verification.email,
+        brandName: brand.name,
+        verifyUrl,
+        siteUrl,
+        locale,
+      }))
+    }
+
     revalidatePath('/admin')
     revalidatePath('/admin/claim-requests')
-    return { ok: true }
+    return {
+      ok: true,
+      ...(claimRequest.emailVerificationTokens[0]
+        ? { domainEmailVerificationSentTo: claimRequest.emailVerificationTokens[0].email }
+        : {}),
+    }
   } catch (err) {
     console.error('[brands:submitClaim]', err)
 

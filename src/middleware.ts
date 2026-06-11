@@ -144,6 +144,7 @@ export async function middleware(request: NextRequest) {
     process.env.PREVIEW_MODE === 'true' &&
     !pathname.startsWith('/auth/') &&
     pathname !== '/api/health' &&
+    pathname !== '/api/claim/verify-email' &&
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   ) {

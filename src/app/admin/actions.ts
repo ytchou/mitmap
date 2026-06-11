@@ -12,7 +12,7 @@ import {
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
 import { createBrand, updateBrand, getBrandById, deleteBrand, generateSlug, syncBrandImages } from '@/lib/services/brands'
 import { createTag, updateTag, mergeTag, deactivateTag, activateTag, setBrandTags, processSuggestedTag } from '@/lib/services/taxonomy'
-import { createResendProvider } from '@/lib/email/resend-adapter'
+import { sendEmail } from '@/lib/email/send'
 import {
   buildApprovalEmail,
   buildRejectionEmail,
@@ -41,18 +41,6 @@ async function requireAdmin(): Promise<{ userId: string; email: string } | { err
   }
 
   return { userId: user.id, email: user.email ?? '' }
-}
-
-function sendEmail(email: Parameters<ReturnType<typeof createResendProvider>['send']>[0]) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.error('[admin:email] RESEND_API_KEY not configured, skipping email')
-    return
-  }
-  const provider = createResendProvider(apiKey)
-  provider.send(email).catch((err) => {
-    console.error('[admin:email]', err)
-  })
 }
 
 export async function approveSubmissionAction(

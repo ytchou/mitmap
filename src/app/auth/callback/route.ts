@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
       const brand = await getBrandById(claim.brandId);
       return NextResponse.redirect(
-        new URL(`/dashboard/brands/${brand.slug}`, getSiteUrl())
+        new URL(`/dashboard?tab=${brand.slug}`, getSiteUrl())
       );
     } catch {
       return NextResponse.redirect(

@@ -23,6 +23,13 @@ vi.mock('@/lib/services/claim-requests', () => ({
   CLAIM_PROOF_TYPES: ['domain_email', 'backend_screenshot', 'business_doc'],
 }))
 
+vi.mock('@/lib/services/brands', () => ({
+  getBrandById: vi.fn(async () => ({
+    name: 'Brand',
+    socialLinks: { officialWebsite: 'https://brand.example' },
+  })),
+}))
+
 vi.mock('@/lib/auth/claim-user', () => ({
   requireClaimUser: vi.fn(async () => ({ id: 'u1' })),
 }))
@@ -39,7 +46,7 @@ const { submitClaimAction, submitReportAction } = await import('../actions')
 describe('submitClaimAction', () => {
   beforeEach(() => {
     createClaimRequest.mockReset()
-    createClaimRequest.mockResolvedValue({ id: 'c1' })
+    createClaimRequest.mockResolvedValue({ id: 'c1', emailVerificationTokens: [] })
   })
 
   it('rejects when no proofs are provided', async () => {

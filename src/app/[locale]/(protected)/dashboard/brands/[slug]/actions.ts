@@ -295,7 +295,7 @@ export async function updateBrandAction(
     await deleteBrandImages(draftOnlyImages)
 
     revalidatePath('/[locale]/brands/[slug]', 'page')
-    revalidatePath(`/dashboard/brands/${brandSlug}`)
+    revalidatePath('/dashboard')
   } catch (err) {
     if (err instanceof InvalidBrandEditFormError) {
       return { error: err.message }
@@ -307,7 +307,7 @@ export async function updateBrandAction(
     }
   }
 
-  redirect(`/dashboard/brands/${brandSlug}`)
+  redirect(`/dashboard?tab=${brandSlug}`)
 }
 
 export async function saveDraftAction(
@@ -418,7 +418,7 @@ export async function publishDraftAction(
     await deleteBrandImages(orphans)
 
     revalidatePath('/[locale]/brands/[slug]', 'page')
-    revalidatePath(`/dashboard/brands/${brand.slug}`)
+    revalidatePath('/dashboard')
   } catch (err) {
     console.error('[brand:publishDraftAction]', err)
     return {
@@ -426,7 +426,7 @@ export async function publishDraftAction(
     }
   }
 
-  redirect(`/dashboard/brands/${brandSlug}`)
+  redirect(`/dashboard?tab=${brandSlug}`)
 }
 
 export async function discardDraftAction(

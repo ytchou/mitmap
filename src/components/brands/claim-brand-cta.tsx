@@ -1,7 +1,7 @@
 'use client'
 
 import { Upload } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRef, useState, useTransition, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { submitClaimAction } from '@/app/[locale]/brands/[slug]/actions'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ type ProofState = {
 
 type FeedbackState =
   | { type: 'idle' }
-  | { type: 'pending' }
+  | { type: 'pending'; domainEmailVerificationSentTo?: string }
   | { type: 'error'; message: string; authRequired?: boolean }
 
 type UploadHookState = {
@@ -148,9 +148,14 @@ function ClaimProofUpload({
   )
 }
 
-export function ClaimBrandCta({ brandId, hasPendingClaim = false, removalSlot }: ClaimBrandCtaProps) {
+export function ClaimBrandCta({
+  brandId,
+  hasPendingClaim = false,
+  removalSlot,
+}: ClaimBrandCtaProps) {
   const t = useTranslations('brands.claimCta')
   const claimErrorsT = useTranslations('brandDetail.claim.errors')
+  const locale = useLocale() as 'zh-TW' | 'en'
   const pathname = usePathname()
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
@@ -211,6 +216,7 @@ export function ClaimBrandCta({ brandId, hasPendingClaim = false, removalSlot }:
             brandId,
             proofs: claimProofs,
             mitSmileCert: mitSmileCert.trim() || undefined,
+            locale,
           })
 
           if ('error' in result) {
@@ -222,7 +228,10 @@ export function ClaimBrandCta({ brandId, hasPendingClaim = false, removalSlot }:
             return
           }
 
-          setFeedback({ type: 'pending' })
+          setFeedback({
+            type: 'pending',
+            domainEmailVerificationSentTo: result.domainEmailVerificationSentTo,
+          })
         } catch {
           setFeedback({
             type: 'error',
@@ -237,7 +246,11 @@ export function ClaimBrandCta({ brandId, hasPendingClaim = false, removalSlot }:
     return (
       <section className="space-y-3 rounded-xl border border-border bg-card p-5 text-left">
         <p className="text-base font-semibold text-foreground">{t('pendingTitle')}</p>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t('pendingBody')}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {feedback.domainEmailVerificationSentTo
+            ? t('pendingDomainEmailBody', { email: feedback.domainEmailVerificationSentTo })
+            : t('pendingBody')}
+        </p>
       </section>
     )
   }
@@ -327,6 +340,11 @@ export function ClaimBrandCta({ brandId, hasPendingClaim = false, removalSlot }:
                         {label}
                       </label>
                       <p className="text-sm text-muted-foreground">{description}</p>
+                      {type === 'domain_email' && (
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          {t('proofTypes.domainEmail.helperText')}
+                        </p>
+                      )}
                       {type === 'business_doc' && (
                         <p className="text-xs leading-relaxed text-muted-foreground">
                           {t('proofTypes.businessDoc.privacyNote')}
@@ -350,6 +368,9 @@ export function ClaimBrandCta({ brandId, hasPendingClaim = false, removalSlot }:
                             placeholder={t('proofTypes.domainEmail.placeholder')}
                             className="min-h-12 bg-card px-3.5 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring"
                           />
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            {t('proofTypes.domainEmail.helperText')}
+                          </p>
                         </div>
                       )}
 

@@ -9,6 +9,10 @@ export type ProofEvidence = {
   url?: string
   imageKey?: string
   note?: string
+  verified?: boolean
+  verifiedAt?: string
+  tokenHash?: string
+  tokenExpiresAt?: string
 }
 export const PROOF_TYPE_I18N_KEYS: Record<ClaimProofType, string> = {
   domain_email: 'domainEmail',

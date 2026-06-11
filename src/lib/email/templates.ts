@@ -182,6 +182,65 @@ export function buildClaimEmail(params: {
   }
 }
 
+export function buildClaimEmailVerificationEmail(params: {
+  recipientEmail: string
+  brandName: string
+  verifyUrl: string
+  siteUrl: string
+  locale?: Locale
+}): EmailMessage {
+  const locale = params.locale ?? 'zh-TW'
+  const brandName = escapeHtml(params.brandName)
+  const verifyUrl = escapeHtml(params.verifyUrl)
+  const siteUrl = escapeHtml(params.siteUrl)
+
+  if (locale === 'en') {
+    return {
+      to: params.recipientEmail,
+      from: FROM_ADDRESS,
+      subject: 'Verify your claim email — Formoria',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Verify your claim email</h2>
+          <p>You requested to claim <strong>${brandName}</strong> on Formoria.</p>
+          <p>Confirm that you control this email address by clicking the button below:</p>
+          <p style="margin: 24px 0;">
+            <a href="${verifyUrl}" style="display: inline-block; background-color: #E06B3F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify email</a>
+          </p>
+          <p>If the button does not work, open this link:</p>
+          <p><a href="${verifyUrl}" style="color: #2563eb;">${verifyUrl}</a></p>
+          <p style="color: #6b7280; font-size: 14px;">This link expires in 7 days. If you did not request this claim, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+          <p style="color: #6b7280; font-size: 14px;">Formoria — Made in Taiwan Brand Directory</p>
+          <p style="color: #9ca3af; font-size: 12px;"><a href="${siteUrl}" style="color: #9ca3af;">${siteUrl}</a></p>
+        </div>
+      `.trim(),
+    }
+  }
+
+  return {
+    to: params.recipientEmail,
+    from: FROM_ADDRESS,
+    subject: '驗證您的認領信箱 — Formoria',
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>驗證您的認領信箱</h2>
+        <p>您已申請認領 Formoria 上的 <strong>${brandName}</strong>。</p>
+        <p>請點擊下方按鈕，確認您可控制此 Email 地址：</p>
+        <p style="margin: 24px 0;">
+          <a href="${verifyUrl}" style="display: inline-block; background-color: #E06B3F; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">驗證信箱</a>
+        </p>
+        <p>若按鈕無法使用，請開啟此連結：</p>
+        <p><a href="${verifyUrl}" style="color: #2563eb;">${verifyUrl}</a></p>
+        <p style="color: #6b7280; font-size: 14px;">此連結將在 7 天後失效。如果您並未提出此認領申請，可安全忽略此郵件。</p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+        <p style="color: #6b7280; font-size: 14px;">Formoria — 台灣品牌目錄</p>
+        <p style="color: #9ca3af; font-size: 12px;"><a href="${siteUrl}" style="color: #9ca3af;">${siteUrl}</a></p>
+      </div>
+    `.trim(),
+  }
+}
+
 export function buildClaimApprovedEmail(params: {
   ownerEmail: string
   brandName: string
@@ -190,7 +249,7 @@ export function buildClaimApprovedEmail(params: {
   locale?: Locale
 }): EmailMessage {
   const locale = params.locale ?? 'zh-TW'
-  const dashboardUrl = `${params.siteUrl}/dashboard/brands/${params.brandSlug}`
+  const dashboardUrl = `${params.siteUrl}/dashboard?tab=${params.brandSlug}`
 
   if (locale === 'en') {
     return {

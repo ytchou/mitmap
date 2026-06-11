@@ -17,7 +17,6 @@
     "brandDirectory": "Brand Directory",
     "faq": "FAQ",
     "support": "Buy Us a Coffee",
-    "mySubmissions": "My Submissions",
     "submitBrand": "Submit a Brand",
     "allBrands": "All Brands",
     "searchPlaceholder": "Search brands...",
@@ -155,6 +154,7 @@
       "uploadingLabel": "Uploading…",
       "pendingTitle": "Claim request received",
       "pendingBody": "We'll review the ownership proof you submitted and email you the result.",
+      "pendingDomainEmailBody": "A verification email has been sent to {email}. Open the link in that email to complete verification.",
       "mitCertLabel": "MIT Smile Mark number (optional)",
       "mitCertHint": "Add it to earn an additional \"MIT verified\" badge.",
       "proofTypes": {
@@ -162,7 +162,8 @@
           "label": "Brand domain email",
           "description": "Enter an email address using the brand's domain (for example, you@yourbrand.com)",
           "emailLabel": "Domain email",
-          "placeholder": "you@yourbrand.com"
+          "placeholder": "you@yourbrand.com",
+          "helperText": "We'll email a verification link to this address — click it to confirm."
         },
         "backendScreenshot": {
           "label": "Admin/backend screenshot",
@@ -646,7 +647,7 @@
   },
   "account": {
     "menuLabel": "Account",
-    "dashboard": "Dashboard",
+    "dashboard": "Owner Dashboard",
     "signOut": "Sign out"
   },
   "forms": {
@@ -692,13 +693,16 @@
       }
     },
     "metadata": {
-      "title": "Brand Management"
+      "title": "Owner Dashboard"
     },
-    "heading": "Brand Management",
+    "heading": "Owner Dashboard",
     "welcome": "Welcome, {email}",
     "yourBrands": "Your Brands",
     "empty": "You haven't claimed any brands yet. Once you claim a brand, it will appear here.",
     "claimedAt": "Claimed {date}",
+    "tabs": {
+      "submissions": "Submissions"
+    },
     "analytics": {
       "trendsLabel": "TRENDS",
       "viewsClicksTitle": "Views & Clicks",
@@ -1028,10 +1032,23 @@
   "admin": {
     "claimRequests": {
       "adminProofLabel": "Ownership proof",
+      "domainEmailVerified": "✓ Verified",
+      "domainEmailPending": "⏳ Pending verification",
       "proofTypes": {
         "domainEmail": "Brand domain email",
         "backendScreenshot": "Admin/backend screenshot",
         "businessDoc": "Business registration document"
+      },
+      "rejectReasons": {
+        "placeholder": "Pick a common reason…",
+        "insufficientProof": "The proof provided is insufficient to confirm you operate this brand.",
+        "proofMismatch": "The proof provided does not match this brand.",
+        "emailUnverified": "The email verification was not completed.",
+        "alreadyClaimed": "This brand has already been claimed by someone else.",
+        "screenshotInsufficient": "The backend screenshot does not demonstrate that you manage this brand.",
+        "docMismatch": "The business registration document does not match the brand or is illegible.",
+        "proofInauthentic": "The proof provided appears to have been edited or is not authentic.",
+        "needMoreEvidence": "The current proof is insufficient; please resubmit with additional supporting evidence."
       }
     }
   },

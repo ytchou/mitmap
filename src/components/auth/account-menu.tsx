@@ -52,12 +52,6 @@ export function AccountMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40 min-w-40">
         <DropdownMenuItem
-          render={<Link href="/my-submissions" />}
-        >
-          {t('nav.mySubmissions')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
           render={<Link href="/dashboard" />}
         >
           {t('account.dashboard')}

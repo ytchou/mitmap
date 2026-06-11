@@ -17,7 +17,6 @@
     "brandDirectory": "品牌目錄",
     "faq": "常見問題",
     "support": "請我喝咖啡",
-    "mySubmissions": "我的提交",
     "submitBrand": "提交品牌",
     "allBrands": "全部品牌",
     "searchPlaceholder": "搜尋品牌...",
@@ -155,6 +154,7 @@
       "uploadingLabel": "上傳中…",
       "pendingTitle": "已收到你的認領申請",
       "pendingBody": "我們會盡快審核你提交的擁有證明，並以 Email 通知你結果。",
+      "pendingDomainEmailBody": "驗證信已寄至 {email}，請點開信中連結完成驗證。",
       "mitCertLabel": "MIT 微笑標章編號（選填）",
       "mitCertHint": "填寫後可獲得額外的「MIT 已驗證」標章",
       "proofTypes": {
@@ -162,7 +162,8 @@
           "label": "品牌網域信箱",
           "description": "輸入使用品牌網域的信箱（例如 you@yourbrand.com）",
           "emailLabel": "網域信箱",
-          "placeholder": "you@yourbrand.com"
+          "placeholder": "you@yourbrand.com",
+          "helperText": "我們會寄送驗證連結至此信箱，請點擊連結完成驗證。"
         },
         "backendScreenshot": {
           "label": "後台截圖",
@@ -646,7 +647,7 @@
   },
   "account": {
     "menuLabel": "帳號",
-    "dashboard": "管理後台",
+    "dashboard": "經營者主控台",
     "signOut": "登出"
   },
   "forms": {
@@ -692,13 +693,16 @@
       }
     },
     "metadata": {
-      "title": "品牌管理"
+      "title": "經營者主控台"
     },
-    "heading": "品牌管理",
+    "heading": "經營者主控台",
     "welcome": "歡迎，{email}",
     "yourBrands": "您的品牌",
     "empty": "尚未認領任何品牌。認領品牌後，它將顯示在此處。",
     "claimedAt": "認領於 {date}",
+    "tabs": {
+      "submissions": "提交紀錄"
+    },
     "analytics": {
       "trendsLabel": "趨勢",
       "viewsClicksTitle": "瀏覽與點擊",
@@ -1028,10 +1032,23 @@
   "admin": {
     "claimRequests": {
       "adminProofLabel": "擁有權證明",
+      "domainEmailVerified": "✓ 已驗證",
+      "domainEmailPending": "⏳ 待驗證",
       "proofTypes": {
         "domainEmail": "品牌網域信箱",
         "backendScreenshot": "後台截圖",
         "businessDoc": "商業登記文件"
+      },
+      "rejectReasons": {
+        "placeholder": "選擇常見原因…",
+        "insufficientProof": "證明不足，無法確認您為品牌經營者。",
+        "proofMismatch": "提供的證明與此品牌不符。",
+        "emailUnverified": "Email 尚未完成驗證。",
+        "alreadyClaimed": "此品牌已由他人完成認領。",
+        "screenshotInsufficient": "上傳的後台截圖無法證明您管理此品牌。",
+        "docMismatch": "商業登記文件與品牌不符或無法辨識。",
+        "proofInauthentic": "提供的證明疑似經過編輯或不實。",
+        "needMoreEvidence": "現有證明不足，請補充其他佐證後再次申請。"
       }
     }
   },

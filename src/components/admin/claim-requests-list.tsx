@@ -11,6 +11,13 @@ import {
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Table,
   TableBody,
   TableCell,
@@ -32,6 +39,26 @@ type RejectActionTarget =
   | { kind: 'claim'; id: string }
   | { kind: 'mit'; id: string }
   | null
+type RejectReasonKey =
+  | 'insufficientProof'
+  | 'proofMismatch'
+  | 'emailUnverified'
+  | 'alreadyClaimed'
+  | 'screenshotInsufficient'
+  | 'docMismatch'
+  | 'proofInauthentic'
+  | 'needMoreEvidence'
+
+const REJECT_REASON_KEYS: RejectReasonKey[] = [
+  'insufficientProof',
+  'proofMismatch',
+  'emailUnverified',
+  'alreadyClaimed',
+  'screenshotInsufficient',
+  'docMismatch',
+  'proofInauthentic',
+  'needMoreEvidence',
+]
 
 function isClickableProofUrl(url: string) {
   try {
@@ -48,10 +75,12 @@ export function ClaimRequestsList({
   claimRequests: ClaimRequestWithSignedProof[]
 }) {
   const proofTypesT = useTranslations('brands.claimCta.proofTypes')
-  const [activeTab, setActiveTab] = useState<TabValue>('all')
+  const adminClaimT = useTranslations('admin.claimRequests')
+  const [activeTab, setActiveTab] = useState<TabValue>('pending')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [rejectTarget, setRejectTarget] = useState<RejectActionTarget>(null)
   const [rejectNotes, setRejectNotes] = useState('')
+  const [rejectReasonPreset, setRejectReasonPreset] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -71,12 +100,14 @@ export function ClaimRequestsList({
     setExpandedId((prev) => (prev === id ? null : id))
     setRejectTarget(null)
     setRejectNotes('')
+    setRejectReasonPreset('')
     setError(null)
   }
 
   function beginReject(kind: NonNullable<RejectActionTarget>['kind'], id: string) {
     setRejectTarget({ kind, id })
     setRejectNotes('')
+    setRejectReasonPreset('')
     setError(null)
   }
 
@@ -107,6 +138,7 @@ export function ClaimRequestsList({
       else {
         setRejectTarget(null)
         setRejectNotes('')
+        setRejectReasonPreset('')
       }
     })
   }
@@ -138,6 +170,7 @@ export function ClaimRequestsList({
       else {
         setRejectTarget(null)
         setRejectNotes('')
+        setRejectReasonPreset('')
       }
     })
   }
@@ -161,7 +194,6 @@ export function ClaimRequestsList({
         onValueChange={(value) => setActiveTab(value as TabValue)}
       >
         <TabsList>
-          <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
           <TabsTrigger value="pending">
             Pending ({tabCounts.pending})
           </TabsTrigger>
@@ -171,6 +203,7 @@ export function ClaimRequestsList({
           <TabsTrigger value="rejected">
             Rejected ({tabCounts.rejected})
           </TabsTrigger>
+          <TabsTrigger value="all">All ({tabCounts.all})</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -223,6 +256,18 @@ export function ClaimRequestsList({
                                     <p className="text-sm font-medium text-foreground">
                                       {proofTypesT(`${PROOF_TYPE_I18N_KEYS[proof.type]}.label`)}
                                     </p>
+                                    {proof.type === 'domain_email' && (
+                                      <span
+                                        className={proof.verified
+                                          ? 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700'
+                                          : 'inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'
+                                        }
+                                      >
+                                        {proof.verified
+                                          ? adminClaimT('domainEmailVerified')
+                                          : adminClaimT('domainEmailPending')}
+                                      </span>
+                                    )}
                                     {proof.url && isClickableProofUrl(proof.url) && (
                                       <a
                                         href={proof.url}
@@ -300,14 +345,40 @@ export function ClaimRequestsList({
                             <div className="w-full max-w-xl">
                               {rejectTarget?.kind === 'claim' &&
                                 rejectTarget.id === claimRequest.id && (
-                                <Textarea
-                                  autoFocus
-                                  placeholder="Why are you rejecting this claim?"
-                                  value={rejectNotes}
-                                  onChange={(event) => setRejectNotes(event.target.value)}
-                                  onClick={(event) => event.stopPropagation()}
-                                  className="mb-2"
-                                />
+                                  <div className="mb-2 space-y-2">
+                                    <Select
+                                      value={rejectReasonPreset}
+                                      onValueChange={(value) => {
+                                        if (!value) return
+                                        setRejectNotes(adminClaimT(`rejectReasons.${value}`))
+                                        setRejectReasonPreset('')
+                                      }}
+                                    >
+                                      <SelectTrigger
+                                        className="w-full"
+                                        onClick={(event) => event.stopPropagation()}
+                                      >
+                                        <SelectValue placeholder={adminClaimT('rejectReasons.placeholder')} />
+                                      </SelectTrigger>
+                                      <SelectContent align="start">
+                                        <SelectItem value="" disabled>
+                                          {adminClaimT('rejectReasons.placeholder')}
+                                        </SelectItem>
+                                        {REJECT_REASON_KEYS.map((reasonKey) => (
+                                          <SelectItem key={reasonKey} value={reasonKey}>
+                                            {adminClaimT(`rejectReasons.${reasonKey}`)}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <Textarea
+                                      autoFocus
+                                      placeholder="Why are you rejecting this claim?"
+                                      value={rejectNotes}
+                                      onChange={(event) => setRejectNotes(event.target.value)}
+                                      onClick={(event) => event.stopPropagation()}
+                                    />
+                                  </div>
                                 )}
                               <Button
                                 variant={

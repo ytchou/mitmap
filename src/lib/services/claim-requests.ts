@@ -1,6 +1,8 @@
 import type { Database, Json } from '@/lib/supabase/database.types'
+import { timingSafeEqual } from 'node:crypto'
 import { NotFoundError, ValidationError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
+import { generateVerificationToken, hashToken } from '@/lib/utils/token'
 import { CLAIM_PROOF_TYPES } from './claim-proofs'
 import type { ClaimProofType, ProofEvidence } from './claim-proofs'
 
@@ -42,6 +44,13 @@ type ClaimRequestRow = {
 type ClaimRequestRowWithJoins = ClaimRequestRow & {
   brands?: Pick<BrandRow, 'name' | 'slug'> | null
   requester_email?: string | null
+}
+
+type ClaimRequestVerificationToken = {
+  proofIndex: number
+  email: string
+  token: string
+  expiresAt: string
 }
 
 type ClaimRequestError = {
@@ -119,6 +128,17 @@ export type ClaimRequestWithSignedProofs = Omit<ClaimRequest, 'proofEvidence'> &
   proofEvidence: Array<ProofEvidence & { signedUrl?: string }>
 }
 
+export type CreateClaimRequestResult = ClaimRequest & {
+  emailVerificationTokens: ClaimRequestVerificationToken[]
+}
+
+export type VerifyClaimEmailProofResult = {
+  ok: boolean
+  brandSlug?: string
+  locale?: 'zh-TW' | 'en'
+  reason?: string
+}
+
 export function rowToClaimRequest(row: ClaimRequestRowWithJoins): ClaimRequest {
   const proofEvidence = parseProofEvidence(row.proof_evidence)
   const firstProof = proofEvidence[0]
@@ -183,6 +203,8 @@ function parseProofEvidence(value: Json | null | undefined): ProofEvidence[] {
     if (typeof record.url === 'string') proof.url = record.url
     if (typeof record.imageKey === 'string') proof.imageKey = record.imageKey
     if (typeof record.note === 'string') proof.note = record.note
+    if (typeof record.verified === 'boolean') proof.verified = record.verified
+    if (typeof record.verifiedAt === 'string') proof.verifiedAt = record.verifiedAt
     return [proof]
   })
 }
@@ -223,6 +245,41 @@ export function normalizeProofEvidence(input: ProofEvidence[], userId: string): 
   }
 
   return normalized
+}
+
+function addDomainEmailVerificationTokens(proofEvidence: ProofEvidence[]): {
+  proofEvidence: ProofEvidence[]
+  emailVerificationTokens: ClaimRequestVerificationToken[]
+} {
+  const emailVerificationTokens: ClaimRequestVerificationToken[] = []
+  const proofEvidenceWithTokens = proofEvidence.map((proof, proofIndex) => {
+    if (proof.type !== 'domain_email' || !proof.url) {
+      return proof
+    }
+
+    const verification = generateVerificationToken()
+    emailVerificationTokens.push({
+      proofIndex,
+      email: proof.url,
+      token: verification.token,
+      expiresAt: verification.expiresAt,
+    })
+
+    return {
+      ...proof,
+      verified: false,
+      tokenHash: verification.tokenHash,
+      tokenExpiresAt: verification.expiresAt,
+    }
+  })
+
+  return { proofEvidence: proofEvidenceWithTokens, emailVerificationTokens }
+}
+
+function tokenHashesMatch(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, 'hex')
+  const rightBuffer = Buffer.from(right, 'hex')
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
 }
 
 function normalizeMitSmileCert(mitSmileCert?: string | null): string | null {
@@ -304,8 +361,10 @@ export async function createClaimRequest(input: {
   brandId: string
   proofEvidence: ProofEvidence[]
   mitSmileCert?: string | null
-}): Promise<ClaimRequest> {
-  const proofEvidence = normalizeProofEvidence(input.proofEvidence, input.userId)
+}): Promise<CreateClaimRequestResult> {
+  const normalizedProofEvidence = normalizeProofEvidence(input.proofEvidence, input.userId)
+  const { proofEvidence, emailVerificationTokens } =
+    addDomainEmailVerificationTokens(normalizedProofEvidence)
   const supabase = createServiceClient()
   const mitSmileCert = normalizeMitSmileCert(input.mitSmileCert)
 
@@ -361,7 +420,111 @@ export async function createClaimRequest(input: {
     }
     throw error
   }
-  return rowToClaimRequest(data as ClaimRequestRowWithJoins)
+  return {
+    ...rowToClaimRequest(data as ClaimRequestRowWithJoins),
+    emailVerificationTokens,
+  }
+}
+
+export async function verifyClaimEmailProof({
+  claimRequestId,
+  proofIndex,
+  token,
+}: {
+  claimRequestId: string
+  proofIndex: number
+  token: string
+}): Promise<VerifyClaimEmailProofResult> {
+  if (!claimRequestId || !Number.isInteger(proofIndex) || proofIndex < 0 || !token) {
+    return { ok: false, locale: 'zh-TW', reason: 'invalid_request' }
+  }
+
+  const supabase = createServiceClient()
+  const { data, error } = await claimRequestsTable(supabase)
+    .select(CLAIM_REQUEST_WITH_BRAND_SELECT)
+    .eq('id', claimRequestId)
+    .maybeSingle()
+
+  if (error || !data) {
+    return { ok: false, locale: 'zh-TW', reason: 'not_found' }
+  }
+
+  const row = data as ClaimRequestRowWithJoins
+  const rawProofEvidence = Array.isArray(row.proof_evidence) ? row.proof_evidence : []
+  const proof = rawProofEvidence[proofIndex]
+  const brandSlug = row.brands?.slug ?? undefined
+  const failure = (reason: string): VerifyClaimEmailProofResult => ({
+    ok: false,
+    brandSlug,
+    locale: 'zh-TW',
+    reason,
+  })
+
+  if (!proof || typeof proof !== 'object' || Array.isArray(proof)) {
+    return failure('proof_not_found')
+  }
+
+  const proofRecord = proof as Record<string, Json | undefined>
+  if (proofRecord.type !== 'domain_email') {
+    return failure('wrong_proof_type')
+  }
+
+  if (proofRecord.verified === true) {
+    return {
+      ok: true,
+      brandSlug,
+      locale: 'zh-TW',
+    }
+  }
+
+  if (typeof proofRecord.tokenHash !== 'string') {
+    return failure('missing_token')
+  }
+
+  const tokenExpiresAt = typeof proofRecord.tokenExpiresAt === 'string'
+    ? Date.parse(proofRecord.tokenExpiresAt)
+    : Number.NaN
+  if (!Number.isFinite(tokenExpiresAt) || tokenExpiresAt <= Date.now()) {
+    return failure('expired')
+  }
+
+  if (!tokenHashesMatch(hashToken(token), proofRecord.tokenHash)) {
+    return failure('invalid_token')
+  }
+
+  const nextProofEvidence = rawProofEvidence.map((item, index) => {
+    if (index !== proofIndex || !item || typeof item !== 'object' || Array.isArray(item)) {
+      return item
+    }
+
+    const { tokenHash: _tokenHash, tokenExpiresAt: _tokenExpiresAt, ...rest } = item as Record<
+      string,
+      Json | undefined
+    >
+    void _tokenHash
+    void _tokenExpiresAt
+    return {
+      ...rest,
+      verified: true,
+      verifiedAt: new Date().toISOString(),
+    }
+  })
+
+  const { error: updateError } = await claimRequestsTable(supabase)
+    .update({ proof_evidence: nextProofEvidence as Json })
+    .eq('id', claimRequestId)
+    .select('id')
+    .single()
+
+  if (updateError) {
+    throw updateError
+  }
+
+  return {
+    ok: true,
+    brandSlug,
+    locale: 'zh-TW',
+  }
 }
 
 export async function hasPendingClaim(userId: string, brandId: string): Promise<boolean> {
