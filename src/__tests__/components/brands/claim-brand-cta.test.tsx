@@ -55,13 +55,13 @@ vi.mock('@/app/[locale]/brands/[slug]/actions', () => ({
 }))
 
 describe('ClaimBrandCta', () => {
-  it('renders the updated trust-forward body copy', () => {
+  it('renders proof-based claim body copy', () => {
     render(<ClaimBrandCta brandId="brand-1" />)
 
     expect(screen.getByText(/Claim your listing with business proof/)).toBeInTheDocument()
   })
 
-  it('does not render the old copy', () => {
+  it('does not render legacy submit-proof copy', () => {
     render(<ClaimBrandCta brandId="brand-1" />)
 
     expect(screen.queryByText(/submit proof to claim and manage/)).not.toBeInTheDocument()
