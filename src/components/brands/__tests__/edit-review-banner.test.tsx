@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent } from '@testing-library/react'
 import { expect, it } from 'vitest'
+import { NextIntlClientProvider } from 'next-intl'
 import { EditReviewBanner } from '../edit-review-banner'
 import type { PendingBrandEdit } from '@/lib/types/brand'
+import zh from '../../../../messages/zh-TW.json'
 
 const BASE: PendingBrandEdit = {
   id: 'edit-1',
@@ -17,13 +19,21 @@ const BASE: PendingBrandEdit = {
   updatedAt: '2026-06-12T10:00:00Z',
 }
 
+function renderWithProvider(ui: React.ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="zh-TW" messages={zh}>
+      {ui}
+    </NextIntlClientProvider>
+  )
+}
+
 it('shows pending state', () => {
-  render(<EditReviewBanner edit={{ ...BASE, status: 'pending' }} brandSlug="test-brand" />)
+  renderWithProvider(<EditReviewBanner edit={{ ...BASE, status: 'pending' }} brandSlug="test-brand" />)
   expect(screen.getAllByText(/審核中|under review/i).length).toBeGreaterThan(0)
 })
 
 it('shows rejected state with reviewer notes', () => {
-  render(
+  renderWithProvider(
     <EditReviewBanner
       edit={{
         ...BASE,
@@ -39,7 +49,7 @@ it('shows rejected state with reviewer notes', () => {
 })
 
 it('shows approved state and can be dismissed', () => {
-  render(
+  renderWithProvider(
     <EditReviewBanner
       edit={{ ...BASE, status: 'approved', reviewedAt: '2026-06-12T12:00:00Z' }}
       brandSlug="test-brand"
@@ -51,6 +61,6 @@ it('shows approved state and can be dismissed', () => {
 })
 
 it('renders nothing when edit is null', () => {
-  const { container } = render(<EditReviewBanner edit={null} brandSlug="test-brand" />)
+  const { container } = renderWithProvider(<EditReviewBanner edit={null} brandSlug="test-brand" />)
   expect(container.firstChild).toBeNull()
 })
