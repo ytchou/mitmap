@@ -799,6 +799,42 @@
         }
       }
     },
+    "health": {
+      "title": "品牌健康分數",
+      "subtitle": "您的品牌在 7 個維度上的表現",
+      "tier": {
+        "gettingStarted": "起步中",
+        "growing": "成長中",
+        "thriving": "蓬勃發展",
+        "exemplary": "卓越典範"
+      },
+      "tierRange": {
+        "gettingStarted": "0–39 · 資料需要補充",
+        "growing": "40–69 · 基礎良好，還有優化空間",
+        "thriving": "70–89 · 品牌形象強烈",
+        "exemplary": "90–100 · 業界最佳"
+      },
+      "actionQueue": {
+        "title": "準備好成長了嗎？這些改變最有效"
+      },
+      "scoreBreakdown": "分數明細",
+      "coldStart": "資料收集中...",
+      "coldStartHint": "需要 7 天資料 · 請稍後回來查看",
+      "drillDown": {
+        "title": "品牌完整度 · 9 項檢核"
+      },
+      "editProfile": "編輯品牌",
+      "lastUpdated": "最後更新：{date}",
+      "dimension": {
+        "profileCompleteness": "品牌完整度",
+        "engagementHealth": "互動健康度",
+        "brandStory": "品牌故事",
+        "photoQuality": "照片品質",
+        "socialPresence": "社群存在感",
+        "purchaseAccessibility": "購買管道",
+        "clickThroughRate": "點擊率"
+      }
+    },
     "mit": {
       "title": "MIT 驗證狀態",
       "status": {

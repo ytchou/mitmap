@@ -799,6 +799,42 @@
         }
       }
     },
+    "health": {
+      "title": "Brand Health Score",
+      "subtitle": "How your brand is performing across 7 dimensions",
+      "tier": {
+        "gettingStarted": "Getting Started",
+        "growing": "Growing",
+        "thriving": "Thriving",
+        "exemplary": "Exemplary"
+      },
+      "tierRange": {
+        "gettingStarted": "0–39 · Profile needs attention",
+        "growing": "40–69 · Good foundation, room to optimize",
+        "thriving": "70–89 · Strong presence",
+        "exemplary": "90–100 · Best-in-class"
+      },
+      "actionQueue": {
+        "title": "Ready to grow? Here's what moves the needle"
+      },
+      "scoreBreakdown": "Score Breakdown",
+      "coldStart": "Collecting data...",
+      "coldStartHint": "Needs 7 days of data · check back soon",
+      "drillDown": {
+        "title": "Profile Completeness · 9-field checklist"
+      },
+      "editProfile": "Edit Profile",
+      "lastUpdated": "Last updated: {date}",
+      "dimension": {
+        "profileCompleteness": "Profile Completeness",
+        "engagementHealth": "Engagement Health",
+        "brandStory": "Brand Story",
+        "photoQuality": "Photo Quality",
+        "socialPresence": "Social Presence",
+        "purchaseAccessibility": "Purchase Accessibility",
+        "clickThroughRate": "Click-Through Rate"
+      }
+    },
     "mit": {
       "title": "MIT Verification",
       "status": {
