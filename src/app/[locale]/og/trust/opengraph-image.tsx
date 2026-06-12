@@ -164,7 +164,7 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
                 fontFamily: locale === 'en' ? 'Bricolage Grotesque' : 'Noto Sans TC',
               }}
             >
-              {locale === 'en' ? 'Trust Made Visible' : '看得見的信任'}
+              Trust Made Visible
             </div>
           </div>
         </div>
