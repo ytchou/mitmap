@@ -25,11 +25,14 @@ export function TrustModel() {
   const t = useTranslations('about.trust')
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="border-t border-border py-16 md:py-24">
       <div className="mx-auto max-w-5xl px-6 md:px-8">
         <h2 className="font-heading text-3xl font-bold leading-tight text-foreground md:text-4xl">
           {t('heading')}
         </h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+          {t('subtitle')}
+        </p>
         <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-3">
           {trustPillars.map(({ key, icon: Icon }) => (
             <div key={key}>
