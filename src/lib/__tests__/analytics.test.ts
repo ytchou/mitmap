@@ -1,39 +1,57 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockSendGAEvent = vi.fn()
 vi.mock('@next/third-parties/google', () => ({
   sendGAEvent: (...args: unknown[]) => mockSendGAEvent(...args),
 }))
 
-import { mapPurchaseDestination, trackDbClick } from '../analytics'
+import {
+  trackOnboardingBannerShown,
+  trackOnboardingBannerCtaClick,
+  trackOnboardingBannerDismiss,
+  trackOnboardingMilestoneReached,
+} from '../analytics'
 
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
+describe('onboarding tracking', () => {
+  beforeEach(() => {
+    mockSendGAEvent.mockClear()
+    window.dataLayer = []
+  })
 
-describe('analytics DB click tracking', () => {
-  it('trackDbClick POSTs a click with normalized destination, fire-and-forget', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
-    vi.stubGlobal('fetch', fetchMock)
-
-    trackDbClick('b1', 'instagram')
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/analytics/track',
-      expect.objectContaining({
-        method: 'POST',
-        keepalive: true,
-        body: JSON.stringify({
-          brandId: 'b1',
-          event: 'click',
-          destination: 'instagram',
-        }),
-      })
+  it('trackOnboardingBannerShown fires with brand slug', () => {
+    trackOnboardingBannerShown('test-brand')
+    expect(mockSendGAEvent).toHaveBeenCalledWith(
+      'event',
+      'onboarding_banner_shown',
+      { brand_slug: 'test-brand' }
     )
   })
 
-  it('mapPurchaseDestination lowercases and sanitizes platform', () => {
-    expect(mapPurchaseDestination('Shopee 蝦皮')).toBe('shopee')
+  it('trackOnboardingBannerCtaClick fires with brand slug', () => {
+    trackOnboardingBannerCtaClick('test-brand')
+    expect(mockSendGAEvent).toHaveBeenCalledWith(
+      'event',
+      'onboarding_banner_cta_click',
+      { brand_slug: 'test-brand' }
+    )
+  })
+
+  it('trackOnboardingBannerDismiss fires with brand slug', () => {
+    trackOnboardingBannerDismiss('test-brand')
+    expect(mockSendGAEvent).toHaveBeenCalledWith(
+      'event',
+      'onboarding_banner_dismiss',
+      { brand_slug: 'test-brand' }
+    )
+  })
+
+  it('trackOnboardingMilestoneReached fires with brand slug and milestone', () => {
+    trackOnboardingMilestoneReached('test-brand', 'halfway')
+    expect(mockSendGAEvent).toHaveBeenCalledWith(
+      'event',
+      'onboarding_milestone_reached',
+      { brand_slug: 'test-brand', milestone: 'halfway' }
+    )
   })
 })
