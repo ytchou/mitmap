@@ -25,7 +25,7 @@ describe('GET /api/email/unsubscribe', () => {
   })
 
   it('unsubscribes and returns confirmation HTML for valid token', async () => {
-    vi.mocked(createServiceClient).mockReturnValue({} as any)
+    vi.mocked(createServiceClient).mockReturnValue({} as ReturnType<typeof createServiceClient>)
     vi.mocked(unsubscribeByToken).mockResolvedValue({ success: true })
 
     const req = new NextRequest(
@@ -41,7 +41,7 @@ describe('GET /api/email/unsubscribe', () => {
   })
 
   it('returns 404 for invalid token', async () => {
-    vi.mocked(createServiceClient).mockReturnValue({} as any)
+    vi.mocked(createServiceClient).mockReturnValue({} as ReturnType<typeof createServiceClient>)
     vi.mocked(unsubscribeByToken).mockResolvedValue({
       success: false,
       error: 'Token not found',

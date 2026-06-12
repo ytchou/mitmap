@@ -53,7 +53,7 @@ describe('process-drips Edge Function', () => {
         return { insert: vi.fn().mockResolvedValue({ error: null }) }
       })
 
-      const results = await evaluateDrips(mockSupabase as any, 'welcome')
+      const results = await evaluateDrips(mockSupabase as Parameters<typeof evaluateDrips>[0], 'welcome')
 
       expect(results.sent).toBe(1)
       expect(mockFetch).toHaveBeenCalledWith(
@@ -77,7 +77,7 @@ describe('process-drips Edge Function', () => {
         }),
       }))
 
-      const results = await evaluateDrips(mockSupabase as any, 'welcome')
+      const results = await evaluateDrips(mockSupabase as Parameters<typeof evaluateDrips>[0], 'welcome')
 
       expect(results.sent).toBe(0)
       expect(mockFetch).not.toHaveBeenCalled()
@@ -95,7 +95,7 @@ describe('process-drips Edge Function', () => {
         }),
       }))
 
-      const results = await evaluateDrips(mockSupabase as any, 'profile_nudge')
+      const results = await evaluateDrips(mockSupabase as Parameters<typeof evaluateDrips>[0], 'profile_nudge')
 
       expect(results.sent).toBe(0)
     })

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   }
 
   return htmlResponse(
-    '您已成功取消訂閱 / You have been unsubscribed from Formoria lifecycle emails. Claim and verification emails will continue.',
+    'You have been unsubscribed from Formoria lifecycle emails. Claim and verification emails will continue.',
     200
   )
 }

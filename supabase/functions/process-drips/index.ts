@@ -177,8 +177,13 @@ async function sendDripEmail(owner: OwnerRow, message: EmailMessage): Promise<vo
   }
 }
 
+type SupabaseLike = {
+  from: (table: string) => Record<string, unknown>
+  rpc: (fn: string, args?: Record<string, unknown>) => unknown
+}
+
 export async function evaluateDrips(
-  supabase: any,
+  supabase: SupabaseLike,
   dripType: string
 ): Promise<{ sent: number; errors: number }> {
   const drip = DRIP_TYPES.find((type) => type.key === dripType)
@@ -231,7 +236,7 @@ export async function evaluateDrips(
   return { sent, errors }
 }
 
-function normalizeOwnerRow(row: any): OwnerRow {
+function normalizeOwnerRow(row: Record<string, unknown>): OwnerRow {
   const brand = Array.isArray(row.brands) ? row.brands[0] : row.brands
   const preferences = Array.isArray(row.owner_email_preferences)
     ? row.owner_email_preferences[0]

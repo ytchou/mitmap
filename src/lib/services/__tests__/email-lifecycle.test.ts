@@ -34,7 +34,7 @@ describe('email-lifecycle service', () => {
       const chain = mockChain({ user_id: 'user-1', unsubscribe_token: 'token-abc' })
       mockSupabase.from.mockReturnValue(chain)
 
-      const result = await createEmailPreferences(mockSupabase as any, 'user-1')
+      const result = await createEmailPreferences(mockSupabase as unknown, 'user-1')
 
       expect(mockSupabase.from).toHaveBeenCalledWith('owner_email_preferences')
       expect(chain.insert).toHaveBeenCalledWith({ user_id: 'user-1' })
@@ -59,7 +59,7 @@ describe('email-lifecycle service', () => {
       }
       mockSupabase.from.mockReturnValue(selectChain)
 
-      const result = await unsubscribeByToken(mockSupabase as any, 'token-abc')
+      const result = await unsubscribeByToken(mockSupabase as unknown, 'token-abc')
 
       expect(result.success).toBe(true)
     })
@@ -74,7 +74,7 @@ describe('email-lifecycle service', () => {
       }
       mockSupabase.from.mockReturnValue(chain)
 
-      const result = await unsubscribeByToken(mockSupabase as any, 'bad-token')
+      const result = await unsubscribeByToken(mockSupabase as unknown, 'bad-token')
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('not found')
@@ -86,7 +86,7 @@ describe('email-lifecycle service', () => {
       const chain = mockChain({ id: 'send-1' })
       mockSupabase.from.mockReturnValue(chain)
 
-      await recordEmailSend(mockSupabase as any, 'user-1', 'welcome')
+      await recordEmailSend(mockSupabase as unknown, 'user-1', 'welcome')
 
       expect(mockSupabase.from).toHaveBeenCalledWith('email_sends')
       expect(chain.insert).toHaveBeenCalledWith(
@@ -108,7 +108,7 @@ describe('email-lifecycle service', () => {
       }
       mockSupabase.from.mockReturnValue(chain)
 
-      const result = await hasSent(mockSupabase as any, 'user-1', 'welcome')
+      const result = await hasSent(mockSupabase as unknown, 'user-1', 'welcome')
       expect(result).toBe(true)
     })
 
@@ -124,7 +124,7 @@ describe('email-lifecycle service', () => {
       }
       mockSupabase.from.mockReturnValue(chain)
 
-      const result = await hasSent(mockSupabase as any, 'user-1', 'welcome')
+      const result = await hasSent(mockSupabase as unknown, 'user-1', 'welcome')
       expect(result).toBe(false)
     })
   })
@@ -143,7 +143,7 @@ describe('email-lifecycle service', () => {
       }
       mockSupabase.from.mockReturnValue(chain)
 
-      const result = await isUnsubscribed(mockSupabase as any, 'user-1')
+      const result = await isUnsubscribed(mockSupabase as unknown, 'user-1')
       expect(result).toBe(true)
     })
 
@@ -157,7 +157,7 @@ describe('email-lifecycle service', () => {
       }
       mockSupabase.from.mockReturnValue(chain)
 
-      const result = await isUnsubscribed(mockSupabase as any, 'user-1')
+      const result = await isUnsubscribed(mockSupabase as unknown, 'user-1')
       expect(result).toBe(false)
     })
   })
