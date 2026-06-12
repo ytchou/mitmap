@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import {
   trackOnboardingBannerCtaClick,
   trackOnboardingBannerDismiss,
@@ -48,10 +49,10 @@ export function WelcomeBanner({
   ]
 
   return (
-    <section className="rounded-xl border border-[#E5E0D8] border-l-4 border-l-[#2F5D50] bg-white p-6">
+    <section className="rounded-lg border border-[#E5E0D8] border-l-4 border-l-[#2F5D50] bg-white p-6">
       <div className="space-y-1">
         <h2 className="text-base font-bold text-[#1C1C1C]">{t('title')}</h2>
-        <p className="mt-1 text-sm text-[#4A4A4A]">{t('description')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
       </div>
 
       <ol className="mt-5 space-y-4">
@@ -62,22 +63,22 @@ export function WelcomeBanner({
             </span>
             <div className="space-y-1">
               <p className="text-sm font-medium text-[#1C1C1C]">{action.label}</p>
-              <p className="text-xs text-[#6B6B6B]">{action.hint}</p>
+              <p className="text-xs text-muted-foreground">{action.hint}</p>
             </div>
           </li>
         ))}
       </ol>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <a
-          className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#C4693B] px-6 py-3 text-sm font-medium text-white hover:bg-[#B05830] focus:outline-none focus:ring-2 focus:ring-[#2F5D50]"
+        <Link
+          className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#2F5D50] px-6 py-3 text-sm font-medium text-white hover:bg-[#1F3F36] focus:outline-none focus:ring-2 focus:ring-[#2F5D50]"
           href={`/dashboard/brands/${slug}/edit#media`}
           onClick={() => trackOnboardingBannerCtaClick(slug)}
         >
           {t('cta')}
-        </a>
+        </Link>
         <button
-          className="min-h-[48px] text-sm text-[#6B6B6B] underline hover:text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#2F5D50]"
+          className="min-h-[48px] text-sm text-muted-foreground underline hover:text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#2F5D50]"
           type="button"
           onClick={() => {
             trackOnboardingBannerDismiss(slug)
