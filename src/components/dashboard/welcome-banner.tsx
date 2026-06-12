@@ -8,11 +8,13 @@ import {
   trackOnboardingBannerDismiss,
   trackOnboardingBannerShown,
 } from '@/lib/analytics'
+import type { ActionNudge } from '@/lib/services/brand-health'
 
 type WelcomeBannerProps = {
   claimedAt: string | null
   completionFraction: number
   slug: string
+  topAction?: Pick<ActionNudge, 'label' | 'anchor' | 'points'>
 }
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
@@ -21,6 +23,7 @@ export function WelcomeBanner({
   claimedAt,
   completionFraction,
   slug,
+  topAction,
 }: WelcomeBannerProps) {
   const t = useTranslations('dashboard.onboarding.banner')
   const [dismissed, setDismissed] = useState(false)
@@ -67,6 +70,29 @@ export function WelcomeBanner({
             </div>
           </li>
         ))}
+        {topAction ? (
+          <li className="flex items-start gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2F5D50] text-xs font-semibold text-white">
+              &gt;
+            </span>
+            <Link
+              className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-md border border-[#2F5D50] bg-[#F5F4F1] px-3 py-2 hover:bg-[#ECE9E2] focus:outline-none focus:ring-2 focus:ring-[#2F5D50]"
+              href={`/dashboard/brands/${slug}/edit${topAction.anchor}`}
+            >
+              <span className="min-w-0 space-y-1">
+                <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-[#2F5D50]">
+                  {t('topPick')}
+                </span>
+                <span className="block text-sm font-medium text-[#1C1C1C]">
+                  {topAction.label}
+                </span>
+              </span>
+              <span className="shrink-0 text-xs font-semibold text-[#2F5D50]">
+                +{topAction.points}
+              </span>
+            </Link>
+          </li>
+        ) : null}
       </ol>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">

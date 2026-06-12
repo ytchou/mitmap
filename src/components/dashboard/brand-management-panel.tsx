@@ -62,6 +62,7 @@ export async function BrandManagementPanel({ slug, claimedAt }: Props) {
           claimedAt={claimedAt}
           completionFraction={completeness.fraction}
           slug={brand.slug}
+          topAction={health.topActions[0]}
         />
         <h3 className="mb-4 text-sm font-semibold text-muted-foreground">
           {t("analyticsHeading")}
