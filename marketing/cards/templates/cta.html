@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formoria Card — CTA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 1080px;
+      height: 1350px;
+      overflow: hidden;
+      margin: 0;
+      position: relative;
+      background-color: {{BG_FILL}};
+      font-family: {{FONT_BODY}};
+    }
+
+    /* Layer 1: Background image */
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1350px;
+      object-fit: cover;
+      display: block;
+    }
+    .bg:not([src]), .bg[src=""] { display: none; }
+
+    /* Layer 2: Scrim overlay */
+    .scrim {
+      position: absolute;
+      inset: 0;
+      background: {{SCRIM}};
+      pointer-events: none;
+    }
+
+    /* Layer 3: Left accent bar */
+    .bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 6px;
+      height: 1350px;
+      background: {{BAR_COLOR}};
+    }
+
+    /* Layer 4: Content frame */
+    .frame {
+      position: absolute;
+      inset: 0;
+      padding: 72px 80px 0 80px;
+      display: flex;
+      flex-direction: column;
+      color: {{TEXT}};
+      font-family: {{FONT_BODY}};
+    }
+
+    /* Wordmark row */
+    .wordmark-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-shrink: 0;
+    }
+
+    .wordmark-zh {
+      font-family: {{FONT_HEADING}};
+      font-size: 20px;
+      font-weight: 700;
+      color: {{TEXT}};
+      line-height: 1;
+    }
+
+    .wordmark-en {
+      font-family: {{FONT_BODY}};
+      font-size: 16px;
+      font-weight: 400;
+      color: {{TEXT}};
+      opacity: 0.67;
+      line-height: 1;
+    }
+
+    /* Spacer — pushes bottom block to bottom */
+    .spacer {
+      flex-grow: 1;
+    }
+
+    /* Bottom content block */
+    .bottom-block {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 88px;
+    }
+
+    /* Tag pill */
+    .tag {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 8px 16px;
+      border: 1.5px solid {{TAG_BORDER}};
+      color: {{TAG_TEXT}};
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 28px;
+    }
+
+    .tag:empty {
+      display: none;
+    }
+
+    /* Headline */
+    .headline {
+      font-family: {{FONT_HEADING}};
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1.22;
+      max-width: 920px;
+      color: {{TEXT}};
+      margin-bottom: 36px;
+    }
+
+    /* Inverted CTA button */
+    .cta-btn {
+      display: inline-flex;
+      align-self: flex-start;
+      background: {{CTA_BTN_BG}};
+      color: {{CTA_BTN_TEXT}};
+      padding: 20px 40px;
+      border-radius: 6px;
+      font-size: 24px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+
+    /* Per-platform note */
+    .cta-note {
+      font-size: 18px;
+      font-weight: 400;
+      color: {{TEXT}};
+      opacity: 0.80;
+    }
+
+    /* Layer 5: Bottom strip */
+    .strip {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 1080px;
+      height: 32px;
+      background: {{STRIP_BG}};
+      display: flex;
+      align-items: center;
+    }
+
+    .strip-footer {
+      position: absolute;
+      left: 80px;
+      font-size: 13px;
+      font-weight: 400;
+      color: {{TEXT}};
+      opacity: 0.8;
+      white-space: nowrap;
+    }
+
+    .strip-counter {
+      position: absolute;
+      right: 80px;
+      font-size: 13px;
+      font-weight: 400;
+      color: {{COUNTER_COLOR}};
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Layer 1: Background image -->
+  <img class="bg" src="{{BG_IMAGE}}" alt="">
+
+  <!-- Layer 2: Scrim -->
+  <div class="scrim"></div>
+
+  <!-- Layer 3: Left accent bar -->
+  <div class="bar"></div>
+
+  <!-- Layer 4: Content frame -->
+  <div class="frame">
+    <div class="wordmark-row">
+      <span class="wordmark-zh">{{WORDMARK_ZH}}</span>
+      <span class="wordmark-en">{{WORDMARK_EN}}</span>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="bottom-block">
+      <span class="tag">{{TAG}}</span>
+
+      <h2 class="headline">{{HEADLINE}}</h2>
+
+      <a class="cta-btn">{{CTA_LABEL}}</a>
+
+      <p class="cta-note">{{CTA_NOTE}}</p>
+    </div>
+  </div>
+
+  <!-- Layer 5: Bottom strip -->
+  <div class="strip">
+    <span class="strip-footer">{{FOOTER}}</span>
+    <span class="strip-counter">{{PAGE_NUM}}</span>
+  </div>
+
+</body>
+</html>
