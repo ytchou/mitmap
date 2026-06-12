@@ -337,7 +337,7 @@ export function BrandInfoStep({
                     <button
                       type="button"
                       onClick={() => {
-                        const next = [...field.value]
+                        const next = [...(field.value ?? [])]
                         next.splice(i, 1)
                         field.onChange(next)
                       }}
