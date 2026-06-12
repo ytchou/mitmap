@@ -11,6 +11,7 @@ import {
 } from '@/lib/services/claim-requests'
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
 import { createBrand, updateBrand, getBrandById, deleteBrand, generateSlug, syncBrandImages } from '@/lib/services/brands'
+import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
 import { createTag, updateTag, mergeTag, deactivateTag, activateTag, setBrandTags, processSuggestedTag } from '@/lib/services/taxonomy'
 import { sendEmail } from '@/lib/email/send'
 import {
@@ -45,23 +46,6 @@ async function requireAdmin(): Promise<{ userId: string; email: string } | { err
   }
 
   return { userId: user.id, email: user.email ?? '' }
-}
-
-async function getBrandOwnerEmail(brandId: string): Promise<string | null> {
-  const supabase = createServiceClient()
-  const { data: owner, error } = await supabase
-    .from('brand_owners')
-    .select('user_id')
-    .eq('brand_id', brandId)
-    .maybeSingle()
-
-  if (error) throw error
-  if (!owner?.user_id) return null
-
-  const { data, error: userError } = await supabase.auth.admin.getUserById(owner.user_id)
-  if (userError) throw userError
-
-  return data.user.email ?? null
 }
 
 export async function approveSubmissionAction(
@@ -189,8 +173,8 @@ export async function approveClaimAction(
     await approveClaimRequest(claimRequestId, auth.userId)
 
     try {
-      const supabase = await createClient()
-      await createEmailPreferences(supabase, claimRequest.userId)
+      const serviceSupabase = createServiceClient()
+      await createEmailPreferences(serviceSupabase, claimRequest.userId)
     } catch (err) {
       console.error('[claim-approved-email-preferences] create failed', err)
     }

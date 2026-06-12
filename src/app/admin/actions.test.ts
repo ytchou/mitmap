@@ -61,6 +61,10 @@ vi.mock('@/lib/services/brands', () => ({
   syncBrandImages: vi.fn().mockResolvedValue({ synced: 0, failed: 0 }),
 }))
 
+vi.mock('@/lib/services/brand-owners', () => ({
+  getBrandOwnerEmail: vi.fn().mockResolvedValue('owner@example.com'),
+}))
+
 vi.mock('@/lib/services/submissions', () => ({
   getSubmission: vi.fn(),
   approveSubmission: vi.fn(),
