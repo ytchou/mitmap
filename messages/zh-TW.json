@@ -49,8 +49,11 @@
       "description": "探索並發現精選的台灣製造品牌。從食品到時尚，支持本土設計師和製造商。"
     },
     "hero": {
+      "eyebrow": "MADE IN TAIWAN",
       "headline": "探索台灣製造的精品品牌",
-      "subheadline": "",
+      "subheadline": "Formoria 收錄經過嚴格驗證的台灣本土品牌，從文具、家居到食品飲料，讓您輕鬆探索真正的台灣製造。",
+      "statsBrands": "品牌",
+      "statsCategories": "分類",
       "cta": "探索所有品牌"
     },
     "showcase": {

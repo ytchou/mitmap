@@ -16,7 +16,6 @@ import {
   updateBrand,
 } from '@/lib/services/brands'
 import { deleteBrandImages } from '@/lib/services/image-upload'
-import { checkContent, createModerationFlags } from '@/lib/services/moderation'
 import type { Brand, PurchaseLink, RetailLocation } from '@/lib/types'
 
 type ActionState = {
@@ -56,7 +55,7 @@ function parseOptionalString(value: FormDataEntryValue | null): string | null {
 function parseBrandEditForm(
   formData: FormData,
   brand: Brand
-): { updateData: Partial<Brand>; fieldsToCheck: Record<string, string> } {
+): Partial<Brand> {
   // Extract basic fields
   const name = formData.get('name') as string | null
   const description = formData.get('description') as string | null
@@ -104,16 +103,6 @@ function parseBrandEditForm(
     ['name', 'address']
   )
 
-  // Build fields to check for moderation
-  const fieldsToCheck: Record<string, string> = {}
-  if (name) fieldsToCheck.name = name
-  if (description) fieldsToCheck.description = description
-  if (websiteUrl) fieldsToCheck.websiteUrl = websiteUrl
-  if (instagram) fieldsToCheck.instagram = instagram
-  if (threads) fieldsToCheck.threads = threads
-  if (facebook) fieldsToCheck.facebook = facebook
-  if (brandHighlights) fieldsToCheck.brandHighlights = brandHighlights
-
   // Security-relevant allow-list: only explicitly permitted owner-editable fields may reach updateBrand.
   const updateData: Partial<Brand> = {}
   if (name) updateData.name = name
@@ -139,53 +128,7 @@ function parseBrandEditForm(
   if (formData.has('productPhotos')) updateData.productPhotos = productPhotos
   if (formData.has('brandHighlights')) updateData.brandHighlights = brandHighlights
 
-  return { updateData, fieldsToCheck }
-}
-
-function moderationFieldErrors(moderation: ReturnType<typeof checkContent>): Record<string, string> {
-  const fieldErrors: Record<string, string> = {}
-  for (const blocked of moderation.blocked) {
-    fieldErrors[blocked.field] = blocked.reason
-  }
-  return fieldErrors
-}
-
-async function createFlagsForModeration(
-  moderation: ReturnType<typeof checkContent>,
-  brand: Brand,
-  userId: string,
-  actingAdmin: boolean
-): Promise<void> {
-  if (moderation.flagged.length === 0) {
-    return
-  }
-
-  function getPreviousContent(fieldName: string): string | null {
-    switch (fieldName) {
-      case 'name': return brand.name ?? null
-      case 'description': return brand.description ?? null
-      case 'websiteUrl': return brand.socialLinks.officialWebsite ?? null
-      case 'instagram': return brand.socialLinks.instagram ?? null
-      case 'threads': return brand.socialLinks.threads ?? null
-      case 'facebook': return brand.socialLinks.facebook ?? null
-      case 'brandHighlights': return brand.brandHighlights ?? null
-      default: return null
-    }
-  }
-
-  const flagInputs = moderation.flagged.map((flag) => ({
-    brandId: brand.id,
-    userId,
-    fieldName: flag.field,
-    flaggedContent: flag.content,
-    flagReason: actingAdmin ? `admin-edit: ${flag.reason}` : flag.reason,
-    tier: flag.tier,
-    status: actingAdmin ? 'reviewed' as const : 'pending' as const,
-    ...(actingAdmin ? { reviewedAt: new Date().toISOString() } : {}),
-    previousContent: getPreviousContent(flag.field),
-  }))
-
-  await createModerationFlags(flagInputs)
+  return updateData
 }
 
 function imageUrlsFromBrand(brand: Pick<Brand, 'logoUrl' | 'heroImageUrl' | 'productPhotos'>): string[] {
@@ -208,36 +151,6 @@ function imageUrlsFromSnapshot(snapshot: Record<string, unknown> | null): string
       ? snapshot.productPhotos.filter((url): url is string => typeof url === 'string')
       : []),
   ].filter((url): url is string => Boolean(url))
-}
-
-function fieldsToCheckFromSnapshot(snapshot: Record<string, unknown>): Record<string, string> {
-  const fieldsToCheck: Record<string, string> = {}
-  if (typeof snapshot.name === 'string' && snapshot.name) fieldsToCheck.name = snapshot.name
-  if (typeof snapshot.description === 'string' && snapshot.description) {
-    fieldsToCheck.description = snapshot.description
-  }
-  if (typeof snapshot.brandHighlights === 'string' && snapshot.brandHighlights) {
-    fieldsToCheck.brandHighlights = snapshot.brandHighlights
-  }
-
-  const socialLinks = snapshot.socialLinks
-  if (typeof socialLinks === 'object' && socialLinks !== null && !Array.isArray(socialLinks)) {
-    const links = socialLinks as Record<string, unknown>
-    if (typeof links.officialWebsite === 'string' && links.officialWebsite) {
-      fieldsToCheck.websiteUrl = links.officialWebsite
-    }
-    if (typeof links.instagram === 'string' && links.instagram) {
-      fieldsToCheck.instagram = links.instagram
-    }
-    if (typeof links.threads === 'string' && links.threads) {
-      fieldsToCheck.threads = links.threads
-    }
-    if (typeof links.facebook === 'string' && links.facebook) {
-      fieldsToCheck.facebook = links.facebook
-    }
-  }
-
-  return fieldsToCheck
 }
 
 export async function updateBrandAction(
@@ -268,14 +181,7 @@ export async function updateBrandAction(
       return { error: t('forbidden') }
     }
 
-    const { updateData, fieldsToCheck } = parseBrandEditForm(formData, brand)
-
-    // Run moderation
-    const moderation = checkContent(fieldsToCheck)
-
-    if (moderation.isBlocked) {
-      return { fieldErrors: moderationFieldErrors(moderation) }
-    }
+    const updateData = parseBrandEditForm(formData, brand)
 
     const previousImageUrls = imageUrlsFromBrand(brand)
     const nextImageUrls = imageUrlsFromBrand({ ...brand, ...updateData })
@@ -283,9 +189,6 @@ export async function updateBrandAction(
 
     const updatedBrand = await updateBrand(brand.id, updateData)
     await deleteBrandImages(orphans)
-
-    // Record flags for Tier 2 content
-    await createFlagsForModeration(moderation, brand, user.id, actingAdmin)
 
     const { snapshot } = await discardDraft(brand.id)
     const draftOnlyImages = diffRemovedImageUrls(
@@ -338,12 +241,7 @@ export async function saveDraftAction(
       return { error: t('forbidden') }
     }
 
-    const { updateData, fieldsToCheck } = parseBrandEditForm(formData, brand)
-    const moderation = checkContent(fieldsToCheck)
-
-    if (moderation.isBlocked) {
-      return { fieldErrors: moderationFieldErrors(moderation) }
-    }
+    const updateData = parseBrandEditForm(formData, brand)
 
     await saveDraft(brand.id, updateData)
     return {}
@@ -391,14 +289,6 @@ export async function publishDraftAction(
     if (!snapshot) {
       return { error: t('noDraft') }
     }
-
-    const moderation = checkContent(fieldsToCheckFromSnapshot(snapshot))
-
-    if (moderation.isBlocked) {
-      return { fieldErrors: moderationFieldErrors(moderation) }
-    }
-
-    await createFlagsForModeration(moderation, brand, user.id, actingAdmin)
 
     const nextImageUrls = imageUrlsFromBrand({
       logoUrl: 'logoUrl' in snapshot

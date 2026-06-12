@@ -57,14 +57,14 @@ export function SaveBrandButton({
       className={cn(
         'inline-flex shrink-0 items-center justify-center border border-border bg-white text-primary transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60',
         variant === 'overlay'
-          ? 'absolute right-2 top-2 h-11 w-11 rounded-full shadow-md'
+          ? 'absolute right-2 top-2 h-8 w-8 rounded-full shadow-sm'
           : 'h-11 gap-2 rounded-md px-3 text-sm font-medium',
         className
       )}
       onClick={handleClick}
     >
       <Heart
-        className="h-5 w-5"
+        className={variant === 'overlay' ? 'h-4 w-4' : 'h-5 w-5'}
         fill={isSaved ? 'currentColor' : 'none'}
         strokeWidth={2}
         aria-hidden

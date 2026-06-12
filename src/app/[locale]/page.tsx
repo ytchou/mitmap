@@ -55,7 +55,7 @@ export default async function LandingPage({ params }: PageProps) {
   const jsonLd = buildWebSiteJsonLd(safeLocale)
   const organizationJsonLd = buildOrganizationJsonLd(safeLocale)
 
-  const [categories, { brands: allBrands }, newBrands, valueTags] = await Promise.all([
+  const [categories, { brands: allBrands, totalCount: totalBrandCount }, newBrands, valueTags] = await Promise.all([
     getActiveCategories(),
     getBrands({ status: 'approved', limit: 60 }),
     getNewBrands(4),
@@ -74,7 +74,7 @@ export default async function LandingPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <main>
-        <HeroSection />
+        <HeroSection brandCount={totalBrandCount} categoryCount={categories.length} />
 
         <SavedBrandsProvider>
           <div className="py-6 md:py-8">

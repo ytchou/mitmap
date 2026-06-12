@@ -25,19 +25,23 @@ import {
 } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
-const CATEGORIES: TagCategory[] = ['product_type', 'material', 'price_range', 'region', 'value']
+const CATEGORIES: TagCategory[] = ['product_type', 'region', 'value']
+
+const CATEGORY_LABELS: Record<string, string> = {
+  product_type: '產品類型',
+  region: '所在地區',
+  value: '品牌特色',
+}
 
 function categoryLabel(category: string): string {
-  return category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return CATEGORY_LABELS[category] ?? category
 }
 
 interface TagManagerProps {
   tags: TaxonomyTag[]
-  /** Optional callback to handle suggested tag processing externally. When provided, the built-in suggested tags section is hidden. */
-  onProcessSuggestion?: (tagId: string, action: 'map-existing' | 'reject') => void
 }
 
-export function TagManager({ tags, onProcessSuggestion }: TagManagerProps) {
+export function TagManager({ tags }: TagManagerProps) {
   const [newTagName, setNewTagName] = useState('')
   const [newTagNameZh, setNewTagNameZh] = useState('')
   const [newTagCategory, setNewTagCategory] = useState<string>('product_type')
@@ -47,8 +51,6 @@ export function TagManager({ tags, onProcessSuggestion }: TagManagerProps) {
   const [mergeTargetId, setMergeTargetId] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  const suggestedTags = tags.filter((t) => t.suggestedBy !== null && t.isActive)
 
   const grouped = CATEGORIES.reduce<Record<string, TaxonomyTag[]>>(
     (acc, category) => {
@@ -148,28 +150,6 @@ export function TagManager({ tags, onProcessSuggestion }: TagManagerProps) {
         {error && <p className="mt-2 text-sm text-[#D94F3D]">{error}</p>}
       </div>
 
-      {/* Suggested Tags Section — hidden when parent handles it via onProcessSuggestion */}
-      {suggestedTags.length > 0 && !onProcessSuggestion && (
-        <div>
-          <h3 className="text-lg font-medium">
-            Suggested Tags ({suggestedTags.length})
-          </h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {suggestedTags.map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#E06B3F] bg-[#FDF3EC] px-3 py-1 text-sm"
-              >
-                {tag.name}
-                {tag.nameZh && (
-                  <span className="text-[#7C7570]">({tag.nameZh})</span>
-                )}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Tags Grouped by Category */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {CATEGORIES.map((category) => {
@@ -180,7 +160,7 @@ export function TagManager({ tags, onProcessSuggestion }: TagManagerProps) {
             <Card key={category}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <span>{category}</span>
+                  <span>{categoryLabel(category)}</span>
                   <span className="inline-flex items-center rounded-full bg-[#F5F4F1] px-2 py-0.5 text-xs font-medium text-[#7C7570]">
                     {categoryTags.length}
                   </span>
@@ -224,6 +204,9 @@ export function TagManager({ tags, onProcessSuggestion }: TagManagerProps) {
                                 {tag.nameZh}
                               </span>
                             )}
+                            <span className="inline-flex items-center rounded-full bg-[#F5F4F1] px-1.5 py-0.5 text-xs font-medium text-[#7C7570]">
+                              {tag.brandCount ?? 0}
+                            </span>
                           </>
                         )}
                       </div>

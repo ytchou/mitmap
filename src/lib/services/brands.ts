@@ -268,7 +268,6 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
         // taxonomy_tags.category is text in the DB — cast to TagCategory at the boundary
         category: t.category as TaxonomyTag['category'],
         isActive: t.is_active ?? true,
-        suggestedBy: t.suggested_by ?? null,
         createdAt: t.created_at ?? '',
       }
     })

@@ -28,8 +28,6 @@ const saveDraft = vi.fn().mockResolvedValue(undefined)
 const getBrandDraft = vi.fn().mockResolvedValue(null)
 const publishDraft = vi.fn().mockResolvedValue({ slug: 'test-brand' })
 const discardDraft = vi.fn().mockResolvedValue({ snapshot: null })
-const checkContent = vi.fn()
-const createModerationFlags = vi.fn().mockResolvedValue([])
 const diffRemovedImageUrls = vi.fn((): string[] => [])
 const deleteBrandImages = vi.fn().mockResolvedValue(undefined)
 const cookieGet = vi.fn()
@@ -65,11 +63,6 @@ vi.mock('@/lib/services/brands', () => ({
   discardDraft,
   updateBrand,
   diffRemovedImageUrls,
-}))
-
-vi.mock('@/lib/services/moderation', () => ({
-  checkContent,
-  createModerationFlags,
 }))
 
 vi.mock('@/lib/services/image-upload', () => ({
@@ -131,62 +124,16 @@ describe('updateBrandAction', () => {
       productPhotos: [],
       brandHighlights: null,
     })
-    checkContent.mockReturnValue({
-      blocked: [],
-      flagged: [],
-      isBlocked: false,
-    })
     diffRemovedImageUrls.mockReturnValue([])
   })
 
-  it('updates brand when content passes moderation', async () => {
+  it('updates brand', async () => {
     const { updateBrandAction } = await import('./actions')
 
     const formData = form({
       brandSlug: 'test-brand',
       name: 'Updated Name',
       description: 'A nice description',
-    })
-
-    try {
-      await updateBrandAction(undefined, formData)
-    } catch {
-      // redirect throws
-    }
-
-    expect(updateBrand).toHaveBeenCalled()
-  })
-
-  it('rejects update when content is blocked (Tier 1)', async () => {
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [{ field: 'description', reason: 'spam detected' }],
-      flagged: [],
-      isBlocked: true,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    const formData = new FormData()
-    formData.set('brandSlug', 'test-brand')
-    formData.set('description', 'Buy cheap viagra')
-
-    const result = await updateBrandAction(undefined, formData)
-
-    expect(result?.fieldErrors?.description).toBeTruthy()
-  })
-
-  it('saves but creates flag for Tier 2 content', async () => {
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [],
-      flagged: [{ field: 'description', content: 'many urls', reason: 'excessive URLs', tier: 'flag' as const }],
-      isBlocked: false,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    const formData = form({
-      brandSlug: 'test-brand',
-      description: 'Visit http://a.com http://b.com http://c.com http://d.com',
     })
 
     try {
@@ -211,32 +158,6 @@ describe('updateBrandAction', () => {
 
     const result = await updateBrandAction(undefined, formData)
     expect(result?.error).toContain('權限')
-  })
-
-  it('checks websiteUrl for moderation', async () => {
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [],
-      flagged: [{ field: 'websiteUrl', content: 'https://brand.tk', reason: 'suspicious TLD', tier: 'flag' as const }],
-      isBlocked: false,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    const formData = form({
-      brandSlug: 'test-brand',
-      websiteUrl: 'https://brand.tk',
-    })
-
-    try {
-      await updateBrandAction(undefined, formData)
-    } catch {
-      // redirect throws
-    }
-
-    expect(checkContent).toHaveBeenCalledWith(
-      expect.objectContaining({ websiteUrl: 'https://brand.tk' })
-    )
-    expect(updateBrand).toHaveBeenCalled()
   })
 
   it('extracts foundingYear from FormData', async () => {
@@ -280,49 +201,6 @@ describe('updateBrandAction', () => {
       expect.objectContaining({
         purchaseLinks: [{ platform: 'shopee', url: 'https://shopee.tw/example', label: 'Buy on Shopee' }],
       })
-    )
-  })
-
-  it('includes previous_content when inserting flags', async () => {
-    vi.mocked(getBrandBySlug).mockResolvedValueOnce({
-      id: 'brand-123',
-      slug: 'test-brand',
-      name: 'Test Brand',
-      description: 'Original description before edit',
-      logoUrl: null,
-      heroImageUrl: null,
-      productPhotos: [],
-      brandHighlights: null,
-      socialLinks: {},
-    })
-
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [],
-      flagged: [{ field: 'description', content: 'SPAMMY CONTENT', reason: 'test', tier: 'flag' as const }],
-      isBlocked: false,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    const formData = form({
-      brandSlug: 'test-brand',
-      description: 'SPAMMY CONTENT',
-    })
-
-    try {
-      await updateBrandAction(undefined, formData)
-    } catch {
-      // redirect throws
-    }
-
-    expect(createModerationFlags).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          fieldName: 'description',
-          flaggedContent: 'SPAMMY CONTENT',
-          previousContent: 'Original description before edit',
-        }),
-      ])
     )
   })
 
@@ -405,25 +283,6 @@ describe('updateBrandAction', () => {
     expect(arg).not.toHaveProperty('founderName')
   })
 
-  it('blocks save when brandHighlights hits Tier 1 moderation', async () => {
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [{ field: 'brandHighlights', reason: 'blocked highlight' }],
-      flagged: [],
-      isBlocked: true,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    const result = await updateBrandAction(undefined, form({
-      brandSlug: 'test-brand',
-      name: 'Acme',
-      brandHighlights: '<banned phrase>',
-    }))
-
-    expect(updateBrand).not.toHaveBeenCalled()
-    expect(result?.fieldErrors?.brandHighlights).toBe('blocked highlight')
-  })
-
   it('returns an error when productPhotos is malformed JSON', async () => {
     const { updateBrandAction } = await import('./actions')
 
@@ -487,7 +346,7 @@ describe('updateBrandAction', () => {
   })
 })
 
-describe('updateBrandAction — admin bypass + moderation', () => {
+describe('updateBrandAction — admin bypass', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.ADMIN_EMAILS = 'admin@formoria.com'
@@ -503,11 +362,6 @@ describe('updateBrandAction — admin bypass + moderation', () => {
       heroImageUrl: null,
       productPhotos: [],
       brandHighlights: null,
-    })
-    checkContent.mockReturnValue({
-      blocked: [],
-      flagged: [],
-      isBlocked: false,
     })
     diffRemovedImageUrls.mockReturnValue([])
   })
@@ -530,71 +384,6 @@ describe('updateBrandAction — admin bypass + moderation', () => {
     }
 
     expect(updateBrand).toHaveBeenCalled()
-  })
-
-  it('auto-resolves moderation flags for god-mode admin edits', async () => {
-    const { isOwnerOf } = await import('@/lib/services/brand-owners')
-    vi.mocked(isOwnerOf).mockResolvedValueOnce(false)
-    mockCookie('god')
-    mockUser('admin@formoria.com', 'admin-1')
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [],
-      flagged: [{ field: 'description', content: 'many urls', reason: 'excessive URLs', tier: 'flag' as const }],
-      isBlocked: false,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    try {
-      await updateBrandAction(undefined, form({
-        brandSlug: 'test-brand',
-        description: 'Visit http://a.com http://b.com http://c.com http://d.com',
-      }))
-    } catch {
-      // redirect throws
-    }
-
-    expect(createModerationFlags).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          status: 'reviewed',
-          reviewedAt: expect.any(String),
-          flagReason: expect.stringContaining('admin-edit'),
-        }),
-      ])
-    )
-  })
-
-  it('keeps pending flags for a real owner edit', async () => {
-    const { isOwnerOf } = await import('@/lib/services/brand-owners')
-    vi.mocked(isOwnerOf).mockResolvedValueOnce(true)
-    mockCookie('god')
-    mockUser('owner@example.com')
-    vi.mocked(checkContent).mockReturnValueOnce({
-      blocked: [],
-      flagged: [{ field: 'description', content: 'many urls', reason: 'excessive URLs', tier: 'flag' as const }],
-      isBlocked: false,
-    })
-
-    const { updateBrandAction } = await import('./actions')
-
-    try {
-      await updateBrandAction(undefined, form({
-        brandSlug: 'test-brand',
-        description: 'Visit http://a.com http://b.com http://c.com http://d.com',
-      }))
-    } catch {
-      // redirect throws
-    }
-
-    expect(createModerationFlags).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          status: 'pending',
-          flagReason: 'excessive URLs',
-        }),
-      ])
-    )
   })
 
   it('forbids an admin in viewer mode from editing an un-owned brand', async () => {
