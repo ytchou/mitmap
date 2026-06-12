@@ -1,8 +1,27 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { isBrandSaved, saveBrand, unsaveBrand } from '@/lib/services/saved-brands'
+import {
+  getUserSavedBrandIds,
+  isBrandSaved,
+  saveBrand,
+  unsaveBrand,
+} from '@/lib/services/saved-brands'
 import { createClient } from '@/lib/supabase/server'
+
+export async function getSavedBrandIdsAction() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    return []
+  }
+
+  return getUserSavedBrandIds(user.id)
+}
 
 export async function toggleSaveAction(brandId: string) {
   const supabase = await createClient()
