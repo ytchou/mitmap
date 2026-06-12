@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
 import { getSubmission, approveSubmission, rejectSubmission } from '@/lib/services/submissions'
 import {
@@ -19,7 +19,11 @@ import {
   buildClaimEmail,
   buildClaimApprovedEmail,
   buildClaimRejectedEmail,
+  buildMitVerificationSubmittedEmail,
+  buildMitVerificationApprovedEmail,
+  buildMitVerificationNeedsDocsEmail,
 } from '@/lib/email/templates'
+import { createEmailPreferences } from '@/lib/services/email-lifecycle'
 import { generateClaimToken } from '@/lib/auth/claim-token'
 import { updateFlagStatus, getModerationFlag } from '@/lib/services/moderation'
 import { updateReportStatus } from '@/lib/services/reports'
@@ -41,6 +45,23 @@ async function requireAdmin(): Promise<{ userId: string; email: string } | { err
   }
 
   return { userId: user.id, email: user.email ?? '' }
+}
+
+async function getBrandOwnerEmail(brandId: string): Promise<string | null> {
+  const supabase = createServiceClient()
+  const { data: owner, error } = await supabase
+    .from('brand_owners')
+    .select('user_id')
+    .eq('brand_id', brandId)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!owner?.user_id) return null
+
+  const { data, error: userError } = await supabase.auth.admin.getUserById(owner.user_id)
+  if (userError) throw userError
+
+  return data.user.email ?? null
 }
 
 export async function approveSubmissionAction(
@@ -167,6 +188,13 @@ export async function approveClaimAction(
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formoria.com'
     await approveClaimRequest(claimRequestId, auth.userId)
 
+    try {
+      const supabase = await createClient()
+      await createEmailPreferences(supabase, claimRequest.userId)
+    } catch (err) {
+      console.error('[claim-approved-email-preferences] create failed', err)
+    }
+
     revalidatePath('/admin/claim-requests')
     revalidatePath('/admin')
     revalidatePath('/[locale]', 'page')
@@ -266,7 +294,19 @@ export async function verifyMitAction(
       resolvedCert = claimRequest?.mit_smile_cert ?? null
     }
 
-    await verifyMitStatus(brandId, resolvedCert, auth.userId)
+    const brand = await verifyMitStatus(brandId, resolvedCert, auth.userId)
+
+    try {
+      const ownerEmail = await getBrandOwnerEmail(brandId)
+      if (ownerEmail) {
+        sendEmail(buildMitVerificationApprovedEmail({
+          to: ownerEmail,
+          brandName: brand.name,
+        }))
+      }
+    } catch (err) {
+      console.error('[mit-verification-approved-email] send failed', err)
+    }
 
     revalidatePath('/admin/claim-requests')
     revalidatePath('/admin/brands')
@@ -297,7 +337,20 @@ export async function rejectMitAction(
       return { error: 'Rejection notes are required.' }
     }
 
-    await rejectMitStatus(brandId, auth.userId, trimmedNotes)
+    const brand = await rejectMitStatus(brandId, auth.userId, trimmedNotes)
+
+    try {
+      const ownerEmail = await getBrandOwnerEmail(brandId)
+      if (ownerEmail) {
+        sendEmail(buildMitVerificationNeedsDocsEmail({
+          to: ownerEmail,
+          brandName: brand.name,
+          notes: trimmedNotes,
+        }))
+      }
+    } catch (err) {
+      console.error('[mit-verification-needs-docs-email] send failed', err)
+    }
 
     revalidatePath('/admin/claim-requests')
     revalidatePath('/admin/brands')
@@ -309,6 +362,36 @@ export async function rejectMitAction(
     return undefined
   } catch (err) {
     console.error('[admin:rejectMitAction]', err)
+    return {
+      error: err instanceof Error ? err.message : 'An unexpected error occurred',
+    }
+  }
+}
+
+export async function acknowledgeMitVerificationSubmissionAction(
+  brandId: string
+): Promise<{ success: boolean } | { error: string }> {
+  try {
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth
+
+    const brand = await getBrandById(brandId)
+
+    try {
+      const ownerEmail = await getBrandOwnerEmail(brandId)
+      if (ownerEmail) {
+        sendEmail(buildMitVerificationSubmittedEmail({
+          to: ownerEmail,
+          brandName: brand.name,
+        }))
+      }
+    } catch (err) {
+      console.error('[mit-verification-submitted-email] send failed', err)
+    }
+
+    return { success: true }
+  } catch (err) {
+    console.error('[admin:acknowledgeMitVerificationSubmissionAction]', err)
     return {
       error: err instanceof Error ? err.message : 'An unexpected error occurred',
     }
