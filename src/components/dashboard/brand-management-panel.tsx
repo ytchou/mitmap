@@ -21,12 +21,14 @@ import { LinkBreakdown } from "@/components/dashboard/link-breakdown";
 import { SourcesBreakdownCard } from "@/components/dashboard/sources-breakdown-card";
 import { BrandCompletenessCard } from "@/components/dashboard/brand-completeness-card";
 import { MitStatusCard } from "@/components/dashboard/mit-status-card";
+import { WelcomeBanner } from "./welcome-banner";
 
 type Props = {
   slug: string;
+  claimedAt: string | null;
 };
 
-export async function BrandManagementPanel({ slug }: Props) {
+export async function BrandManagementPanel({ slug, claimedAt }: Props) {
   const brand = await getBrandBySlug(slug);
   const completeness = computeBrandCompleteness(brand);
 
@@ -54,7 +56,12 @@ export async function BrandManagementPanel({ slug }: Props) {
       </div>
 
       <div className="mt-8 space-y-6">
-        <h3 className="mb-4 text-sm font-semibold uppercase text-muted-foreground">
+        <WelcomeBanner
+          claimedAt={claimedAt}
+          completionFraction={completeness.fraction}
+          slug={brand.slug}
+        />
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground">
           {t("analyticsHeading")}
         </h3>
         <AnalyticsCards
@@ -88,7 +95,7 @@ export async function BrandManagementPanel({ slug }: Props) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("descriptionLabel")}
               </p>
               <p className="mt-1 text-sm">
@@ -97,7 +104,7 @@ export async function BrandManagementPanel({ slug }: Props) {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("categoryLabel")}
               </p>
               <p className="mt-1 text-sm">
@@ -106,7 +113,7 @@ export async function BrandManagementPanel({ slug }: Props) {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("websiteLabel")}
               </p>
               <p className="mt-1 text-sm">
@@ -115,7 +122,7 @@ export async function BrandManagementPanel({ slug }: Props) {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("socialLinksLabel")}
               </p>
               <div className="mt-1 space-y-1 text-sm">
