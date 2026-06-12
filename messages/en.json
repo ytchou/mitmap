@@ -827,7 +827,16 @@
         "exemplary": "90–100 · Best-in-class"
       },
       "actionQueue": {
-        "title": "Ready to grow? Here's what moves the needle"
+        "title": "Ready to grow? Here's what moves the needle",
+        "label": {
+          "profileCompleteness": "Complete your brand profile",
+          "engagementHealth": "Boost your engagement",
+          "brandStory": "Strengthen your brand story",
+          "photoQuality": "Add more product photos",
+          "socialPresence": "Link a social account",
+          "purchaseAccessibility": "Add a purchase link",
+          "clickThroughRate": "Improve your click-through rate"
+        }
       },
       "scoreBreakdown": "Score Breakdown",
       "coldStart": "Collecting data...",

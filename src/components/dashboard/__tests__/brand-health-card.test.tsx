@@ -36,8 +36,8 @@ function makeHealthScore(overrides: Partial<BrandHealthScore> = {}): BrandHealth
       { key: 'clickThroughRate', score: 0, weight: 0.10, coldStart: true },
     ],
     topActions: [
-      { dimension: 'photoQuality', key: 'photoQuality', label: 'Add 2 more product photos', points: 8, anchor: '#product-photos', icon: 'camera' },
-      { dimension: 'socialPresence', key: 'socialPresence', label: 'Link a social account', points: 5, anchor: '#social-links', icon: 'share-2' },
+      { dimension: 'photoQuality', key: 'photoQuality', labelKey: 'photoQuality', points: 8, anchor: '#product-photos', icon: 'camera' },
+      { dimension: 'socialPresence', key: 'socialPresence', labelKey: 'socialPresence', points: 5, anchor: '#social-links', icon: 'share-2' },
     ],
     ...overrides,
   }
@@ -95,8 +95,8 @@ describe('BrandHealthCard', () => {
 
   it('renders action nudges', async () => {
     render(BrandHealthCard(defaultProps))
-    expect(screen.getByText('Add 2 more product photos')).toBeInTheDocument()
-    expect(screen.getByText('Link a social account')).toBeInTheDocument()
+    expect(screen.getByText('dashboard.health.actionQueue.label.photoQuality')).toBeInTheDocument()
+    expect(screen.getByText('dashboard.health.actionQueue.label.socialPresence')).toBeInTheDocument()
   })
 
   it('renders the profile drill-down with 9 checklist items', async () => {

@@ -827,7 +827,16 @@
         "exemplary": "90–100 · 業界最佳"
       },
       "actionQueue": {
-        "title": "準備好成長了嗎？這些改變最有效"
+        "title": "準備好成長了嗎？這些改變最有效",
+        "label": {
+          "profileCompleteness": "完善您的品牌資料",
+          "engagementHealth": "提升品牌互動",
+          "brandStory": "強化品牌故事",
+          "photoQuality": "新增更多產品照片",
+          "socialPresence": "連結社群帳號",
+          "purchaseAccessibility": "新增購買連結",
+          "clickThroughRate": "提升點擊率"
+        }
       },
       "scoreBreakdown": "分數明細",
       "coldStart": "資料收集中...",

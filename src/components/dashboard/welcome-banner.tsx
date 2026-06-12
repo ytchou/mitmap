@@ -14,7 +14,7 @@ type WelcomeBannerProps = {
   claimedAt: string | null
   completionFraction: number
   slug: string
-  topAction?: Pick<ActionNudge, 'label' | 'anchor' | 'points'>
+  topAction?: Pick<ActionNudge, 'labelKey' | 'anchor' | 'points'>
 }
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
@@ -26,6 +26,7 @@ export function WelcomeBanner({
   topAction,
 }: WelcomeBannerProps) {
   const t = useTranslations('dashboard.onboarding.banner')
+  const tHealth = useTranslations('dashboard.health')
   const [dismissed, setDismissed] = useState(false)
   const [mountedAt] = useState(() => Date.now())
   const claimedAtTime = claimedAt === null ? null : new Date(claimedAt).getTime()
@@ -84,7 +85,7 @@ export function WelcomeBanner({
                   {t('topPick')}
                 </span>
                 <span className="block text-sm font-medium text-[#1C1C1C]">
-                  {topAction.label}
+                  {tHealth(`actionQueue.label.${topAction.labelKey}`)}
                 </span>
               </span>
               <span className="shrink-0 text-xs font-semibold text-[#2F5D50]">

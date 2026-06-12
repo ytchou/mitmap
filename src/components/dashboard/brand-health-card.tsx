@@ -120,7 +120,7 @@ export function BrandHealthCard({ health, completeness, slug }: BrandHealthCardP
                           <Icon className="h-4 w-4 text-[#2F5D50]" aria-hidden="true" />
                         </span>
                         <span className="min-w-0 text-sm font-semibold text-[#1C1C1C]">
-                          {action.label}
+                          {t(`actionQueue.label.${action.labelKey}`)}
                         </span>
                       </span>
                       <span className="shrink-0 text-xs font-semibold text-[#2F5D50]">

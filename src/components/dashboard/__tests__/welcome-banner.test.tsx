@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
+import type { DimensionKey } from '@/lib/services/brand-health'
 
 const mockTrackShown = vi.fn()
 const mockTrackCta = vi.fn()
@@ -32,6 +33,13 @@ const messages = {
         dismiss: '稍後再說',
       },
     },
+    health: {
+      actionQueue: {
+        label: {
+          photoQuality: 'Add more product photos',
+        },
+      },
+    },
   },
 }
 
@@ -40,7 +48,7 @@ function renderBanner(
     claimedAt: string
     completionFraction: number
     slug: string
-    topAction: { label: string; anchor: string; points: number }
+    topAction: { labelKey: DimensionKey; anchor: string; points: number }
   }>
 ) {
   const now = new Date()
@@ -80,14 +88,14 @@ describe('WelcomeBanner', () => {
     renderBanner({
       slug: 'my-brand',
       topAction: {
-        label: 'Add product photos',
+        labelKey: 'photoQuality',
         anchor: '#product-photos',
         points: 1200,
       },
     })
 
     expect(screen.getByText('首選')).toBeInTheDocument()
-    const nudge = screen.getByRole('link', { name: /Add product photos/ })
+    const nudge = screen.getByRole('link', { name: /Add more product photos/ })
     expect(nudge).toHaveAttribute(
       'href',
       '/dashboard/brands/my-brand/edit#product-photos'

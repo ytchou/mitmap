@@ -40,7 +40,7 @@ export type ActionNudge = {
   key: DimensionKey
   anchor: string
   icon: string
-  label: string
+  labelKey: DimensionKey
   dimension: string
   points: number
 }
@@ -85,16 +85,6 @@ const ICONS: Record<DimensionKey, string> = {
   socialPresence: 'share-2',
   purchaseAccessibility: 'shopping-bag',
   clickThroughRate: 'mouse-pointer-click',
-}
-
-const LABELS: Record<DimensionKey, string> = {
-  profileCompleteness: 'Complete your brand profile',
-  engagementHealth: 'Improve profile engagement',
-  brandStory: 'Strengthen your brand story',
-  photoQuality: 'Add more product photos',
-  socialPresence: 'Connect more social channels',
-  purchaseAccessibility: 'Add purchase links',
-  clickThroughRate: 'Improve click-through rate',
 }
 
 function getField<T>(brand: Brand, camelKey: string, snakeKey: string): T | undefined {
@@ -225,7 +215,7 @@ function buildTopActions(dimensions: DimensionScore[]): ActionNudge[] {
       key: dimension.key,
       anchor: ANCHORS[dimension.key],
       icon: ICONS[dimension.key],
-      label: LABELS[dimension.key],
+      labelKey: dimension.key,
       dimension: dimension.key,
       points: Math.round((100 - dimension.score) * dimension.weight * 100),
     }))
