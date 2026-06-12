@@ -1,4 +1,4 @@
-import type { Database } from '@/lib/supabase/database.types'
+import type { Database, Json } from '@/lib/supabase/database.types'
 
 type FeedbackRow = Database['public']['Tables']['feedback']['Row']
 type FeedbackInsert = Database['public']['Tables']['feedback']['Insert']
@@ -105,7 +105,7 @@ export async function createFeedbackFromTally(input: {
     url: input.url ?? null,
     tally_response_id: input.tallyResponseId,
     user_email: input.userEmail ?? null,
-    metadata: input.metadata ?? {},
+    metadata: (input.metadata ?? {}) as Json,
   }
 
   const { error } = await supabase
