@@ -1,6 +1,4 @@
-export type TagCategory = 'product_type' | 'material' | 'price_range' | 'region' | 'value'
-
-export type TagSource = 'auto' | 'manual' | 'suggested'
+export type TagCategory = 'product_type' | 'region' | 'value'
 
 export type TaxonomyTag = {
   id: string
@@ -9,7 +7,6 @@ export type TaxonomyTag = {
   slug: string
   category: TagCategory
   isActive: boolean
-  suggestedBy: string | null
   createdAt: string
+  brandCount?: number
 }
-

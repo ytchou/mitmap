@@ -84,10 +84,15 @@ async function refreshSupabaseSession(request: NextRequest, response: NextRespon
   );
 
   // Refresh the session — must call getUser() not getSession()
-  // to properly validate the JWT against the Supabase Auth server
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // to properly validate the JWT against the Supabase Auth server.
+  // Timeout prevents stale/invalid tokens from blocking the request.
+  let user = null;
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch {
+    // Auth timeout or network error — continue as unauthenticated
+  }
 
   const currentCookie = request.cookies.get('fm_mode')?.value
   const decision = resolveAdminModeCookie({ email: user?.email ?? null, currentCookie })

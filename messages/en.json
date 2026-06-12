@@ -49,8 +49,11 @@
       "description": "Explore and discover curated Made in Taiwan brands. From food to fashion, support local designers and manufacturers."
     },
     "hero": {
+      "eyebrow": "MADE IN TAIWAN",
       "headline": "Discover Premium Brands Made in Taiwan",
-      "subheadline": "Discover quality brands made in Taiwan",
+      "subheadline": "Formoria curates verified Taiwanese brands — from stationery and homeware to food and drink. Explore the best of Made in Taiwan.",
+      "statsBrands": "brands",
+      "statsCategories": "categories",
       "cta": "Explore All Brands"
     },
     "showcase": {

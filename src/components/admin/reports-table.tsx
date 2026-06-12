@@ -1,10 +1,17 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { reviewReportAction, bulkUpdateReportsAction } from '@/app/admin/actions'
+import { reviewReportAction } from '@/app/admin/actions'
 import type { BrandReport, ReportReason } from '@/lib/services/reports'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 interface ReportsTableProps {
   reports: BrandReport[]
@@ -18,117 +25,78 @@ const REASON_LABELS: Record<ReportReason, string> = {
   removal_request: '要求移除',
 }
 
+function ActionPill({
+  label,
+  onClick,
+  variant = 'default',
+}: {
+  label: string
+  onClick: () => void
+  variant?: 'default' | 'destructive'
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        variant === 'destructive'
+          ? 'inline-flex items-center rounded-full bg-[#F5F4F1] px-3 py-1 text-xs font-medium text-[#7C7570] transition-colors hover:bg-[#EAE7E2]'
+          : 'inline-flex items-center rounded-full bg-[#F5F4F1] px-3 py-1 text-xs font-medium text-[#3D3531] transition-colors hover:bg-[#EAE7E2]'
+      }
+    >
+      {label}
+    </button>
+  )
+}
+
 export function ReportsTable({ reports }: ReportsTableProps) {
-  const [selected, setSelected] = useState(new Set<string>())
   const [, startTransition] = useTransition()
 
-  if (reports.length === 0) {
-    return <p className="text-muted-foreground">目前沒有待處理的檢舉。</p>
-  }
-
-  function toggleAll() {
-    if (selected.size === reports.length) {
-      setSelected(new Set())
-    } else {
-      setSelected(new Set(reports.map((r) => r.id)))
-    }
-  }
-
-  function toggleOne(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
-
-  function handleBulk(decision: 'reviewed' | 'dismissed') {
+  function handleReview(id: string, decision: 'reviewed' | 'dismissed') {
     startTransition(async () => {
-      await bulkUpdateReportsAction(Array.from(selected), decision)
-      setSelected(new Set())
+      await reviewReportAction(id, decision)
     })
   }
 
   return (
-    <div className="space-y-4">
-      {selected.size > 0 && (
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => handleBulk('reviewed')}>
-            批量審核
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleBulk('dismissed')}>
-            批量忽略
-          </Button>
-        </div>
-      )}
-
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="w-10 py-2">
-              <input
-                type="checkbox"
-                checked={selected.size === reports.length}
-                onChange={toggleAll}
-                aria-label="全選"
-              />
-            </th>
-            <th className="py-2 text-left">品牌</th>
-            <th className="py-2 text-left">原因</th>
-            <th className="py-2 text-left">補充</th>
-            <th className="py-2 text-left">日期</th>
-            <th className="py-2 text-left">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reports.map((r) => (
-            <tr key={r.id} className="border-b">
-              <td className="py-2">
-                <input
-                  type="checkbox"
-                  checked={selected.has(r.id)}
-                  onChange={() => toggleOne(r.id)}
-                  aria-label={`選擇 ${r.brandName}`}
-                />
-              </td>
-              <td className="py-2">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>品牌</TableHead>
+          <TableHead>原因</TableHead>
+          <TableHead>補充</TableHead>
+          <TableHead>日期</TableHead>
+          <TableHead>操作</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {reports.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+              目前沒有待處理的檢舉。
+            </TableCell>
+          </TableRow>
+        ) : (
+          reports.map((r) => (
+            <TableRow key={r.id}>
+              <TableCell className="font-medium">
                 <Link href={`/brands/${r.brandSlug}`} className="underline">
                   {r.brandName}
                 </Link>
-              </td>
-              <td className="py-2">{REASON_LABELS[r.reason]}</td>
-              <td className="max-w-xs truncate py-2">{r.notes ?? '—'}</td>
-              <td className="py-2">{new Date(r.createdAt).toLocaleDateString()}</td>
-              <td className="py-2">
-                <div className="flex gap-2">
-                  <form
-                    action={async () => {
-                      await reviewReportAction(r.id, 'reviewed')
-                    }}
-                  >
-                    <Button type="submit" size="sm">
-                      審核
-                    </Button>
-                  </form>
-                  <form
-                    action={async () => {
-                      await reviewReportAction(r.id, 'dismissed')
-                    }}
-                  >
-                    <Button type="submit" size="sm" variant="outline">
-                      忽略
-                    </Button>
-                  </form>
+              </TableCell>
+              <TableCell>{REASON_LABELS[r.reason]}</TableCell>
+              <TableCell className="max-w-xs truncate">{r.notes ?? '—'}</TableCell>
+              <TableCell>{new Date(r.createdAt).toLocaleDateString('zh-TW')}</TableCell>
+              <TableCell>
+                <div className="flex gap-1.5">
+                  <ActionPill label="審核" onClick={() => handleReview(r.id, 'reviewed')} />
+                  <ActionPill label="忽略" onClick={() => handleReview(r.id, 'dismissed')} variant="destructive" />
                 </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
   )
 }

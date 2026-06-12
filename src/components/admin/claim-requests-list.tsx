@@ -185,10 +185,6 @@ export function ClaimRequestsList({
 
   return (
     <div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Review ownership claims and supporting proof before granting brand access.
-      </p>
-
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as TabValue)}

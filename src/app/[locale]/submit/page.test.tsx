@@ -25,7 +25,6 @@ vi.mock('@/lib/services/taxonomy', () => ({
       nameZh: '時尚',
       category: 'product_type',
       isActive: true,
-      suggestedBy: null,
       createdAt: '2026-01-01',
     },
   ]),
