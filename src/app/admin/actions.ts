@@ -12,7 +12,16 @@ import {
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
 import { createBrand, updateBrand, getBrandById, deleteBrand, generateSlug, syncBrandImages } from '@/lib/services/brands'
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
-import { createTag, updateTag, mergeTag, deactivateTag, activateTag, setBrandTags } from '@/lib/services/taxonomy'
+import {
+  createTag,
+  updateTag,
+  mergeTag,
+  deactivateTag,
+  activateTag,
+  setBrandTags,
+  getTagBySlug,
+  addTagToBrand,
+} from '@/lib/services/taxonomy'
 import { sendEmail } from '@/lib/email/send'
 import {
   buildApprovalEmail,
@@ -98,6 +107,27 @@ export async function approveSubmissionAction(
     }
 
     await approveSubmission(submissionId, auth.userId)
+
+    try {
+      const { suggestedTags } = submission
+      if (suggestedTags && !Array.isArray(suggestedTags)) {
+        const structuredTags = suggestedTags as { region?: string; values?: string[] }
+
+        if (structuredTags.region) {
+          const tag = await getTagBySlug(structuredTags.region)
+          if (tag) await addTagToBrand(brand.id, tag.id)
+        }
+
+        if (Array.isArray(structuredTags.values)) {
+          for (const slug of structuredTags.values) {
+            const tag = await getTagBySlug(slug)
+            if (tag) await addTagToBrand(brand.id, tag.id)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[admin:approveSubmission] tag application failed:', err)
+    }
 
     if (submission.isBrandOwner) {
       const token = await generateClaimToken(brand.id, submission.submitterEmail, submission.brandName)
