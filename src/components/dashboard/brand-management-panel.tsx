@@ -61,7 +61,7 @@ export async function BrandManagementPanel({ slug, claimedAt }: Props) {
           completionFraction={completeness.fraction}
           slug={brand.slug}
         />
-        <h3 className="mb-4 text-sm font-semibold uppercase text-muted-foreground">
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground">
           {t("analyticsHeading")}
         </h3>
         <AnalyticsCards
@@ -95,7 +95,7 @@ export async function BrandManagementPanel({ slug, claimedAt }: Props) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("descriptionLabel")}
               </p>
               <p className="mt-1 text-sm">
@@ -104,7 +104,7 @@ export async function BrandManagementPanel({ slug, claimedAt }: Props) {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("categoryLabel")}
               </p>
               <p className="mt-1 text-sm">
@@ -113,7 +113,7 @@ export async function BrandManagementPanel({ slug, claimedAt }: Props) {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("websiteLabel")}
               </p>
               <p className="mt-1 text-sm">
@@ -122,7 +122,7 @@ export async function BrandManagementPanel({ slug, claimedAt }: Props) {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 {t("socialLinksLabel")}
               </p>
               <div className="mt-1 space-y-1 text-sm">
