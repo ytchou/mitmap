@@ -13,7 +13,7 @@ import {
 import {
   getSavedBrandIdsAction,
   toggleSaveAction,
-} from '@/app/[locale]/brands/[slug]/save-actions'
+} from '@/lib/actions/saved-brands'
 import { useUser } from '@/lib/auth/use-user'
 
 type SavedBrandsContextValue = {
@@ -61,6 +61,8 @@ export function SavedBrandsProvider({ children }: SavedBrandsProviderProps) {
         }
 
         setSavedIds(new Set(ids))
+      } catch (error) {
+        console.error('Failed to fetch saved brands', error)
       } finally {
         if (isMounted) {
           setFetchLoading(false)
@@ -74,6 +76,8 @@ export function SavedBrandsProvider({ children }: SavedBrandsProviderProps) {
   }, [user, userLoading])
 
   const toggle = useCallback((brandId: string) => {
+    const snapshot = new Set(savedIds)
+
     setSavedIds((current) => {
       const next = new Set(current)
 
@@ -87,23 +91,18 @@ export function SavedBrandsProvider({ children }: SavedBrandsProviderProps) {
     })
 
     void (async () => {
-      const result = await toggleSaveAction(brandId)
+      try {
+        const result = await toggleSaveAction(brandId)
 
-      if ('error' in result) {
-        setSavedIds((current) => {
-          const next = new Set(current)
-
-          if (next.has(brandId)) {
-            next.delete(brandId)
-          } else {
-            next.add(brandId)
-          }
-
-          return next
-        })
+        if ('error' in result) {
+          setSavedIds(snapshot)
+        }
+      } catch (error) {
+        console.error('Failed to toggle saved brand', error)
+        setSavedIds(snapshot)
       }
     })()
-  }, [])
+  }, [savedIds])
 
   const value = useMemo(
     () => ({

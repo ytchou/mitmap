@@ -19,7 +19,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-import { toggleSaveAction } from '../save-actions'
+import { toggleSaveAction } from '@/lib/actions/saved-brands'
 import { isBrandSaved, saveBrand, unsaveBrand } from '@/lib/services/saved-brands'
 import { revalidatePath } from 'next/cache'
 
@@ -43,7 +43,7 @@ describe('toggleSaveAction', () => {
 
     expect(saveBrand).toHaveBeenCalledWith(userId, brandId)
     expect(unsaveBrand).not.toHaveBeenCalled()
-    expect(revalidatePath).toHaveBeenCalledWith('/dashboard')
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'layout')
     expect(result).toEqual({ ok: true, saved: true })
   })
 
