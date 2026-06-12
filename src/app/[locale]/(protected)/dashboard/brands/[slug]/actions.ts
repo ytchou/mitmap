@@ -200,7 +200,13 @@ export async function updateBrandAction(
     // Handle value tags
     const valueTagsRaw = formData.get('valueTags') as string | null
     if (valueTagsRaw !== null) {
-      const slugs: string[] = JSON.parse(valueTagsRaw || '[]')
+      let slugs: string[] = []
+      try {
+        slugs = JSON.parse(valueTagsRaw || '[]')
+        if (!Array.isArray(slugs)) slugs = []
+      } catch {
+        slugs = []
+      }
       const tags = await Promise.all(slugs.map(slug => getTagBySlug(slug)))
       const ids = tags.filter(Boolean).map(t => t!.id)
       await updateBrandCategoryTags(brand.id, 'value', ids)

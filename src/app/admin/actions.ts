@@ -38,6 +38,11 @@ import { generateClaimToken } from '@/lib/auth/claim-token'
 import { updateReportStatus } from '@/lib/services/reports'
 import type { TagCategory } from '@/lib/types'
 
+function isStructuredTags(v: unknown): v is { region?: string; values?: string[] } {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+
 async function requireAdmin(): Promise<{ userId: string; email: string } | { error: string }> {
   const supabase = await createClient()
   const {
@@ -110,8 +115,8 @@ export async function approveSubmissionAction(
 
     try {
       const { suggestedTags } = submission
-      if (suggestedTags && !Array.isArray(suggestedTags)) {
-        const structuredTags = suggestedTags as { region?: string; values?: string[] }
+      if (isStructuredTags(suggestedTags)) {
+        const structuredTags = suggestedTags
 
         if (structuredTags.region) {
           const tag = await getTagBySlug(structuredTags.region)
@@ -119,10 +124,12 @@ export async function approveSubmissionAction(
         }
 
         if (Array.isArray(structuredTags.values)) {
-          for (const slug of structuredTags.values) {
-            const tag = await getTagBySlug(slug)
-            if (tag) await addTagToBrand(brand.id, tag.id)
-          }
+          await Promise.all(
+            structuredTags.values.map(async (slug) => {
+              const tag = await getTagBySlug(slug)
+              if (tag) await addTagToBrand(brand.id, tag.id)
+            })
+          )
         }
       }
     } catch (err) {
