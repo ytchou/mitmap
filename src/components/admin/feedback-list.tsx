@@ -39,13 +39,13 @@ function getTitlePreview(item: FeedbackItem) {
 
 function getSourceBadgeClass(source: FeedbackItem['source']) {
   return source === 'sentry'
-    ? 'bg-purple-100 text-purple-700'
-    : 'bg-blue-100 text-blue-700'
+    ? 'bg-[#F5F4F1] text-[#7C7570]'
+    : 'bg-[#E5E0D8] text-[#7C7570]'
 }
 
 function getStatusBadgeClass(status: FeedbackStatus) {
-  if (status === 'open') return 'bg-yellow-100 text-yellow-700'
-  if (status === 'reviewed') return 'bg-green-100 text-green-700'
+  if (status === 'open') return 'bg-[#FAF8F3] text-[#C4693B] border border-[#C4693B]'
+  if (status === 'reviewed') return 'bg-[#EAF3E8] text-[#2D5A27]'
   return 'bg-[#F5F4F1] text-[#7C7570]'
 }
 
@@ -89,16 +89,18 @@ export function FeedbackList({ items }: { items: FeedbackItem[] }) {
     setSyncing(true)
     setSyncMessage(null)
 
-    try {
-      const result = await syncSentryFeedbackAction()
-      if ('error' in result) {
-        setSyncMessage(result.error)
-      } else {
-        setSyncMessage(`Synced ${result.synced} feedback item(s).`)
+    startTransition(async () => {
+      try {
+        const result = await syncSentryFeedbackAction()
+        if ('error' in result) {
+          setSyncMessage(result.error)
+        } else {
+          setSyncMessage(`Synced ${result.synced} feedback item(s).`)
+        }
+      } finally {
+        setSyncing(false)
       }
-    } finally {
-      setSyncing(false)
-    }
+    })
   }
 
   return (
