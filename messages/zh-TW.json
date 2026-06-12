@@ -723,6 +723,27 @@
       "trendDown": "下降趨勢",
       "trendFlat": "持平"
     },
+    "onboarding": {
+      "banner": {
+        "title": "歡迎加入 Formoria！",
+        "description": "讓我們一起讓你的品牌被更多人看見。完成以下 3 件事，你的品牌頁面就能展現最佳狀態：",
+        "action1": "上傳品牌封面照",
+        "action1Hint": "訪客第一眼看到的視覺印象",
+        "action2": "撰寫品牌介紹",
+        "action2Hint": "幫助消費者認識你的品牌故事",
+        "action3": "新增購買連結",
+        "action3Hint": "讓有興趣的人直接下單",
+        "cta": "開始編輯",
+        "dismiss": "稍後再說"
+      },
+      "milestone": {
+        "gettingStarted": "好的開始！繼續完善你的品牌頁面。",
+        "halfway": "已經完成一半了！你的品牌頁面看起來越來越棒。",
+        "complete": "太棒了！你的品牌頁面已經完整。"
+      },
+      "tier1Label": "重要項目",
+      "tier2Label": "加分項目"
+    },
     "completeness": {
       "title": "品牌資料完整度",
       "summary": "已完成 {completed}/{total}",
@@ -733,38 +754,47 @@
       "items": {
         "heroImage": {
           "label": "主視覺",
+          "hint": "品牌頁的第一印象，讓你的品牌一眼被記住",
           "nudge": "顧客進入頁面第一眼看到的畫面。"
         },
         "logo": {
           "label": "品牌標誌",
+          "hint": "品牌辨識度的核心，出現在目錄和分類頁",
           "nudge": "建立品牌辨識度與信任感。"
         },
         "description": {
           "label": "品牌介紹",
+          "hint": "幫助搜尋和探索，讓更多人發現你",
           "nudge": "讓顧客了解你的品牌與台灣製造的故事。"
         },
         "purchaseLinks": {
           "label": "購買連結",
+          "hint": "讓有興趣的消費者直接採取行動",
           "nudge": "附上商店或電商連結，讓顧客直接購買。"
         },
         "productPhotos": {
           "label": "產品照片",
+          "hint": "展示你的產品，增加頁面停留時間",
           "nudge": "用最好的照片展示你的產品。"
         },
         "socialLinks": {
           "label": "社群連結",
+          "hint": "建立信任感，讓消費者追蹤你的動態",
           "nudge": "讓粉絲在各平台上追蹤你。"
         },
         "brandHighlights": {
           "label": "品牌亮點",
+          "hint": "讓你的品牌特色一目了然",
           "nudge": "一眼看見品牌的賣點特色。"
         },
         "foundingYear": {
           "label": "創立年份",
+          "hint": "展現品牌歷史和經驗",
           "nudge": "增添品牌歷史與可信度。"
         },
         "retailLocations": {
           "label": "實體據點",
+          "hint": "讓附近的消費者找到你的實體店面",
           "nudge": "讓在地顧客找到實體據點。"
         }
       }
