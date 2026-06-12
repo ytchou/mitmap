@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -187,6 +188,35 @@ export type Database = {
           },
         ]
       }
+      brand_saves: {
+        Row: {
+          brand_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_saves_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_submissions: {
         Row: {
           brand_id: string | null
@@ -267,17 +297,14 @@ export type Database = {
       brand_taxonomy: {
         Row: {
           brand_id: string
-          source: string
           tag_id: string
         }
         Insert: {
           brand_id: string
-          source?: string
           tag_id: string
         }
         Update: {
           brand_id?: string
-          source?: string
           tag_id?: string
         }
         Relationships: [
@@ -452,6 +479,78 @@ export type Database = {
           },
         ]
       }
+      email_sends: {
+        Row: {
+          id: string
+          sent_at: string
+          template_key: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          sent_at?: string
+          template_key: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          sent_at?: string
+          template_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          reviewed_at: string | null
+          sentry_event_id: string | null
+          sentry_feedback_id: string | null
+          source: string
+          status: string
+          tally_response_id: string | null
+          title: string | null
+          type: string
+          url: string | null
+          user_email: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reviewed_at?: string | null
+          sentry_event_id?: string | null
+          sentry_feedback_id?: string | null
+          source: string
+          status?: string
+          tally_response_id?: string | null
+          title?: string | null
+          type: string
+          url?: string | null
+          user_email?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reviewed_at?: string | null
+          sentry_event_id?: string | null
+          sentry_feedback_id?: string | null
+          source?: string
+          status?: string
+          tally_response_id?: string | null
+          title?: string | null
+          type?: string
+          url?: string | null
+          user_email?: string | null
+        }
+        Relationships: []
+      }
       moderation_flags: {
         Row: {
           brand_id: string
@@ -501,6 +600,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      owner_email_preferences: {
+        Row: {
+          created_at: string
+          unsubscribe_token: string
+          unsubscribed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       taxonomy_tags: {
         Row: {
@@ -564,6 +684,7 @@ export type Database = {
         Args: { p_brand_id: string; p_source?: string }
         Returns: undefined
       }
+      profile_completeness: { Args: { p_brand_id: string }; Returns: number }
       refresh_brand_tag_slugs: {
         Args: { p_brand_id: string }
         Returns: undefined
@@ -713,3 +834,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+A new version of Supabase CLI is available: v2.106.0 (currently installed v2.105.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
