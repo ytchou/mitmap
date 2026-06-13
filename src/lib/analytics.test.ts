@@ -27,6 +27,9 @@ import {
   trackSessionStart,
   trackBrandPageShared,
   trackListingSharedByOwner,
+  trackSignUp,
+  trackLogin,
+  trackViewItemList,
 } from './analytics'
 
 beforeEach(() => {
@@ -332,5 +335,41 @@ describe('analytics', () => {
       throw new Error('gtag not loaded')
     })
     expect(() => trackBrandDetailViewed('test')).not.toThrow()
+  })
+})
+
+describe('trackSignUp', () => {
+  it('sends sign_up event with method', () => {
+    trackSignUp('google')
+    expect(mockSendGAEvent).toHaveBeenCalledWith('event', 'sign_up', {
+      method: 'google',
+    })
+  })
+})
+
+describe('trackLogin', () => {
+  it('sends login event with method', () => {
+    trackLogin('google')
+    expect(mockSendGAEvent).toHaveBeenCalledWith('event', 'login', {
+      method: 'google',
+    })
+  })
+})
+
+describe('trackViewItemList', () => {
+  it('sends view_item_list with list name and item count', () => {
+    trackViewItemList('directory', 12)
+    expect(mockSendGAEvent).toHaveBeenCalledWith('event', 'view_item_list', {
+      item_list_name: 'directory',
+      item_count: 12,
+    })
+  })
+
+  it('sends view_item_list for category pages', () => {
+    trackViewItemList('category:food', 5)
+    expect(mockSendGAEvent).toHaveBeenCalledWith('event', 'view_item_list', {
+      item_list_name: 'category:food',
+      item_count: 5,
+    })
   })
 })

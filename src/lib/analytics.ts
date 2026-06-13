@@ -306,3 +306,18 @@ export function trackOnboardingMilestoneReached(
     milestone,
   })
 }
+
+export function trackSignUp(method: string) {
+  safeGAEvent('event', 'sign_up', { method })
+}
+
+export function trackLogin(method: string) {
+  safeGAEvent('event', 'login', { method })
+}
+
+export function trackViewItemList(listName: string, itemCount: number) {
+  safeGAEvent('event', 'view_item_list', {
+    item_list_name: listName,
+    item_count: itemCount,
+  })
+}
