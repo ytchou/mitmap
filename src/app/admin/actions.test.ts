@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
+import { refreshHealthChecks } from './actions'
+import { checkAllServices } from '@/lib/services/health-checks'
 
 // Mocks must be at top-level for vitest hoisting
 vi.mock('@/lib/supabase/server', () => ({
@@ -120,6 +122,10 @@ vi.mock('@/lib/services/reports', () => ({
 vi.mock('@/lib/services/feedback', () => ({
   updateFeedbackStatus: vi.fn().mockResolvedValue(undefined),
   syncSentryFeedback: vi.fn().mockResolvedValue({ synced: 3, errors: 0 }),
+}))
+
+vi.mock('@/lib/services/health-checks', () => ({
+  checkAllServices: vi.fn(),
 }))
 
 vi.mock('@/lib/email/resend-adapter', () => ({
@@ -678,5 +684,34 @@ describe('syncSentryFeedbackAction', () => {
     const result = await syncSentryFeedbackAction()
 
     expect(result).toEqual({ error: 'Sentry API unreachable' })
+  })
+})
+
+describe('refreshHealthChecks', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('calls checkAllServices and revalidates /admin', async () => {
+    vi.mocked(checkAllServices).mockResolvedValue([
+      {
+        service: 'Supabase',
+        status: 'healthy',
+        message: 'Connected',
+        checkedAt: new Date().toISOString(),
+      },
+    ])
+
+    await refreshHealthChecks()
+
+    expect(checkAllServices).toHaveBeenCalledOnce()
+    expect(revalidatePath).toHaveBeenCalledWith('/admin')
+  })
+
+  it('revalidates /admin even if checkAllServices throws', async () => {
+    vi.mocked(checkAllServices).mockRejectedValue(new Error('service down'))
+
+    await expect(refreshHealthChecks()).resolves.not.toThrow()
+    expect(revalidatePath).toHaveBeenCalledWith('/admin')
   })
 })
