@@ -1147,6 +1147,7 @@
       "purchaseLinksMin": "請提供至少一個購買連結",
       "pdpaRequired": "請同意隱私政策",
       "turnstileRequired": "請完成驗證",
+      "ubn_format": "統一編號須為8位數字",
       "valueTagsMax": "最多可選擇 3 個品牌價值"
     },
     "errors": {

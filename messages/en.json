@@ -1147,6 +1147,7 @@
       "purchaseLinksMin": "Please provide at least one purchase link",
       "pdpaRequired": "Please agree to the privacy policy",
       "turnstileRequired": "Please complete verification",
+      "ubn_format": "Business number must be 8 digits",
       "valueTagsMax": "You can select up to 3 brand values"
     },
     "errors": {
