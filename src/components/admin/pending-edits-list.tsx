@@ -2,13 +2,20 @@
 
 import { Fragment, useState, useTransition } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { PendingBrandEditWithBrand } from '@/lib/types/brand'
 import { approvePendingEditAction, rejectPendingEditAction } from '@/app/admin/actions'
 import { EditDiffView, computeDiffFields } from './edit-diff-view'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
-export function PendingEditsList({ edits }: { edits: PendingBrandEditWithBrand[] }) {
+type PendingBrandEditWithRisk = PendingBrandEditWithBrand & {
+  moderationRiskLevel?: 'high' | 'medium' | 'clean'
+}
+
+export function PendingEditsList({ edits }: { edits: PendingBrandEditWithRisk[] }) {
+  const moderationT = useTranslations('admin.moderation')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [rejectNoteId, setRejectNoteId] = useState<string | null>(null)
   const [rejectNote, setRejectNote] = useState('')
@@ -44,7 +51,15 @@ export function PendingEditsList({ edits }: { edits: PendingBrandEditWithBrand[]
           <Fragment key={edit.id}>
             <div className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0">
               <div className="flex-1">
-                <p className="font-semibold">{edit.brand.name}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold">{edit.brand.name}</p>
+                  {edit.moderationRiskLevel === 'high' && (
+                    <Badge className="bg-destructive text-white text-xs">{moderationT('riskHigh')}</Badge>
+                  )}
+                  {edit.moderationRiskLevel === 'medium' && (
+                    <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs">{moderationT('riskMedium')}</Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">{edit.submittedBy}</p>
               </div>
               <p className="text-sm text-muted-foreground">

@@ -34,6 +34,9 @@ const getTagBySlug = vi.fn()
 const updateBrandCategoryTags = vi.fn().mockResolvedValue(undefined)
 const cookieGet = vi.fn()
 const isActingAsAdmin = vi.fn().mockResolvedValue(false)
+const scanContent = vi.fn()
+const shouldAutoApprove = vi.fn()
+const saveModerationFlags = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(async () => ({
@@ -78,9 +81,23 @@ vi.mock('@/lib/services/image-upload', () => ({
 
 vi.mock('@/lib/services/pending-edits', () => ({
   createPendingEdit: vi.fn().mockResolvedValue({ id: 'edit-1', status: 'pending' }),
+  approvePendingEdit: vi.fn().mockResolvedValue(undefined),
+  hasPendingEdit: vi.fn().mockResolvedValue(false),
+  getPendingEdits: vi.fn(),
+  getPendingEdit: vi.fn(),
+  getPendingEditCount: vi.fn(),
+  rejectPendingEdit: vi.fn(),
+  getLatestEditReview: vi.fn(),
+  getPendingEditForReview: vi.fn(),
 }))
 
-import { createPendingEdit } from '@/lib/services/pending-edits'
+vi.mock('@/lib/services/moderation', () => ({
+  scanContent,
+  shouldAutoApprove,
+  saveModerationFlags,
+}))
+
+import { approvePendingEdit, createPendingEdit } from '@/lib/services/pending-edits'
 
 vi.mock('@/lib/services/taxonomy', () => ({
   getTagBySlug,
@@ -145,6 +162,7 @@ describe('updateBrandAction', () => {
       brandHighlights: null,
     })
     diffRemovedImageUrls.mockReturnValue([])
+    scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
     getTagBySlug.mockImplementation(async (slug: string) => (
       slug === 'taipei'
         ? { id: 'tag-region-taipei', slug, category: 'region' }
@@ -418,6 +436,7 @@ describe('updateBrandAction — admin bypass', () => {
       brandHighlights: null,
     })
     diffRemovedImageUrls.mockReturnValue([])
+    scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
     getTagBySlug.mockImplementation(async (slug: string) => (
       slug === 'taipei'
         ? { id: 'tag-region-taipei', slug, category: 'region' }
@@ -483,10 +502,95 @@ describe('updateBrandAction — edit gating', () => {
       brandHighlights: null,
     })
     diffRemovedImageUrls.mockReturnValue([])
+    scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
+    shouldAutoApprove.mockResolvedValue(false)
+    saveModerationFlags.mockResolvedValue(undefined)
   })
 
-  it('routes non-admin owner to review queue instead of direct update', async () => {
+  it('auto-approves clean trusted non-admin owner edits instead of queueing them', async () => {
     isActingAsAdmin.mockResolvedValueOnce(false)
+    shouldAutoApprove.mockResolvedValueOnce(true)
+
+    const { updateBrandAction } = await import('./actions')
+
+    try {
+      await updateBrandAction(undefined, form({
+        brandSlug: 'test-brand',
+        name: 'Trusted Name',
+        description: 'Clean trusted description',
+        brandHighlights: 'Clean trusted highlight',
+        websiteUrl: 'https://example.com',
+        'purchaseLinks[0].platform': 'shop',
+        'purchaseLinks[0].url': 'https://shop.example.com/product',
+        'purchaseLinks[0].label': 'Shop',
+      }))
+    } catch {
+      // redirect throws
+    }
+
+    expect(scanContent).toHaveBeenCalledWith({
+      brandName: 'Trusted Name',
+      fields: {
+        name: 'Trusted Name',
+        description: 'Clean trusted description',
+        brandHighlights: 'Clean trusted highlight',
+        website: 'https://example.com',
+        purchaseUrl: 'https://shop.example.com/product',
+      },
+    })
+    expect(shouldAutoApprove).toHaveBeenCalledWith(
+      { riskLevel: 'clean', flags: [] },
+      'user-1'
+    )
+    expect(updateBrand).toHaveBeenCalledWith(
+      'brand-1',
+      expect.objectContaining({
+        name: 'Trusted Name',
+        description: 'Clean trusted description',
+      })
+    )
+    expect(approvePendingEdit).not.toHaveBeenCalled()
+    expect(createPendingEdit).not.toHaveBeenCalled()
+  })
+
+  it('queues flagged non-admin owner edits and saves moderation flags', async () => {
+    isActingAsAdmin.mockResolvedValueOnce(false)
+    const flags = [
+      {
+        fieldName: 'description',
+        tier: 'tier2',
+        reason: 'Email address detected',
+        flaggedContent: 'Contact owner@example.com',
+      },
+    ]
+    scanContent.mockReturnValueOnce({ riskLevel: 'medium', flags })
+
+    const { updateBrandAction } = await import('./actions')
+
+    const result = await updateBrandAction(undefined, form({
+      brandSlug: 'test-brand',
+      name: 'Queued Name',
+      description: 'Contact owner@example.com',
+    }))
+
+    expect(createPendingEdit).toHaveBeenCalledWith(
+      'brand-1',
+      'user-1',
+      expect.objectContaining({
+        name: 'Queued Name',
+        description: 'Contact owner@example.com',
+      })
+    )
+    expect(saveModerationFlags).toHaveBeenCalledWith('brand-1', 'user-1', flags)
+    expect(shouldAutoApprove).not.toHaveBeenCalled()
+    expect(approvePendingEdit).not.toHaveBeenCalled()
+    expect(updateBrand).not.toHaveBeenCalled()
+    expect(result?.message).toBe('brandEditSubmittedForReview')
+  })
+
+  it('queues clean non-admin owner edits when auto-approval is false', async () => {
+    isActingAsAdmin.mockResolvedValueOnce(false)
+    shouldAutoApprove.mockResolvedValueOnce(false)
 
     const { updateBrandAction } = await import('./actions')
 
@@ -496,6 +600,20 @@ describe('updateBrandAction — edit gating', () => {
       description: 'Queued description',
     }))
 
+    expect(scanContent).toHaveBeenCalledWith({
+      brandName: 'Queued Name',
+      fields: {
+        name: 'Queued Name',
+        description: 'Queued description',
+        brandHighlights: undefined,
+        website: undefined,
+        purchaseUrl: undefined,
+      },
+    })
+    expect(shouldAutoApprove).toHaveBeenCalledWith(
+      { riskLevel: 'clean', flags: [] },
+      'user-1'
+    )
     expect(createPendingEdit).toHaveBeenCalledWith(
       'brand-1',
       'user-1',
@@ -504,6 +622,8 @@ describe('updateBrandAction — edit gating', () => {
         description: 'Queued description',
       })
     )
+    expect(saveModerationFlags).not.toHaveBeenCalled()
+    expect(approvePendingEdit).not.toHaveBeenCalled()
     expect(updateBrand).not.toHaveBeenCalled()
     expect(result?.message).toBe('brandEditSubmittedForReview')
   })
@@ -524,6 +644,24 @@ describe('updateBrandAction — edit gating', () => {
 
     expect(createPendingEdit).not.toHaveBeenCalled()
     expect(updateBrand).toHaveBeenCalled()
+  })
+
+  it('blocks non-admin update immediately when scan returns high risk (tier-1 hard block)', async () => {
+    isActingAsAdmin.mockResolvedValue(false)
+    scanContent.mockReturnValue({ riskLevel: 'high', flags: [
+      { fieldName: 'name', tier: 'tier1', reason: 'spam', flaggedContent: 'Buy Now Brand' },
+    ] })
+
+    const { updateBrandAction } = await import('./actions')
+
+    const result = await updateBrandAction(undefined, form({
+      brandSlug: 'test-brand',
+      name: 'Buy Now Brand',
+    }))
+
+    expect(result).toEqual({ error: expect.any(String) })
+    expect(updateBrand).not.toHaveBeenCalled()
+    expect(createPendingEdit).not.toHaveBeenCalled()
   })
 })
 
@@ -549,6 +687,8 @@ describe('publishDraftAction — edit gating', () => {
       description: 'Draft description',
     })
     diffRemovedImageUrls.mockReturnValue([])
+    scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
+    shouldAutoApprove.mockResolvedValue(false)
   })
 
   it('routes non-admin owner to review queue instead of direct publish', async () => {
@@ -588,5 +728,22 @@ describe('publishDraftAction — edit gating', () => {
 
     expect(createPendingEdit).not.toHaveBeenCalled()
     expect(publishDraft).toHaveBeenCalledWith('brand-1')
+  })
+
+  it('blocks non-admin publish immediately when draft scan returns high risk (tier-1 hard block)', async () => {
+    isActingAsAdmin.mockResolvedValue(false)
+    scanContent.mockReturnValue({ riskLevel: 'high', flags: [
+      { fieldName: 'description', tier: 'tier1', reason: 'spam', flaggedContent: 'Buy Now' },
+    ] })
+
+    const { publishDraftAction } = await import('./actions')
+
+    const result = await publishDraftAction(undefined, form({
+      brandSlug: 'test-brand',
+    }))
+
+    expect(result).toEqual({ error: expect.any(String) })
+    expect(publishDraft).not.toHaveBeenCalled()
+    expect(createPendingEdit).not.toHaveBeenCalled()
   })
 })

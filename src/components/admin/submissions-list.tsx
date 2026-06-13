@@ -1,9 +1,11 @@
 'use client'
 
 import { Fragment, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import type { BrandSubmission, SourceAttribution, SubmissionStatus } from '@/lib/types'
 import { StatusBadge } from './status-badge'
 import { approveSubmissionAction, rejectSubmissionAction } from '@/app/admin/actions'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -17,6 +19,10 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 
 type TabValue = 'all' | SubmissionStatus
+
+type BrandSubmissionWithRisk = BrandSubmission & {
+  moderationRiskLevel?: 'high' | 'medium' | 'clean'
+}
 
 const SOURCE_ATTRIBUTION_LABELS: Record<SourceAttribution, string> = {
   bought_product: 'I bought their product',
@@ -47,8 +53,9 @@ function getStructuredSuggestedTagSections(tags: StructuredSuggestedTags) {
 export function SubmissionsList({
   submissions,
 }: {
-  submissions: BrandSubmission[]
+  submissions: BrandSubmissionWithRisk[]
 }) {
+  const moderationT = useTranslations('admin.moderation')
   const [activeTab, setActiveTab] = useState<TabValue>('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
@@ -152,7 +159,15 @@ export function SubmissionsList({
                   onClick={() => handleRowClick(submission.id)}
                 >
                   <TableCell className="font-medium">
-                    {submission.brandName}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>{submission.brandName}</span>
+                      {submission.moderationRiskLevel === 'high' && (
+                        <Badge className="bg-destructive text-white text-xs">{moderationT('riskHigh')}</Badge>
+                      )}
+                      {submission.moderationRiskLevel === 'medium' && (
+                        <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs">{moderationT('riskMedium')}</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>{submission.submitterEmail}</TableCell>
                   <TableCell>{formatDate(submission.submittedAt)}</TableCell>
