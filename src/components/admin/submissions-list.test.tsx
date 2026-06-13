@@ -1,9 +1,19 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { NextIntlClientProvider } from 'next-intl'
 import { describe, expect, it, vi } from 'vitest'
 import type { BrandSubmission } from '@/lib/types'
 import { SubmissionsList } from './submissions-list'
+import messages from '../../../messages/zh-TW.json'
+
+function renderWithIntl(ui: Parameters<typeof render>[0]) {
+  return render(
+    <NextIntlClientProvider locale="zh-TW" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>
+  )
+}
 
 vi.mock('@/app/admin/actions', () => ({
   approveSubmissionAction: vi.fn(),
@@ -41,7 +51,7 @@ describe('SubmissionsList', () => {
   it('shows unified business number in the expanded detail row when provided', async () => {
     const user = userEvent.setup()
 
-    render(
+    renderWithIntl(
       <SubmissionsList
         submissions={[
           makeSubmission({ unifiedBusinessNumber: '12345678' }),
@@ -58,7 +68,7 @@ describe('SubmissionsList', () => {
   it('does not show unified business number label when omitted', async () => {
     const user = userEvent.setup()
 
-    render(<SubmissionsList submissions={[makeSubmission()]} />)
+    renderWithIntl(<SubmissionsList submissions={[makeSubmission()]} />)
 
     await user.click(screen.getByText('Test Brand'))
 
