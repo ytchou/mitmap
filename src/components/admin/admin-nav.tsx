@@ -2,20 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShieldAlert, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const navLinks: { label: string; href: string; icon?: LucideIcon }[] = [
-  { label: '管理後台', href: '/admin' },
-  { label: '待審核提交', href: '/admin/submissions' },
-  { label: '認領申請', href: '/admin/claim-requests' },
-  { label: '品牌', href: '/admin/brands' },
-  { label: '分類管理', href: '/admin/taxonomy' },
-  { label: '檢舉', href: '/admin/reports' },
-  { label: '品牌編輯審核', href: '/admin/pending-edits' },
-  { label: '內容審核', href: '/admin/moderation', icon: ShieldAlert },
-  { label: 'Feedback', href: '/admin/feedback' },
-  { label: '批量匯入', href: '/admin/bulk-import' },
+const navLinks: { label: string; href: string }[] = [
+  { label: '總覽', href: '/admin' },
+  { label: '審核佇列', href: '/admin/review-queue' },
+  { label: '認領申請', href: '/admin/claims' },
+  { label: '信號', href: '/admin/signals' },
+  { label: '目錄管理', href: '/admin/catalog' },
 ]
 
 export function AdminNav() {
@@ -35,8 +29,6 @@ export function AdminNav() {
 
         <div className="flex items-center gap-1">
           {navLinks.map((link) => {
-            const Icon = link.icon
-
             return (
               <Link
                 key={link.href}
@@ -48,7 +40,6 @@ export function AdminNav() {
                     : 'text-white/70 hover:text-white'
                 )}
               >
-                {Icon && <Icon className="h-4 w-4" aria-hidden="true" />}
                 {link.label}
               </Link>
             )
