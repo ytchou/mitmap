@@ -20,7 +20,7 @@ type BrandDraftData = BrandRow['draft_data']
 type TaxonomyTagRow = Database['public']['Tables']['taxonomy_tags']['Row']
 type RawSeedRow = Record<string, unknown>
 
-const curatedSubmissionSchema = createSubmissionSchema(false).omit({
+export const curatedSubmissionSchema = createSubmissionSchema(false).omit({
   _honeypot: true,
   isOwner: true,
   pdpaConsent: true,
@@ -268,7 +268,8 @@ export function normalizeRow(rawRow: RawSeedRow): CuratedSubmissionInput {
     name: getString(rawRow.name),
     description: getString(rawRow.description),
     category: getString(rawRow.category),
-    tags: parseStringArray(rawRow.tags, 'tags'),
+    region: getString(rawRow.region) || undefined,
+    valueTags: parseStringArray(rawRow.valueTags ?? rawRow.tags, 'valueTags'),
     logoUrl: getString(rawRow.logoUrl),
     productPhotos: parseStringArray(rawRow.productPhotos, 'productPhotos'),
     brandHighlights: getString(rawRow.brandHighlights),

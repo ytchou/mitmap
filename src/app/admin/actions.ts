@@ -18,17 +18,19 @@ import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verificatio
 import {
   brandToInsert,
   createBrand,
+  curatedSubmissionSchema,
   curatedSubmissionToBrand,
   deleteBrand,
   findSimilarBrands,
   generateSlug,
   getBrandById,
   isReservedSlug,
+  normalizeRow,
   parseBrandCSV,
   syncBrandImages,
   updateBrand,
 } from '@/lib/services/brands'
-import type { SimilarBrand } from '@/lib/services/brands'
+import type { CuratedSubmissionInput, SimilarBrand } from '@/lib/services/brands'
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
 import {
   createTag,
@@ -59,13 +61,12 @@ import { updateReportStatus } from '@/lib/services/reports'
 import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedback'
 import type { FeedbackStatus } from '@/lib/services/feedback'
 import type { TagCategory } from '@/lib/types'
-import { createSubmissionSchema } from '@/lib/validations/submission'
 
 export type PreviewRow = {
   rowIndex: number
   name: string
   slug: string
-  validatedData: Record<string, unknown>
+  validatedData: Partial<CuratedSubmissionInput>
   status: 'new' | 'potential-duplicate' | 'error'
   match?: SimilarBrand
   error?: string
@@ -865,60 +866,6 @@ export async function syncSentryFeedbackAction(): Promise<
   }
 }
 
-const bulkImportSubmissionSchema = createSubmissionSchema(false).omit({
-  _honeypot: true,
-  isOwner: true,
-  pdpaConsent: true,
-  sourceAttribution: true,
-  turnstileToken: true,
-})
-
-function csvStringValue(value: unknown): string {
-  if (typeof value === 'string') return value.trim()
-  if (value == null) return ''
-  return String(value).trim()
-}
-
-function csvStringArrayValue(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => csvStringValue(item))
-      .filter(Boolean)
-  }
-
-  const raw = csvStringValue(value)
-  return raw ? [raw] : []
-}
-
-function normalizeBulkImportRow(rawRow: Record<string, unknown>): Record<string, unknown> {
-  const socialLinks =
-    rawRow.socialLinks && typeof rawRow.socialLinks === 'object' && !Array.isArray(rawRow.socialLinks)
-      ? rawRow.socialLinks as Record<string, unknown>
-      : {}
-
-  return {
-    ...rawRow,
-    name: csvStringValue(rawRow.name),
-    description: csvStringValue(rawRow.description),
-    category: csvStringValue(rawRow.category),
-    region: csvStringValue(rawRow.region) || undefined,
-    valueTags: csvStringArrayValue(rawRow.valueTags ?? rawRow.tags),
-    logoUrl: csvStringValue(rawRow.logoUrl),
-    productPhotos: csvStringArrayValue(rawRow.productPhotos),
-    brandHighlights: csvStringValue(rawRow.brandHighlights),
-    purchaseLinks: Array.isArray(rawRow.purchaseLinks) ? rawRow.purchaseLinks : [],
-    socialLinks: {
-      instagram: csvStringValue(socialLinks.instagram ?? rawRow.instagram),
-      threads: csvStringValue(socialLinks.threads ?? rawRow.threads),
-      facebook: csvStringValue(socialLinks.facebook ?? rawRow.facebook),
-      website: csvStringValue(
-        socialLinks.website ?? socialLinks.officialWebsite ?? rawRow.website ?? rawRow.officialWebsite
-      ),
-    },
-    retailLocations: Array.isArray(rawRow.retailLocations) ? rawRow.retailLocations : [],
-  }
-}
-
 export async function previewBulkImportAction(
   csvText: string
 ): Promise<{ error?: string; rows: PreviewRow[] }> {
@@ -935,11 +882,33 @@ export async function previewBulkImportAction(
     const validRows: PreviewRow[] = []
 
     rawRows.forEach((rawRow, index) => {
-      const parsed = bulkImportSubmissionSchema.safeParse(normalizeBulkImportRow(rawRow))
+      let normalized: CuratedSubmissionInput
+      try {
+        normalized = normalizeRow(rawRow)
+      } catch (err) {
+        const name =
+          typeof rawRow.name === 'string'
+            ? rawRow.name.trim()
+            : rawRow.name == null
+              ? ''
+              : String(rawRow.name).trim()
+
+        rows.push({
+          rowIndex: index + 1,
+          name,
+          slug: '',
+          validatedData: {},
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Unknown validation error',
+        })
+        return
+      }
+
+      const parsed = curatedSubmissionSchema.safeParse(normalized)
       if (!parsed.success) {
         rows.push({
           rowIndex: index + 1,
-          name: csvStringValue(rawRow.name),
+          name: normalized.name,
           slug: '',
           validatedData: {},
           status: 'error',
