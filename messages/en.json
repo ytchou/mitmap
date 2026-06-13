@@ -1087,7 +1087,14 @@
       "valueTagsOptionalHint": "optional",
       "valueTagsCounter": "{count} / {max}",
       "valueTagsCounterLabel": "{count} of {max} selected",
-      "removeValue": "Remove {value}"
+      "removeValue": "Remove {value}",
+      "ubn": "Unified Business Number (optional)",
+      "ubnHint": "8-digit number issued by the Ministry of Economic Affairs",
+      "ubnDuplicateTitle": "A brand with this UBN already exists in the directory",
+      "ubnDuplicateSeeExisting": "See existing brand:",
+      "nameDuplicateTitle": "Similar brand names found",
+      "nameDuplicateConfirmLabel": "I confirm this is not a duplicate brand",
+      "checking": "Checking"
     },
     "review": {
       "brandInfo": "Brand Info",

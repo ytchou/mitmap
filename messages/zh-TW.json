@@ -1087,7 +1087,14 @@
       "valueTagsOptionalHint": "選填",
       "valueTagsCounter": "{count} / {max}",
       "valueTagsCounterLabel": "已選擇 {count} 個，最多 {max} 個",
-      "removeValue": "移除 {value}"
+      "removeValue": "移除 {value}",
+      "ubn": "統一編號（選填）",
+      "ubnHint": "8位數字，公司或商號的統一編號，由經濟部核發",
+      "ubnDuplicateTitle": "此統一編號的品牌已存在於目錄中",
+      "ubnDuplicateSeeExisting": "請查看現有品牌：",
+      "nameDuplicateTitle": "發現相似品牌名稱",
+      "nameDuplicateConfirmLabel": "我確認這不是重複的品牌",
+      "checking": "檢查中"
     },
     "review": {
       "brandInfo": "品牌資訊",
