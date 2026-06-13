@@ -97,7 +97,7 @@ export async function submitBrand(
       contactEmail: user.email ?? null,
       brandHighlights: parsed.brandHighlights?.trim() || null,
       siteContent: null,
-      unified_business_number: parsed.unifiedBusinessNumber ?? null,
+      unifiedBusinessNumber: parsed.unifiedBusinessNumber ?? null,
     })
 
     // Create submission audit record

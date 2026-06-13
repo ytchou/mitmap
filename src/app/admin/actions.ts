@@ -117,6 +117,7 @@ export async function approveSubmissionAction(
         contactEmail: submission.submitterEmail,
         brandHighlights: null,
         siteContent: null,
+        unifiedBusinessNumber: submission.unifiedBusinessNumber ?? null,
       })
       slug = brand.slug
     } else {

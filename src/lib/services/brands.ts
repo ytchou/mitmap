@@ -467,7 +467,7 @@ export async function getBrandBySlug(slug: string): Promise<Brand> {
 
 export async function createBrand(
   data: Omit<Brand, 'id' | 'tags' | 'submittedAt' | 'approvedAt' | 'createdAt' | 'updatedAt'> & {
-    unified_business_number?: string | null
+    unifiedBusinessNumber?: string | null
   }
 ): Promise<Brand> {
   const supabase = createServiceClient()
@@ -488,7 +488,7 @@ export async function createBrand(
   if (existing) throw new ValidationError(`Brand slug already exists: ${slug}`)
 
   const row = brandToInsert({ ...data, slug })
-  row.unified_business_number = data.unified_business_number ?? null
+  row.unified_business_number = data.unifiedBusinessNumber ?? null
   const { data: inserted, error } = await supabase
     .from('brands')
     .insert(row)
