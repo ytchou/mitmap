@@ -1094,7 +1094,9 @@
       "ubnDuplicateSeeExisting": "請查看現有品牌：",
       "nameDuplicateTitle": "發現相似品牌名稱",
       "nameDuplicateConfirmLabel": "我確認這不是重複的品牌",
-      "checking": "檢查中"
+      "checking": "檢查中",
+      "next": "下一步",
+      "dedup_check_failed": "無法驗重複，請再試一次。"
     },
     "review": {
       "brandInfo": "品牌資訊",

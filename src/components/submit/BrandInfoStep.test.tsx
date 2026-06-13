@@ -31,6 +31,12 @@ vi.mock('../upload/ImageUploader', () => ({
   ImageUploader: () => <div data-testid="image-uploader" />,
 }))
 
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+    <a href={href} className={className}>{children}</a>
+  ),
+}))
+
 const mockCheckDuplicates = vi.mocked(checkDuplicates)
 
 const mockCategories = [
@@ -175,7 +181,7 @@ describe('BrandInfoStep duplicate checks', () => {
     await user.click(screen.getByRole('button', { name: /next/i }))
 
     expect(await screen.findByText('發現相似品牌名稱')).toBeInTheDocument()
-    expect(screen.getByText('相似品牌')).toBeInTheDocument()
+    expect(screen.getByText(/相似品牌 \(91%\)/)).toBeInTheDocument()
     expect(
       screen.getByRole('checkbox', { name: '我確認這不是重複的品牌' })
     ).toBeInTheDocument()

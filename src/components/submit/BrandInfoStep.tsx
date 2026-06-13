@@ -19,6 +19,7 @@ import { ImageUploader } from '../upload/ImageUploader'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { checkDuplicates } from '@/app/[locale]/submit/actions'
+import { Link } from '@/i18n/navigation'
 import type { SubmissionFormData } from '@/lib/validations/submission'
 import type { PhotoItem } from '@/lib/types/scraper'
 import type { TaxonomyTag } from '@/lib/types/taxonomy'
@@ -263,6 +264,7 @@ export function BrandInfoStep({
   const [dedupCheckedName, setDedupCheckedName] = useState('')
   const [dedupCheckedUbn, setDedupCheckedUbn] = useState('')
   const [dedupConfirmed, setDedupConfirmed] = useState(false)
+  const [dedupError, setDedupError] = useState<string | null>(null)
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false)
   const activeDedupResult =
     dedupResult &&
@@ -272,6 +274,7 @@ export function BrandInfoStep({
       : null
 
   const handleNext = async () => {
+    setDedupError(null)
     if (!onNext || activeDedupResult?.ubnMatch) return
 
     const formValues = getValues()
@@ -298,6 +301,9 @@ export function BrandInfoStep({
       }
 
       onNext(formValues)
+    } catch (err) {
+      console.error("[handleNext] checkDuplicates failed:", err)
+      setDedupError(t("dedup_check_failed"))
     } finally {
       setIsCheckingDuplicates(false)
     }
@@ -595,12 +601,12 @@ export function BrandInfoStep({
           <AlertTitle>{t('ubnDuplicateTitle')}</AlertTitle>
           <AlertDescription>
             {t('ubnDuplicateSeeExisting')}
-            <a
+            <Link
               href={`/brands/${activeDedupResult.ubnMatch.slug}`}
               className="ml-1 underline"
             >
               {activeDedupResult.ubnMatch.name}
-            </a>
+            </Link>
           </AlertDescription>
         </Alert>
       )}
@@ -613,7 +619,9 @@ export function BrandInfoStep({
             <AlertDescription>
               <ul className="mb-2 mt-1 list-inside list-disc">
                 {activeDedupResult.nameMatches.map((m) => (
-                  <li key={m.id}>{m.name}</li>
+                  <li key={m.id}>
+                    {m.name} ({Math.round(m.similarity * 100)}%)
+                  </li>
                 ))}
               </ul>
               <div className="mt-2 flex items-center gap-2">
@@ -635,7 +643,7 @@ export function BrandInfoStep({
         )}
 
       {onNext && (
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end">
           <button
             type="button"
             onClick={handleNext}
@@ -645,6 +653,9 @@ export function BrandInfoStep({
             {isCheckingDuplicates ? t('checking') : t('next')}
             <ArrowRight className="h-4 w-4" />
           </button>
+          {dedupError && (
+            <p className="text-sm text-destructive mt-1">{dedupError}</p>
+          )}
         </div>
       )}
     </div>

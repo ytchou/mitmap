@@ -1094,7 +1094,9 @@
       "ubnDuplicateSeeExisting": "See existing brand:",
       "nameDuplicateTitle": "Similar brand names found",
       "nameDuplicateConfirmLabel": "I confirm this is not a duplicate brand",
-      "checking": "Checking"
+      "checking": "Checking",
+      "next": "Next",
+      "dedup_check_failed": "Unable to check for duplicates. Please try again."
     },
     "review": {
       "brandInfo": "Brand Info",
