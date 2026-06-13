@@ -131,7 +131,7 @@ export function submissionToInsert(
   if (data.notifiedAt !== undefined) row.notified_at = data.notifiedAt
   if (data.isBrandOwner !== undefined) row.is_brand_owner = data.isBrandOwner
   if (data.sourceAttribution !== undefined) row.source_attribution = data.sourceAttribution
-  if (data.productTypeNote !== undefined) row.product_type_note = data.productTypeNote
+  row.product_type_note = data.productTypeNote ?? null
   return row
 }
 
@@ -149,7 +149,6 @@ export async function createSubmission(
   // Authenticated insert: RLS requires a signed-in user, and the submit action authenticates first.
   const supabase = await createClient()
   const row = submissionToInsert(data)
-  row.product_type_note = data.productTypeNote ?? null
   const { data: inserted, error } = await supabase
     .from('brand_submissions')
     .insert(row)
