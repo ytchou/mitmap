@@ -40,12 +40,12 @@ export function SystemStatusCard({ initialResults }: { initialResults: ServiceHe
           disabled={isPending}
           className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
         >
-          {isPending ? '更新中…' : 'Refresh'}
+          {isPending ? '更新中…' : '重新整理'}
         </button>
       </CardHeader>
       <CardContent className="space-y-2">
         {initialResults.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground">No data</p>
+          <p className="text-center text-sm text-muted-foreground">無資料</p>
         )}
         {initialResults.map((result) => (
           <div key={result.service} className="flex items-center justify-between text-sm">
