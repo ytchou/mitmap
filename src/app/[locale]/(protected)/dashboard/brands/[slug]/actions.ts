@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
 import { isOwnerOf } from '@/lib/services/brand-owners'
 import { createPendingEdit } from '@/lib/services/pending-edits'
+import { scanContent, shouldAutoApprove, saveModerationFlags } from '@/lib/services/moderation'
 import {
   diffRemovedImageUrls,
   discardDraft,
@@ -19,6 +20,7 @@ import {
 import { deleteBrandImages } from '@/lib/services/image-upload'
 import { getTagBySlug, updateBrandCategoryTags } from '@/lib/services/taxonomy'
 import type { Brand, PurchaseLink, RetailLocation } from '@/lib/types'
+import type { ContentPayload, ModerationResult } from '@/lib/services/moderation'
 
 type ActionState = {
   success?: boolean
@@ -157,6 +159,67 @@ function imageUrlsFromSnapshot(snapshot: Record<string, unknown> | null): string
   ].filter((url): url is string => Boolean(url))
 }
 
+function getString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function getPurchaseUrl(value: unknown): string | undefined {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const firstLink = value.find((item): item is { url: string } => (
+    typeof item === 'object' &&
+    item !== null &&
+    'url' in item &&
+    typeof item.url === 'string' &&
+    item.url.length > 0
+  ))
+  return firstLink?.url
+}
+
+function getWebsite(value: unknown): string | undefined {
+  if (typeof value !== 'object' || value === null || !('officialWebsite' in value)) {
+    return undefined
+  }
+
+  return getString(value.officialWebsite)
+}
+
+function buildModerationPayload(
+  proposedData: Record<string, unknown>,
+  brandName: string
+): ContentPayload {
+  const proposedName = getString(proposedData.name)
+
+  return {
+    brandName: proposedName ?? brandName,
+    fields: {
+      name: proposedName,
+      description: getString(proposedData.description),
+      brandHighlights: getString(proposedData.brandHighlights),
+      website: getWebsite(proposedData.socialLinks),
+      purchaseUrl: getPurchaseUrl(proposedData.purchaseLinks),
+    },
+  }
+}
+
+async function saveModerationFlagsQuietly(
+  brandId: string,
+  userId: string,
+  moderationResult: ModerationResult
+): Promise<void> {
+  if (moderationResult.flags.length === 0) {
+    return
+  }
+
+  try {
+    await saveModerationFlags(brandId, userId, moderationResult.flags)
+  } catch (error) {
+    console.error('[brand:moderation] saveModerationFlags failed:', error)
+  }
+}
+
 export async function updateBrandAction(
   _prevState: ActionState,
   formData: FormData
@@ -188,7 +251,55 @@ export async function updateBrandAction(
     const updateData = parseBrandEditForm(formData, brand)
     const isAdmin = await isActingAsAdmin(user.email)
     if (!isAdmin) {
+      const proposedData = updateData as Record<string, unknown>
+      const moderationResult = scanContent(buildModerationPayload(proposedData, brand.name))
+      const autoApprove = moderationResult.flags.length === 0
+        ? await shouldAutoApprove(moderationResult, user.id)
+        : false
+
+      if (autoApprove) {
+        const previousImageUrls = imageUrlsFromBrand(brand)
+        const nextImageUrls = imageUrlsFromBrand({ ...brand, ...updateData })
+        const orphans = diffRemovedImageUrls(previousImageUrls, nextImageUrls)
+
+        const updatedBrand = await updateBrand(brand.id, updateData)
+
+        const regionSlug = formData.get('region') as string | null
+        if (regionSlug !== null) {
+          const tag = regionSlug ? await getTagBySlug(regionSlug) : null
+          await updateBrandCategoryTags(brand.id, 'region', tag ? [tag.id] : [])
+        }
+
+        const valueTagsRaw = formData.get('valueTags') as string | null
+        if (valueTagsRaw !== null) {
+          let slugs: string[] = []
+          try {
+            slugs = JSON.parse(valueTagsRaw || '[]')
+            if (!Array.isArray(slugs)) slugs = []
+          } catch {
+            slugs = []
+          }
+          const tags = await Promise.all(slugs.map(slug => getTagBySlug(slug)))
+          const ids = tags.filter(Boolean).map(t => t!.id)
+          await updateBrandCategoryTags(brand.id, 'value', ids)
+        }
+
+        await deleteBrandImages(orphans)
+
+        const { snapshot } = await discardDraft(brand.id)
+        const draftOnlyImages = diffRemovedImageUrls(
+          imageUrlsFromSnapshot(snapshot),
+          imageUrlsFromBrand(updatedBrand)
+        )
+        await deleteBrandImages(draftOnlyImages)
+
+        revalidatePath('/[locale]/brands/[slug]', 'page')
+        revalidatePath('/dashboard')
+        redirect(`/dashboard?tab=${brandSlug}`)
+      }
+
       await createPendingEdit(brand.id, user.id, updateData as Record<string, unknown>)
+      await saveModerationFlagsQuietly(brand.id, user.id, moderationResult)
       return { success: true, message: 'brandEditSubmittedForReview' }
     }
 
@@ -325,7 +436,36 @@ export async function publishDraftAction(
     const draftPartial = snapshot
     const isAdmin = await isActingAsAdmin(user.email)
     if (!isAdmin) {
+      const moderationResult = scanContent(buildModerationPayload(draftPartial, brand.name))
+      const autoApprove = moderationResult.flags.length === 0
+        ? await shouldAutoApprove(moderationResult, user.id)
+        : false
+
+      if (autoApprove) {
+        const nextImageUrls = imageUrlsFromBrand({
+          logoUrl: 'logoUrl' in snapshot
+            ? (typeof snapshot.logoUrl === 'string' ? snapshot.logoUrl : null)
+            : brand.logoUrl,
+          heroImageUrl: 'heroImageUrl' in snapshot
+            ? (typeof snapshot.heroImageUrl === 'string' ? snapshot.heroImageUrl : null)
+            : brand.heroImageUrl,
+          productPhotos: 'productPhotos' in snapshot
+            ? (Array.isArray(snapshot.productPhotos)
+                ? snapshot.productPhotos.filter((url): url is string => typeof url === 'string')
+                : [])
+            : brand.productPhotos,
+        })
+        const orphans = diffRemovedImageUrls(imageUrlsFromBrand(brand), nextImageUrls)
+        await publishDraft(brand.id)
+        await deleteBrandImages(orphans)
+
+        revalidatePath('/[locale]/brands/[slug]', 'page')
+        revalidatePath('/dashboard')
+        redirect(`/dashboard?tab=${brandSlug}`)
+      }
+
       await createPendingEdit(brand.id, user.id, draftPartial)
+      await saveModerationFlagsQuietly(brand.id, user.id, moderationResult)
       await discardDraft(brand.id)
       return { success: true, message: 'brandEditSubmittedForReview' }
     }
