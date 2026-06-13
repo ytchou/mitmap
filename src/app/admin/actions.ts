@@ -1021,8 +1021,8 @@ export async function executeBulkImportAction(
       }
     })
 
-    for (let index = 0; index < preparedRows.length; index += 100) {
-      const batch = preparedRows.slice(index, index + 100)
+    for (let batchStart = 0; batchStart < preparedRows.length; batchStart += 100) {
+      const batch = preparedRows.slice(batchStart, batchStart + 100)
       const { data: insertedRows, error } = await supabase
         .from('brands')
         .upsert(batch.map((row) => row.insert), { onConflict: 'slug', ignoreDuplicates: true })
