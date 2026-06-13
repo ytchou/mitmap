@@ -1,4 +1,5 @@
 import type { BrandSubmission, SubmissionStatus, SourceAttribution } from '@/lib/types'
+import type { DuplicateCheckResult } from '@/lib/types/submission'
 import type { Database } from '@/lib/supabase/database.types'
 import { NotFoundError } from '@/lib/errors'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
@@ -28,7 +29,9 @@ type SubmissionRowInput = Pick<
   | 'submitter_email'
   | 'submitted_at'
   | 'status'
-> & Partial<Omit<SubmissionRowWithProductTypeNote,
+> & {
+  unified_business_number?: string | null
+} & Partial<Omit<SubmissionRowWithProductTypeNote,
   | 'id'
   | 'brand_id'
   | 'brand_name'
@@ -57,6 +60,7 @@ export type CreateSubmissionInput = {
   isOwner?: boolean
   sourceAttribution?: SourceAttribution | null
   productTypeNote?: string | null
+  unifiedBusinessNumber?: string
 }
 
 export function buildSubmissionRecord(input: CreateSubmissionInput): Record<string, unknown> {
@@ -74,6 +78,7 @@ export function buildSubmissionRecord(input: CreateSubmissionInput): Record<stri
     is_brand_owner: input.isOwner ?? false,
     source_attribution: input.sourceAttribution ?? null,
     product_type_note: input.productTypeNote ?? null,
+    unified_business_number: input.unifiedBusinessNumber ?? null,
   }
 }
 
@@ -105,6 +110,7 @@ export function submissionToDomain(row: SubmissionRowInput): BrandSubmissionWith
     isBrandOwner: row.is_brand_owner ?? false,
     sourceAttribution: (row.source_attribution as BrandSubmission['sourceAttribution']) ?? null,
     productTypeNote: row.product_type_note ?? null,
+    unifiedBusinessNumber: row.unified_business_number ?? undefined,
   }
 }
 
@@ -132,6 +138,9 @@ export function submissionToInsert(
   if (data.isBrandOwner !== undefined) row.is_brand_owner = data.isBrandOwner
   if (data.sourceAttribution !== undefined) row.source_attribution = data.sourceAttribution
   row.product_type_note = data.productTypeNote ?? null
+  if (data.unifiedBusinessNumber !== undefined) {
+    row.unified_business_number = data.unifiedBusinessNumber ?? null
+  }
   return row
 }
 
@@ -141,7 +150,7 @@ export function submissionToInsert(
 
 export async function createSubmission(
   data: Pick<BrandSubmission, 'brandName' | 'submitterEmail'> &
-    Partial<Pick<BrandSubmission, 'brandId' | 'submitterName' | 'description' | 'websiteUrl' | 'socialLinks' | 'pdpaConsentAt' | 'isBrandOwner' | 'sourceAttribution'>> & {
+    Partial<Pick<BrandSubmission, 'brandId' | 'submitterName' | 'description' | 'websiteUrl' | 'socialLinks' | 'pdpaConsentAt' | 'isBrandOwner' | 'sourceAttribution' | 'unifiedBusinessNumber'>> & {
       suggestedTags?: SuggestedTagsInput
       productTypeNote?: string | null
     }
@@ -206,7 +215,10 @@ export async function getSubmission(id: string): Promise<BrandSubmission> {
   return submissionToDomain(data)
 }
 
-export async function getSubmissions(status?: SubmissionStatus): Promise<BrandSubmission[]> {
+export async function getSubmissions(
+  status?: SubmissionStatus,
+  options?: { limit?: number }
+): Promise<BrandSubmission[]> {
   const supabase = createServiceClient()
   let query = supabase.from('brand_submissions').select('*')
 
@@ -214,7 +226,12 @@ export async function getSubmissions(status?: SubmissionStatus): Promise<BrandSu
     query = query.eq('status', status)
   }
 
-  const { data, error } = await query.order('submitted_at', { ascending: false })
+  query = query.order('submitted_at', { ascending: false })
+  if (options?.limit) {
+    query = query.limit(options.limit)
+  }
+
+  const { data, error } = await query
 
   if (error) throw error
   return (data ?? []).map(submissionToDomain)
@@ -282,4 +299,26 @@ export async function getUserSubmissions(userEmail: string): Promise<UserSubmiss
     status: (row.status as 'pending' | 'approved' | 'rejected') ?? 'pending',
     createdAt: row.submitted_at,
   }))
+}
+
+export async function checkBrandDuplicates(
+  name: string,
+  ubn?: string
+): Promise<DuplicateCheckResult> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('check_brand_duplicates', {
+    p_name: name,
+    p_ubn: ubn ?? null,
+  })
+
+  if (error) {
+    console.error('[checkBrandDuplicates] RPC error:', error.message)
+    return { ubnMatch: null, nameMatches: [] }
+  }
+
+  return {
+    ubnMatch: data?.ubn_match ?? null,
+    nameMatches: data?.name_matches ?? [],
+  }
 }
