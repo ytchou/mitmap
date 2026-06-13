@@ -347,6 +347,43 @@ describe('trackSignUp', () => {
   })
 })
 
+describe('UTM on conversion events', () => {
+  beforeEach(() => {
+    window.history.pushState(
+      {},
+      '',
+      '/?utm_source=google&utm_medium=cpc&utm_campaign=launch'
+    )
+  })
+
+  it('trackSignUp includes UTM params', () => {
+    trackSignUp('google')
+    expect(mockSendGAEvent).toHaveBeenCalledWith(
+      'event',
+      'sign_up',
+      expect.objectContaining({
+        method: 'google',
+        utm_source: 'google',
+        utm_medium: 'cpc',
+        utm_campaign: 'launch',
+      })
+    )
+  })
+
+  it('trackSubmissionCompleted includes UTM params', () => {
+    trackSubmissionCompleted('test-brand', 'accessories', true, 120)
+    expect(mockSendGAEvent).toHaveBeenCalledWith(
+      'event',
+      'submission_completed',
+      expect.objectContaining({
+        utm_source: 'google',
+        utm_medium: 'cpc',
+        utm_campaign: 'launch',
+      })
+    )
+  })
+})
+
 describe('trackLogin', () => {
   it('sends login event with method', () => {
     trackLogin('google')

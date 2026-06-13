@@ -228,6 +228,7 @@ export function trackSubmissionCompleted(
     category,
     has_logo: hasLogo,
     time_spent_seconds: timeSpentSeconds,
+    ...getUtmParams(window.location.search),
   })
 }
 
@@ -308,7 +309,10 @@ export function trackOnboardingMilestoneReached(
 }
 
 export function trackSignUp(method: string) {
-  safeGAEvent('event', 'sign_up', { method })
+  safeGAEvent('event', 'sign_up', {
+    method,
+    ...getUtmParams(window.location.search),
+  })
 }
 
 export function trackLogin(method: string) {
