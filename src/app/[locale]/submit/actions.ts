@@ -3,6 +3,7 @@
 import { getTranslations } from 'next-intl/server'
 import { createSubmissionSchema, type SubmissionFormData } from '@/lib/validations/submission'
 import { createBrand } from '@/lib/services/brands'
+import { scanContent, saveModerationFlags } from '@/lib/services/moderation'
 import { checkBrandDuplicates, createSubmission } from '@/lib/services/submissions'
 import { createClient } from '@/lib/supabase/server'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
@@ -66,6 +67,21 @@ export async function submitBrand(
       return { error: t('validation') }
     }
 
+    const moderationPayload = {
+      fields: {
+        name: parsed.name,
+        description: parsed.description,
+        brandHighlights: parsed.brandHighlights,
+        website: parsed.socialLinks.website,
+        purchaseUrl: parsed.purchaseLinks[0]?.url,
+      },
+      brandName: parsed.name,
+    }
+    const moderationResult = scanContent(moderationPayload)
+    if (moderationResult.riskLevel === 'high') {
+      return { error: t('validation') }
+    }
+
     // Create brand with pending status
     const brand = await createBrand({
       name: parsed.name,
@@ -99,6 +115,14 @@ export async function submitBrand(
       siteContent: null,
       unifiedBusinessNumber: parsed.unifiedBusinessNumber ?? null,
     })
+
+    if (moderationResult.flags.length > 0) {
+      try {
+        await saveModerationFlags(brand.id, user.id, moderationResult.flags)
+      } catch (err) {
+        console.error('Save moderation flags error:', err)
+      }
+    }
 
     // Create submission audit record
     await createSubmission({

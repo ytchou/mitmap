@@ -49,6 +49,7 @@ Content management and moderation.
 - Brand listing management (edit, hide, delete)
 - Taxonomy tag management (add, merge, rename)
 - New tag suggestion review
+- Content moderation dashboard (`/admin/moderation`) — pending flags with risk badges
 
 #### Admin god-mode ⇄ viewer-mode (DEV-764)
 By default an admin operates in **god mode**: they may act as the **owner of any brand** through the owner dashboard UI, managing any listing without owning it. This is gated by auth primitives backed by an `fm_mode` cookie:
@@ -91,9 +92,31 @@ A brand carries two **orthogonal** trust signals, plus an independent owner sign
 
 **Neutral Community absence:** a brand with neither the MIT nor the brand-managed badge displays a muted **社群品牌 / Community brand** label. Absence of a badge reads as intentional and complete, never as "missing" — MIT Smile certification is hard to obtain, so most brands legitimately lack it.
 
-**Admin verification path:** owners may optionally submit a MIT 微笑標章 number on the claim form (`claim_requests.mit_smile_cert`). An admin verifies or rejects MIT status from the claim-review screen or per-brand on `/admin/brands` (service: `verifyMitStatus` / `rejectMitStatus`; server actions: `verifyMitAction` / `rejectMitAction`). v1 has no bulk import, no dedicated MIT queue, and no middle tier (all deferred to v2; v2 bulk-match lever = data.gov.tw dataset #6027).
+**Admin verification path:** owners may optionally submit a MIT 微笑標章 number on the claim form (`claim_requests.mit_smile_cert`). An admin verifies or rejects MIT status from the claim-review screen or per-brand on `/admin/brands` (service: `verifyMitStatus` / `rejectMitStatus`; server actions: `verifyMitAction` / `rejectMitAction`). v1 bulk import: admin-only CSV import page at `/admin/bulk-import` (DEV-806). MIT queue and middle tier still deferred to v2. v2 bulk-match lever = data.gov.tw dataset #6027.
 
-**Moderation under admin god mode (DEV-764):** when a god-mode admin edits a brand they do not own via the owner path, the edit is recorded as an **auto-resolved** moderation flag — `status='reviewed'` with `flag_reason` prefixed `admin-edit:`. This keeps a full audit trail but, unlike a real owner's edit (which stays `pending` and enters the review queue), it does **not** require human review. The tier-1 spam hard-block still applies to everyone, admins included. No DB migration is needed for this behavior.
+**Moderation under admin god mode (DEV-764):** when a god-mode admin edits a brand they do not own via the owner path, the edit runs `scanContent()` + `saveModerationFlags()` (same as any owner edit) and then immediately calls `markFlagsReviewed()` so the resulting flags are recorded as **auto-resolved** — `status='reviewed'` with `flag_reason` prefixed `admin-edit:`. This keeps a full audit trail but does **not** require human review. The tier-1 spam hard-block still applies to everyone, admins included. No DB migration is needed for this behavior.
+
+### Content Moderation (DEV-804)
+
+All brand submissions and owner edits pass through `scanContent()` (synchronous, in-process) before the record is persisted or queued.
+
+**Tier 1 — hard block (applies to everyone, including admins):**
+- Suspicious TLDs in URLs: `.tk`, `.ml`, `.ga`, `.cf`, `.gq`
+- Excessive URLs: more than 3 URLs in any single text field
+- Known English spam phrases (curated list in `moderation.ts`)
+
+**Tier 2 — zh-TW flags (queued for admin review):**
+- Contact injection: phone numbers or email addresses embedded in description/name fields
+- Excessive emoji: more than 10 emoji characters in a single field
+- Short or identical descriptions: description duplicates the brand name, or is under the minimum character threshold
+
+**Auto-approval for trusted owner edits:**
+- Owner edits with a clean tier-2 scan (no flags) AND `≥ TRUSTED_OWNER_THRESHOLD` (3) previously approved edits bypass the review queue and are applied directly.
+- New brand submissions always enter the admin review queue regardless of scan result — auto-approval does not apply.
+
+**Admin moderation dashboard (`/admin/moderation`, DEV-804):**
+- Lists all pending moderation flags with risk badges (tier label + matched rule).
+- Admins can approve or reject each flagged item inline.
 
 ### Brand Health Score (Internal Engagement Tool)
 

@@ -15,8 +15,24 @@ import {
   rejectPendingEdit,
 } from '@/lib/services/pending-edits'
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
-import { createBrand, updateBrand, getBrandById, deleteBrand, generateSlug, syncBrandImages } from '@/lib/services/brands'
+import {
+  brandToInsert,
+  createBrand,
+  curatedSubmissionSchema,
+  curatedSubmissionToBrand,
+  deleteBrand,
+  findSimilarBrands,
+  generateSlug,
+  getBrandById,
+  isReservedSlug,
+  normalizeRow,
+  parseBrandCSV,
+  syncBrandImages,
+  updateBrand,
+} from '@/lib/services/brands'
+import type { CuratedSubmissionInput, SimilarBrand } from '@/lib/services/brands'
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
+import { scanContent, saveModerationFlags, markFlagsReviewed } from '@/lib/services/moderation'
 import {
   createTag,
   updateTag,
@@ -46,6 +62,22 @@ import { updateReportStatus } from '@/lib/services/reports'
 import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedback'
 import type { FeedbackStatus } from '@/lib/services/feedback'
 import type { TagCategory } from '@/lib/types'
+
+export type PreviewRow = {
+  rowIndex: number
+  name: string
+  slug: string
+  validatedData: Partial<CuratedSubmissionInput>
+  status: 'new' | 'potential-duplicate' | 'error'
+  match?: SimilarBrand
+  error?: string
+}
+
+export type ImportResult = {
+  name: string
+  status: 'imported' | 'skipped' | 'error'
+  error?: string
+}
 
 function isStructuredTags(v: unknown): v is { region?: string; values?: string[] } {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -134,6 +166,12 @@ export async function approveSubmissionAction(
     }
 
     await approveSubmission(submissionId, auth.userId)
+
+    try {
+      await markFlagsReviewed(brand.id)
+    } catch (err) {
+      console.error('[admin] markFlagsReviewed failed:', err)
+    }
 
     try {
       const { suggestedTags } = submission
@@ -320,6 +358,12 @@ export async function approvePendingEditAction(
 
     const edit = await getPendingEditEmailContext(editId)
     await approvePendingEdit(editId, auth.userId)
+
+    try {
+      await markFlagsReviewed(edit.brandId)
+    } catch (err) {
+      console.error('[admin] markFlagsReviewed failed:', err)
+    }
 
     try {
       if (edit.ownerEmail && edit.brandName) {
@@ -509,13 +553,36 @@ export async function acknowledgeMitVerificationSubmissionAction(
 
 export async function updateBrandAction(
   brandId: string,
-  data: { name?: string; description?: string; category?: string; status?: string }
+  data: {
+    name?: string
+    description?: string
+    category?: string
+    status?: string
+    brandHighlights?: string
+    website?: string
+    purchaseUrl?: string
+  }
 ): Promise<{ error: string } | undefined> {
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return auth
 
     await updateBrand(brandId, data as Parameters<typeof updateBrand>[1])
+
+    const { name, description, brandHighlights, website, purchaseUrl } = data
+    const moderationPayload = {
+      fields: { name, description, brandHighlights, website, purchaseUrl },
+      brandName: name ?? '',
+    }
+    const moderationResult = scanContent(moderationPayload)
+    if (moderationResult.flags.length > 0) {
+      try {
+        await saveModerationFlags(brandId, auth.userId, moderationResult.flags)
+        await markFlagsReviewed(brandId)
+      } catch (err) {
+        console.error('[admin] god-mode moderation audit failed:', err)
+      }
+    }
 
     revalidatePath('/admin/brands')
     revalidatePath('/admin')
@@ -833,6 +900,199 @@ export async function syncSentryFeedbackAction(): Promise<
   } catch (err) {
     console.error('[admin:syncSentry]', err)
     return { error: err instanceof Error ? err.message : 'An unexpected error occurred' }
+  }
+}
+
+export async function previewBulkImportAction(
+  csvText: string
+): Promise<{ error?: string; rows: PreviewRow[] }> {
+  try {
+    const auth = await requireAdmin()
+    if ('error' in auth) return { error: auth.error, rows: [] }
+
+    const rawRows = parseBrandCSV(csvText)
+    if (rawRows.length === 0) {
+      return { error: 'No rows found in CSV', rows: [] }
+    }
+
+    const rows: PreviewRow[] = []
+    const validRows: PreviewRow[] = []
+
+    rawRows.forEach((rawRow, index) => {
+      let normalized: CuratedSubmissionInput
+      try {
+        normalized = normalizeRow(rawRow)
+      } catch (err) {
+        const name =
+          typeof rawRow.name === 'string'
+            ? rawRow.name.trim()
+            : rawRow.name == null
+              ? ''
+              : String(rawRow.name).trim()
+
+        rows.push({
+          rowIndex: index + 1,
+          name,
+          slug: '',
+          validatedData: {},
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Unknown validation error',
+        })
+        return
+      }
+
+      const parsed = curatedSubmissionSchema.safeParse(normalized)
+      if (!parsed.success) {
+        rows.push({
+          rowIndex: index + 1,
+          name: normalized.name,
+          slug: '',
+          validatedData: {},
+          status: 'error',
+          error: parsed.error.issues.map((issue) => issue.message).join('; '),
+        })
+        return
+      }
+
+      const slug = generateSlug(parsed.data.name)
+      if (!slug) {
+        rows.push({
+          rowIndex: index + 1,
+          name: parsed.data.name,
+          slug,
+          validatedData: parsed.data,
+          status: 'error',
+          error: 'Unable to generate slug',
+        })
+        return
+      }
+
+      if (isReservedSlug(slug)) {
+        rows.push({
+          rowIndex: index + 1,
+          name: parsed.data.name,
+          slug,
+          validatedData: parsed.data,
+          status: 'error',
+          error: `Slug conflicts with reserved route: ${slug}`,
+        })
+        return
+      }
+
+      const previewRow: PreviewRow = {
+        rowIndex: index + 1,
+        name: parsed.data.name,
+        slug,
+        validatedData: { ...parsed.data, slug },
+        status: 'new',
+      }
+      rows.push(previewRow)
+      validRows.push(previewRow)
+    })
+
+    const similarBrands = await findSimilarBrands(validRows.map((row) => row.name))
+    const bestMatches = new Map<string, SimilarBrand>()
+
+    for (const match of similarBrands) {
+      const current = bestMatches.get(match.inputName)
+      if (!current || match.score > current.score) {
+        bestMatches.set(match.inputName, match)
+      }
+    }
+
+    for (const row of validRows) {
+      const match = bestMatches.get(row.name)
+      if (match) {
+        row.status = 'potential-duplicate'
+        row.match = match
+      }
+    }
+
+    return { rows }
+  } catch (err) {
+    console.error('[admin:previewBulkImport]', err)
+    return {
+      error: err instanceof Error ? err.message : 'An unexpected error occurred',
+      rows: [],
+    }
+  }
+}
+
+export async function executeBulkImportAction(
+  selectedRows: PreviewRow[]
+): Promise<{ error?: string; results: ImportResult[] }> {
+  try {
+    const auth = await requireAdmin()
+    if ('error' in auth) return { error: auth.error, results: [] }
+
+    if (selectedRows.length === 0) {
+      return { results: [] }
+    }
+
+    const supabase = createServiceClient()
+    const results: ImportResult[] = selectedRows.map((row) => ({
+      name: row.name,
+      status: 'imported',
+    }))
+
+    const preparedRows: Array<{ index: number; slug: string; insert: Record<string, unknown> }> = []
+    selectedRows.forEach((row, index) => {
+      try {
+        const brand = curatedSubmissionToBrand(
+          row.validatedData as Parameters<typeof curatedSubmissionToBrand>[0]
+        )
+        preparedRows.push({
+          index,
+          slug: row.slug,
+          insert: {
+            ...brandToInsert(brand),
+            approved_at: new Date().toISOString(),
+          },
+        })
+      } catch (err) {
+        results[index] = {
+          name: row.name,
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Unknown import error',
+        }
+      }
+    })
+
+    for (let batchStart = 0; batchStart < preparedRows.length; batchStart += 100) {
+      const batch = preparedRows.slice(batchStart, batchStart + 100)
+      const { data: insertedRows, error } = await supabase
+        .from('brands')
+        .upsert(batch.map((row) => row.insert), { onConflict: 'slug', ignoreDuplicates: true })
+        .select('slug')
+
+      if (error) {
+        for (const row of batch) {
+          results[row.index] = {
+            name: selectedRows[row.index].name,
+            status: 'error',
+            error: error.message,
+          }
+        }
+      } else {
+        const insertedSlugs = new Set((insertedRows ?? []).map((r: { slug: string }) => r.slug))
+        for (const row of batch) {
+          const wasInserted = insertedSlugs.has(row.slug)
+          results[row.index] = {
+            name: selectedRows[row.index].name,
+            status: wasInserted ? 'imported' : 'skipped',
+          }
+        }
+      }
+    }
+
+    revalidatePath('/admin/brands')
+    return { results }
+  } catch (err) {
+    console.error('[admin:executeBulkImport]', err)
+    return {
+      error: err instanceof Error ? err.message : 'An unexpected error occurred',
+      results: [],
+    }
   }
 }
 
