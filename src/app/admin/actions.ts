@@ -61,6 +61,7 @@ import { generateClaimToken } from '@/lib/auth/claim-token'
 import { updateReportStatus } from '@/lib/services/reports'
 import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedback'
 import type { FeedbackStatus } from '@/lib/services/feedback'
+import { checkAllServices } from '@/lib/services/health-checks'
 import type { TagCategory } from '@/lib/types'
 
 export type PreviewRow = {
@@ -1130,4 +1131,13 @@ export async function bulkUpdateReportsAction(
   }
 
   return { updated, errors }
+}
+
+export async function refreshHealthChecks(): Promise<void> {
+  try {
+    await checkAllServices()
+  } catch (err) {
+    console.error('[admin:refreshHealthChecks]', err)
+  }
+  revalidatePath('/admin')
 }
