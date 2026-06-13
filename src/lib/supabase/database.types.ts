@@ -550,56 +550,6 @@ export type Database = {
         }
         Relationships: []
       }
-      moderation_flags: {
-        Row: {
-          brand_id: string
-          created_at: string
-          field_name: string
-          flag_reason: string
-          flagged_content: string
-          id: string
-          previous_content: string | null
-          reviewed_at: string | null
-          status: string
-          tier: string
-          user_id: string
-        }
-        Insert: {
-          brand_id: string
-          created_at?: string
-          field_name: string
-          flag_reason: string
-          flagged_content: string
-          id?: string
-          previous_content?: string | null
-          reviewed_at?: string | null
-          status?: string
-          tier: string
-          user_id: string
-        }
-        Update: {
-          brand_id?: string
-          created_at?: string
-          field_name?: string
-          flag_reason?: string
-          flagged_content?: string
-          id?: string
-          previous_content?: string | null
-          reviewed_at?: string | null
-          status?: string
-          tier?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "moderation_flags_brand_id_fkey"
-            columns: ["brand_id"]
-            isOneToOne: false
-            referencedRelation: "brands"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       owner_email_preferences: {
         Row: {
           created_at: string

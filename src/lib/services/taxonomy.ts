@@ -1,5 +1,4 @@
 import type { TagCategory, TaxonomyTag } from '@/lib/types'
-import type { TagSource } from '@/lib/types/taxonomy'
 import type { Database } from '@/lib/supabase/database.types'
 import { NotFoundError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -17,17 +16,6 @@ type BrandWithTaxonomyLeft = Pick<BrandRow, 'id' | 'name' | 'slug' | 'category'>
   brand_taxonomy: Array<{ brand_id: string }> | null
 }
 
-/** brand_taxonomy row with nested tag used in getBrandsForReview */
-type BrandTaxonomyWithSourceAndTag = {
-  source: string
-  taxonomy_tags: TaxonomyTagRow | null
-}
-
-/** Partial brand row (only the columns selected in getBrandsForReview) */
-type BrandWithTaxonomyForReview = Pick<BrandRow, 'id' | 'name' | 'slug'> & {
-  brand_taxonomy: BrandTaxonomyWithSourceAndTag[] | null
-}
-
 // ---------------------------------------------------------------------------
 // Additional types for taxonomy governance
 // ---------------------------------------------------------------------------
@@ -37,22 +25,6 @@ export type UntaggedBrand = {
   name: string
   slug: string
   category: string
-}
-
-export type BrandForReview = {
-  id: string
-  name: string
-  slug: string
-  tags: Array<TaxonomyTag & { source: TagSource }>
-}
-
-type ProcessSuggestedTagAction = 'create-new' | 'map-existing' | 'reject'
-
-type NewTagData = {
-  name: string
-  nameZh?: string
-  category: TagCategory
-  brandId: string
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +40,6 @@ export function tagToDomain(row: TaxonomyTagRow): TaxonomyTag {
     // taxonomy_tags.category is text in DB — cast to TagCategory at the boundary
     category: row.category as TagCategory,
     isActive: row.is_active ?? true,
-    suggestedBy: row.suggested_by ?? null,
     createdAt: row.created_at ?? '',
   }
 }
@@ -80,7 +51,6 @@ export function tagToInsert(data: Partial<TaxonomyTag>): Record<string, unknown>
   if (data.slug !== undefined) row.slug = data.slug
   if (data.category !== undefined) row.category = data.category
   if (data.isActive !== undefined) row.is_active = data.isActive
-  if (data.suggestedBy !== undefined) row.suggested_by = data.suggestedBy
   return row
 }
 
@@ -92,7 +62,7 @@ export async function getTags(category?: TagCategory, includeInactive?: boolean)
   const supabase = createServiceClient()
   let query = supabase
     .from('taxonomy_tags')
-    .select('*')
+    .select('*, brand_taxonomy(brands(status))')
 
   if (!includeInactive) {
     query = query.eq('is_active', true)
@@ -103,9 +73,15 @@ export async function getTags(category?: TagCategory, includeInactive?: boolean)
   }
 
   const { data, error } = await query
-
   if (error) throw error
-  return (data ?? []).map(tagToDomain)
+
+  return (data ?? [])
+    .map((row) => {
+      const bt = (row.brand_taxonomy as { brands: { status: string } | null }[] | null) ?? []
+      const brandCount = bt.filter((r) => r.brands?.status === 'approved').length
+      return { ...tagToDomain(row), brandCount }
+    })
+    .sort((a, b) => b.brandCount! - a.brandCount!)
 }
 
 export async function getActiveCategories(): Promise<
@@ -166,7 +142,7 @@ export async function getValueTagsWithCoverage(minBrands = 1): Promise<TaxonomyT
 }
 
 export async function createTag(
-  data: Pick<TaxonomyTag, 'name' | 'category'> & Partial<Pick<TaxonomyTag, 'nameZh' | 'suggestedBy'>>
+  data: Pick<TaxonomyTag, 'name' | 'category'> & Partial<Pick<TaxonomyTag, 'nameZh'>>
 ): Promise<TaxonomyTag> {
   const supabase = createServiceClient()
   const slug = generateSlug(data.name)
@@ -287,17 +263,13 @@ export async function activateTag(id: string): Promise<void> {
 // Tag assignment CRUD
 // ---------------------------------------------------------------------------
 
-export async function setBrandTags(
-  brandId: string,
-  tagIds: string[],
-  source: TagSource
-): Promise<void> {
+export async function setBrandTags(brandId: string, tagIds: string[]): Promise<void> {
   const supabase = createServiceClient()
 
   // Fetch existing rows before delete so we can restore on insert failure
   const { data: existingRows, error: fetchErr } = await supabase
     .from('brand_taxonomy')
-    .select('tag_id, source')
+    .select('tag_id')
     .eq('brand_id', brandId)
 
   if (fetchErr) throw fetchErr
@@ -311,7 +283,7 @@ export async function setBrandTags(
 
   if (tagIds.length === 0) return
 
-  const rows = tagIds.map((tagId) => ({ brand_id: brandId, tag_id: tagId, source }))
+  const rows = tagIds.map((tagId) => ({ brand_id: brandId, tag_id: tagId }))
   const { error: insertErr } = await supabase.from('brand_taxonomy').insert(rows)
 
   if (insertErr) {
@@ -320,7 +292,6 @@ export async function setBrandTags(
       const restoreRows = existingRows.map((r) => ({
         brand_id: brandId,
         tag_id: r.tag_id,
-        source: r.source,
       }))
       const { error: restoreErr } = await supabase.from('brand_taxonomy').insert(restoreRows)
       if (restoreErr) {
@@ -331,15 +302,11 @@ export async function setBrandTags(
   }
 }
 
-export async function addTagToBrand(
-  brandId: string,
-  tagId: string,
-  source: TagSource
-): Promise<void> {
+export async function addTagToBrand(brandId: string, tagId: string): Promise<void> {
   const supabase = createServiceClient()
   const { error } = await supabase
     .from('brand_taxonomy')
-    .upsert({ brand_id: brandId, tag_id: tagId, source }, { onConflict: 'brand_id,tag_id' })
+    .upsert({ brand_id: brandId, tag_id: tagId }, { onConflict: 'brand_id,tag_id' })
 
   if (error) throw error
 }
@@ -379,59 +346,4 @@ export async function getUntaggedBrands(): Promise<UntaggedBrand[]> {
       slug: row.slug,
       category: row.category ?? '',
     }))
-}
-
-export async function getBrandsForReview(source: TagSource = 'auto'): Promise<BrandForReview[]> {
-  const supabase = createServiceClient()
-
-  const { data, error } = await supabase
-    .from('brands')
-    .select('id, name, slug, brand_taxonomy!inner(source, taxonomy_tags(*))')
-    .eq('brand_taxonomy.source', source)
-
-  if (error) throw error
-
-  // Cast to typed join shape — Supabase's select return type doesn't track multi-level joins
-  const rows = (data ?? []) as unknown as BrandWithTaxonomyForReview[]
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    tags: (row.brand_taxonomy ?? [])
-      .filter((bt) => bt.taxonomy_tags !== null)
-      .map((bt) => ({
-        ...tagToDomain(bt.taxonomy_tags as TaxonomyTagRow),
-        source: bt.source as TagSource,
-      })),
-  }))
-}
-
-// ---------------------------------------------------------------------------
-// Suggested tag processing
-// ---------------------------------------------------------------------------
-
-export async function processSuggestedTag(
-  submissionId: string,
-  action: ProcessSuggestedTagAction,
-  targetTagId?: string,
-  newTagData?: NewTagData
-): Promise<void> {
-  if (action === 'reject') return
-
-  if (action === 'map-existing') {
-    if (!targetTagId) throw new Error('targetTagId required for map-existing action')
-    await addTagToBrand(submissionId, targetTagId, 'suggested')
-    return
-  }
-
-  if (action === 'create-new') {
-    if (!newTagData) throw new Error('newTagData required for create-new action')
-    const newTag = await createTag({
-      name: newTagData.name,
-      nameZh: newTagData.nameZh,
-      category: newTagData.category,
-      suggestedBy: submissionId,
-    })
-    await addTagToBrand(newTagData.brandId, newTag.id, 'suggested')
-  }
 }

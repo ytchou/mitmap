@@ -13,8 +13,6 @@ import {
   addTagToBrand,
   removeTagFromBrand,
   getUntaggedBrands,
-  getBrandsForReview,
-  processSuggestedTag,
   getValueTagsWithCoverage,
 } from '../taxonomy'
 
@@ -46,7 +44,7 @@ describe('setBrandTags', () => {
   it('deletes existing brand_taxonomy rows then inserts new ones', async () => {
     mockFrom.mockReturnValue(makeChain({ data: null, error: null }))
 
-    await setBrandTags('brand-1', ['tag-1', 'tag-2'], 'manual')
+    await setBrandTags('brand-1', ['tag-1', 'tag-2'])
 
     expect(mockFrom).toHaveBeenCalledWith('brand_taxonomy')
     // select (preflight) + delete + insert = 3 calls
@@ -56,13 +54,13 @@ describe('setBrandTags', () => {
   it('skips insert when tagIds is empty (untagging)', async () => {
     mockFrom.mockReturnValue(makeChain({ data: null, error: null }))
 
-    await setBrandTags('brand-1', [], 'manual')
+    await setBrandTags('brand-1', [])
 
     // select (preflight) + delete = 2 calls; insert is skipped
     expect(mockFrom).toHaveBeenCalledTimes(2)
   })
 
-  it('uses the provided source on all inserted rows', async () => {
+  it('inserts brand and tag ids only', async () => {
     const insertedRows: unknown[] = []
 
     // Calls: 1=select (preflight), 2=delete, 3=insert
@@ -78,13 +76,9 @@ describe('setBrandTags', () => {
       return { insert: insertMock }
     })
 
-    await setBrandTags('brand-1', ['tag-a'], 'auto')
+    await setBrandTags('brand-1', ['tag-a'])
 
-    expect(insertedRows).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ brand_id: 'brand-1', tag_id: 'tag-a', source: 'auto' }),
-      ])
-    )
+    expect(insertedRows).toEqual([{ brand_id: 'brand-1', tag_id: 'tag-a' }])
   })
 })
 
@@ -97,11 +91,11 @@ describe('addTagToBrand', () => {
     const upsertMock = vi.fn(() => makeChain({ data: null, error: null }))
     mockFrom.mockReturnValue({ upsert: upsertMock })
 
-    await addTagToBrand('brand-1', 'tag-1', 'suggested')
+    await addTagToBrand('brand-1', 'tag-1')
 
     expect(mockFrom).toHaveBeenCalledWith('brand_taxonomy')
     expect(upsertMock).toHaveBeenCalledWith(
-      { brand_id: 'brand-1', tag_id: 'tag-1', source: 'suggested' },
+      { brand_id: 'brand-1', tag_id: 'tag-1' },
       { onConflict: 'brand_id,tag_id' }
     )
   })
@@ -164,108 +158,6 @@ describe('getUntaggedBrands', () => {
     await getUntaggedBrands()
 
     expect(mockFrom).toHaveBeenCalledWith('brands')
-  })
-})
-
-describe('getBrandsForReview', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('returns brands with their tags', async () => {
-    const dbRows = [
-      {
-        id: 'b1',
-        name: 'Leather Studio',
-        slug: 'leather-studio',
-        brand_taxonomy: [
-          {
-            source: 'auto',
-            taxonomy_tags: {
-              id: 't1',
-              name: 'Bags',
-              name_zh: '包',
-              slug: 'bags',
-              category: 'product_type',
-              is_active: true,
-              suggested_by: null,
-              created_at: '2026-01-01',
-            },
-          },
-        ],
-      },
-    ]
-    mockFrom.mockReturnValue(makeChain({ data: dbRows, error: null }))
-
-    const result = await getBrandsForReview('auto')
-
-    expect(result.length).toBe(1)
-    expect(result[0].id).toBe('b1')
-    expect(result[0].tags.length).toBe(1)
-    expect(result[0].tags[0].id).toBe('t1')
-  })
-
-  it('queries brands table', async () => {
-    mockFrom.mockReturnValue(makeChain({ data: [], error: null }))
-
-    await getBrandsForReview('auto')
-
-    expect(mockFrom).toHaveBeenCalledWith('brands')
-  })
-})
-
-describe('processSuggestedTag', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('returns early on reject action without DB calls', async () => {
-    await processSuggestedTag('sub-1', 'reject')
-
-    expect(mockFrom).not.toHaveBeenCalled()
-  })
-
-  it('on map-existing: upserts into brand_taxonomy with targetTagId and suggested source', async () => {
-    const upsertMock = vi.fn(() => makeChain({ data: null, error: null }))
-    mockFrom.mockReturnValue({ upsert: upsertMock })
-
-    await processSuggestedTag('sub-1', 'map-existing', 'target-tag-id')
-
-    expect(upsertMock).toHaveBeenCalledWith(
-      expect.objectContaining({ tag_id: 'target-tag-id', source: 'suggested' }),
-      expect.any(Object)
-    )
-  })
-
-  it('on create-new: inserts a new tag then upserts into brand_taxonomy', async () => {
-    const tagRow = {
-      id: 'new-tag-id',
-      name: 'New Tag',
-      name_zh: null,
-      slug: 'new-tag',
-      category: 'product_type',
-      is_active: true,
-      suggested_by: null,
-      created_at: '2026-01-01',
-    }
-    const insertMock = vi.fn(() => makeChain({ data: tagRow, error: null }))
-    const upsertMock = vi.fn(() => makeChain({ data: null, error: null }))
-
-    let callCount = 0
-    mockFrom.mockImplementation(() => {
-      callCount++
-      if (callCount === 1) return { insert: insertMock }
-      return { upsert: upsertMock }
-    })
-
-    await processSuggestedTag('sub-1', 'create-new', undefined, {
-      name: 'New Tag',
-      category: 'product_type' as const,
-      brandId: 'brand-1',
-    })
-
-    expect(insertMock).toHaveBeenCalled()
-    expect(upsertMock).toHaveBeenCalled()
   })
 })
 

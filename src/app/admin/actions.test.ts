@@ -89,13 +89,6 @@ vi.mock('@/lib/services/taxonomy', () => ({
   mergeTag: vi.fn(),
   deactivateTag: vi.fn(),
   setBrandTags: vi.fn().mockResolvedValue(undefined),
-  getBrandsForReview: vi.fn().mockResolvedValue([]),
-  processSuggestedTag: vi.fn().mockResolvedValue(undefined),
-}))
-
-vi.mock('@/lib/services/moderation', () => ({
-  getModerationFlag: vi.fn(),
-  updateFlagStatus: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/lib/services/reports', () => ({
@@ -162,7 +155,6 @@ describe('admin actions module', () => {
     expect(typeof mod.renameTagAction).toBe('function')
     expect(typeof mod.mergeTagAction).toBe('function')
     expect(typeof mod.deactivateTagAction).toBe('function')
-    expect(typeof mod.reviewFlagAction).toBe('function')
     expect(typeof mod.acknowledgeMitVerificationSubmissionAction).toBe('function')
   })
 })
@@ -289,68 +281,8 @@ describe('resyncBrandImagesAction', () => {
   })
 })
 
-describe('revertFlagAction', () => {
-  it('revertFlagAction is exported', async () => {
-    const mod = await import('./actions')
-    expect(typeof mod.revertFlagAction).toBe('function')
-  })
-
-  it('returns stale error when flag has no previous_content', async () => {
-    const { getModerationFlag } = await import('@/lib/services/moderation')
-    vi.mocked(getModerationFlag).mockResolvedValue({
-      id: 'flag-1',
-      brandId: 'brand-1',
-      brandName: null,
-      brandSlug: null,
-      userId: 'user-1',
-      fieldName: 'description',
-      flaggedContent: 'SPAM',
-      previousContent: null,
-      flagReason: 'test',
-      tier: 'flag',
-      status: 'pending',
-      reviewedAt: null,
-      createdAt: '2026-01-01T00:00:00Z',
-    })
-
-    const { revertFlagAction } = await import('./actions')
-    const result = await revertFlagAction('flag-1')
-    expect(result).toEqual({ error: 'stale' })
-  })
-})
-
-describe('bulkUpdateFlagsAction', () => {
-  it('bulkUpdateFlagsAction is exported', async () => {
-    const mod = await import('./actions')
-    expect(typeof mod.bulkUpdateFlagsAction).toBe('function')
-  })
-
-  it('reviews all specified flag IDs', async () => {
-    const { updateFlagStatus } = await import('@/lib/services/moderation')
-    vi.mocked(updateFlagStatus).mockResolvedValue(undefined)
-
-    const { bulkUpdateFlagsAction } = await import('./actions')
-    const result = await bulkUpdateFlagsAction(['flag-1', 'flag-2'], 'reviewed')
-    expect(result).toEqual({ updated: 2, errors: [] })
-    expect(updateFlagStatus).toHaveBeenCalledTimes(2)
-  })
-
-  it('reports individual failures without aborting the rest', async () => {
-    const { updateFlagStatus } = await import('@/lib/services/moderation')
-    vi.mocked(updateFlagStatus)
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error('DB error'))
-
-    const { bulkUpdateFlagsAction } = await import('./actions')
-    const result = await bulkUpdateFlagsAction(['flag-1', 'flag-2'], 'reviewed')
-    expect(result.updated).toBe(1)
-    expect(result.errors).toHaveLength(1)
-    expect(result.errors[0].id).toBe('flag-2')
-  })
-})
-
 describe('setBrandTagsAction', () => {
-  it('calls setBrandTags with manual source', async () => {
+  it('calls setBrandTags with tag ids', async () => {
     const { setBrandTags } = await import('@/lib/services/taxonomy')
     vi.mocked(setBrandTags).mockResolvedValue(undefined)
 
@@ -361,7 +293,7 @@ describe('setBrandTagsAction', () => {
 
     const result = await setBrandTagsAction(formData)
 
-    expect(setBrandTags).toHaveBeenCalledWith('brand-123', ['tag-1', 'tag-2'], 'manual')
+    expect(setBrandTags).toHaveBeenCalledWith('brand-123', ['tag-1', 'tag-2'])
     expect(result).toEqual({ success: true })
   })
 
@@ -377,7 +309,7 @@ describe('setBrandTagsAction', () => {
 })
 
 describe('confirmBrandTagsAction', () => {
-  it('calls setBrandTags to upgrade source from auto to manual', async () => {
+  it('calls setBrandTags with confirmed tag ids', async () => {
     const { setBrandTags } = await import('@/lib/services/taxonomy')
     vi.mocked(setBrandTags).mockResolvedValue(undefined)
 
@@ -388,40 +320,7 @@ describe('confirmBrandTagsAction', () => {
 
     const result = await confirmBrandTagsAction(formData)
 
-    expect(setBrandTags).toHaveBeenCalledWith('brand-123', ['tag-1'], 'manual')
-    expect(result).toEqual({ success: true })
-  })
-})
-
-describe('processSuggestedTagAction', () => {
-  it('calls processSuggestedTag with correct params for reject', async () => {
-    const { processSuggestedTag } = await import('@/lib/services/taxonomy')
-    vi.mocked(processSuggestedTag).mockResolvedValue(undefined)
-
-    const { processSuggestedTagAction } = await import('./actions')
-    const formData = new FormData()
-    formData.append('submissionId', 'sub-123')
-    formData.append('action', 'reject')
-
-    const result = await processSuggestedTagAction(formData)
-
-    expect(processSuggestedTag).toHaveBeenCalledWith('sub-123', 'reject', undefined, undefined)
-    expect(result).toEqual({ success: true })
-  })
-
-  it('passes targetTagId for map-existing action', async () => {
-    const { processSuggestedTag } = await import('@/lib/services/taxonomy')
-    vi.mocked(processSuggestedTag).mockResolvedValue(undefined)
-
-    const { processSuggestedTagAction } = await import('./actions')
-    const formData = new FormData()
-    formData.append('submissionId', 'sub-123')
-    formData.append('action', 'map-existing')
-    formData.append('targetTagId', 'tag-456')
-
-    const result = await processSuggestedTagAction(formData)
-
-    expect(processSuggestedTag).toHaveBeenCalledWith('sub-123', 'map-existing', 'tag-456', undefined)
+    expect(setBrandTags).toHaveBeenCalledWith('brand-123', ['tag-1'])
     expect(result).toEqual({ success: true })
   })
 })

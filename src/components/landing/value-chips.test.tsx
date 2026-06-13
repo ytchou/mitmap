@@ -20,9 +20,9 @@ function renderWithZhTW(ui: React.ReactElement) {
 }
 
 const mockTags: TaxonomyTag[] = [
-  { id: '1', slug: 'sustainable', name: 'Sustainable', nameZh: '永續經營', category: 'value', isActive: true, suggestedBy: null, createdAt: '2024-01-01' },
-  { id: '2', slug: 'handmade', name: 'Handmade', nameZh: '手工製作', category: 'value', isActive: true, suggestedBy: null, createdAt: '2024-01-01' },
-  { id: '3', slug: 'local-ingredients', name: 'Local Ingredients', nameZh: '在地食材', category: 'value', isActive: true, suggestedBy: null, createdAt: '2024-01-01' },
+  { id: '1', slug: 'sustainable', name: 'Sustainable', nameZh: '永續經營', category: 'value', isActive: true, createdAt: '2024-01-01' },
+  { id: '2', slug: 'handmade', name: 'Handmade', nameZh: '手工製作', category: 'value', isActive: true, createdAt: '2024-01-01' },
+  { id: '3', slug: 'local-ingredients', name: 'Local Ingredients', nameZh: '在地食材', category: 'value', isActive: true, createdAt: '2024-01-01' },
 ]
 
 describe('ValueChips', () => {

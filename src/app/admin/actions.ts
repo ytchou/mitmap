@@ -12,7 +12,7 @@ import {
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
 import { createBrand, updateBrand, getBrandById, deleteBrand, generateSlug, syncBrandImages } from '@/lib/services/brands'
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
-import { createTag, updateTag, mergeTag, deactivateTag, activateTag, setBrandTags, processSuggestedTag } from '@/lib/services/taxonomy'
+import { createTag, updateTag, mergeTag, deactivateTag, activateTag, setBrandTags } from '@/lib/services/taxonomy'
 import { sendEmail } from '@/lib/email/send'
 import {
   buildApprovalEmail,
@@ -26,11 +26,10 @@ import {
 } from '@/lib/email/templates'
 import { createEmailPreferences } from '@/lib/services/email-lifecycle'
 import { generateClaimToken } from '@/lib/auth/claim-token'
-import { updateFlagStatus, getModerationFlag } from '@/lib/services/moderation'
 import { updateReportStatus } from '@/lib/services/reports'
 import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedback'
 import type { FeedbackStatus } from '@/lib/services/feedback'
-import type { TagCategory, Brand } from '@/lib/types'
+import type { TagCategory } from '@/lib/types'
 
 async function requireAdmin(): Promise<{ userId: string; email: string } | { error: string }> {
   const supabase = await createClient()
@@ -561,27 +560,6 @@ export async function mergeTagAction(
   }
 }
 
-export async function reviewFlagAction(
-  flagId: string,
-  decision: 'reviewed' | 'dismissed'
-): Promise<{ error: string } | undefined> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    await updateFlagStatus(flagId, decision)
-
-    revalidatePath('/admin/flagged')
-    revalidatePath('/admin')
-    return undefined
-  } catch (err) {
-    console.error('[admin:reviewFlag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
 export async function deactivateTagAction(
   tagId: string
 ): Promise<{ error: string } | undefined> {
@@ -622,70 +600,6 @@ export async function approveSuggestedTagAction(
   }
 }
 
-export async function revertFlagAction(
-  flagId: string
-): Promise<{ success: true } | { error: 'stale' | 'not_found' }> {
-  const auth = await requireAdmin()
-  if ('error' in auth) throw new Error(auth.error)
-
-  // 1. Fetch the flag via service layer
-  const flag = await getModerationFlag(flagId)
-
-  if (!flag) return { error: 'not_found' }
-
-  // 2. If no previous content to revert to, it's stale
-  if (!flag.previousContent) return { error: 'stale' }
-
-  // 3. Fetch the current brand via service layer (properly typed, snake_case → camelCase decoded)
-  let brand: Brand
-  try {
-    brand = await getBrandById(flag.brandId)
-  } catch {
-    return { error: 'not_found' }
-  }
-
-  // 4. Map fieldName to the current brand value using camelCase domain types
-  function getCurrentValue(fieldName: string): string | null {
-    switch (fieldName) {
-      case 'name': return brand.name ?? null
-      case 'description': return brand.description ?? null
-      case 'websiteUrl': return brand.socialLinks.officialWebsite ?? null
-      case 'instagram': return brand.socialLinks.instagram ?? null
-      case 'threads': return brand.socialLinks.threads ?? null
-      case 'facebook': return brand.socialLinks.facebook ?? null
-      default: return null
-    }
-  }
-
-  const currentValue = getCurrentValue(flag.fieldName)
-
-  // 5. Stale check — if the brand field no longer matches the flagged content, revert is no longer safe
-  if (currentValue !== flag.flaggedContent) return { error: 'stale' }
-
-  // 6. Build the update payload using domain types — updateBrand handles snake_case mapping
-  function buildBrandUpdate(fieldName: string, previousContent: string): Parameters<typeof updateBrand>[1] {
-    if (['websiteUrl', 'instagram', 'threads', 'facebook'].includes(fieldName)) {
-      return {
-        socialLinks: {
-          ...brand.socialLinks,
-          [fieldName === 'websiteUrl' ? 'officialWebsite' : fieldName]: previousContent,
-        },
-      }
-    }
-    return { [fieldName]: previousContent } as Parameters<typeof updateBrand>[1]
-  }
-
-  await updateBrand(brand.id, buildBrandUpdate(flag.fieldName, flag.previousContent))
-
-  // 7. Mark flag as reviewed
-  await updateFlagStatus(flagId, 'reviewed')
-
-  revalidatePath('/admin/flagged')
-  revalidatePath(`/brands/${brand.slug}`)
-
-  return { success: true }
-}
-
 export async function setBrandTagsAction(
   formData: FormData
 ): Promise<{ success: true } | { error: string }> {
@@ -702,7 +616,7 @@ export async function setBrandTagsAction(
 
     const tagIds: string[] = tagIdsRaw ? JSON.parse(tagIdsRaw as string) : []
 
-    await setBrandTags(brandId, tagIds, 'manual')
+    await setBrandTags(brandId, tagIds)
 
     revalidatePath('/admin/brands')
     revalidatePath('/admin/taxonomy')
@@ -731,7 +645,7 @@ export async function confirmBrandTagsAction(
 
     const tagIds: string[] = tagIdsRaw ? JSON.parse(tagIdsRaw as string) : []
 
-    await setBrandTags(brandId, tagIds, 'manual')
+    await setBrandTags(brandId, tagIds)
 
     revalidatePath('/admin/brands')
     revalidatePath('/admin/taxonomy')
@@ -742,71 +656,6 @@ export async function confirmBrandTagsAction(
       error: err instanceof Error ? err.message : 'An unexpected error occurred',
     }
   }
-}
-
-export async function processSuggestedTagAction(
-  formData: FormData
-): Promise<{ success: true } | { error: string }> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    const submissionId = formData.get('submissionId')
-    const action = formData.get('action')
-    const targetTagId = formData.get('targetTagId') ?? undefined
-    const newTagDataRaw = formData.get('newTagData') ?? undefined
-
-    if (!submissionId || typeof submissionId !== 'string') {
-      return { error: 'submissionId is required' }
-    }
-    if (!action || typeof action !== 'string') {
-      return { error: 'action is required' }
-    }
-
-    const newTagData = newTagDataRaw ? JSON.parse(newTagDataRaw as string) : undefined
-
-    await processSuggestedTag(
-      submissionId,
-      action as Parameters<typeof processSuggestedTag>[1],
-      targetTagId as string | undefined,
-      newTagData
-    )
-
-    revalidatePath('/admin/taxonomy')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin:processSuggestedTag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function bulkUpdateFlagsAction(
-  flagIds: string[],
-  decision: 'reviewed' | 'dismissed'
-): Promise<{ updated: number; errors: { id: string; message: string }[] }> {
-  const auth = await requireAdmin()
-  if ('error' in auth) throw new Error(auth.error)
-
-  let updated = 0
-  const errors: { id: string; message: string }[] = []
-
-  for (const id of flagIds) {
-    try {
-      await updateFlagStatus(id, decision)
-      updated++
-    } catch (err) {
-      errors.push({
-        id,
-        message: err instanceof Error ? err.message : 'Unknown error',
-      })
-    }
-  }
-
-  revalidatePath('/admin/flagged')
-
-  return { updated, errors }
 }
 
 export async function reviewReportAction(

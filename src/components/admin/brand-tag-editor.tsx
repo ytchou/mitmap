@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import type { TaxonomyTag, TagSource } from '@/lib/types/taxonomy'
+import type { TaxonomyTag } from '@/lib/types/taxonomy'
 
 interface Props {
-  brand: { id: string; name: string; tags: Array<TaxonomyTag & { source: TagSource }> }
+  brand: { id: string; name: string; tags: TaxonomyTag[] }
   allTags: TaxonomyTag[]
   onSave: (tagIds: string[]) => void | Promise<void>
 }
@@ -14,10 +14,6 @@ export function BrandTagEditor({ brand, allTags, onSave }: Props) {
     brand.tags.map((t) => t.id),
   )
   const [isSaving, setIsSaving] = useState(false)
-
-  const autoTagIds = new Set(
-    brand.tags.filter((t) => t.source === 'auto').map((t) => t.id),
-  )
 
   const grouped = allTags.reduce<Record<string, TaxonomyTag[]>>((acc, tag) => {
     if (!acc[tag.category]) acc[tag.category] = []
@@ -45,7 +41,6 @@ export function BrandTagEditor({ brand, allTags, onSave }: Props) {
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => {
               const isSelected = selectedTagIds.includes(tag.id)
-              const isAuto = autoTagIds.has(tag.id)
               return (
                 <button
                   key={tag.id}
@@ -58,17 +53,6 @@ export function BrandTagEditor({ brand, allTags, onSave }: Props) {
                   }
                 >
                   {tag.name}
-                  {isAuto && (
-                    <span
-                      className={
-                        isSelected
-                          ? 'text-[11px] font-medium text-white/70 bg-white/20 rounded-full px-2 py-0.5 ml-1'
-                          : 'text-[11px] font-medium text-[#857E79] bg-[#F5F4F1] rounded-full px-2 py-0.5 ml-1'
-                      }
-                    >
-                      auto
-                    </span>
-                  )}
                 </button>
               )
             })}

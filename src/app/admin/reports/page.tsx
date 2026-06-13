@@ -18,11 +18,7 @@ export default async function AdminReportsPage() {
         <h1 className="font-heading text-2xl font-bold">品牌檢舉</h1>
         <p className="mt-1 text-muted-foreground">審核社群回報的品牌問題</p>
       </div>
-      {reports.length === 0 ? (
-        <p className="text-muted-foreground">目前沒有待處理的檢舉。</p>
-      ) : (
-        <ReportsTable reports={reports} />
-      )}
+      <ReportsTable reports={reports} />
     </div>
   )
 }
