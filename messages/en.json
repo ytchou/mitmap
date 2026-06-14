@@ -1312,6 +1312,73 @@
       "cta": "Submit Your Brand"
     }
   },
+  "gettingStarted": {
+    "metadata": {
+      "title": "Getting Started",
+      "description": "Learn how Formoria works, how to submit Taiwan-made brands, and what happens after review."
+    },
+    "hero": {
+      "eyebrow": "Formoria onboarding",
+      "title": "Getting Started guide",
+      "intro": "Use this guide to understand how to discover, submit, claim, and maintain Taiwan-made brand listings on Formoria.",
+      "primaryCta": "Submit a brand",
+      "secondaryCta": "Browse brands"
+    },
+    "steps": {
+      "heading": "How Formoria works",
+      "discover": {
+        "title": "Discover Taiwan-made brands",
+        "body": "Explore verified listings across categories, values, locations, and shopping channels."
+      },
+      "submit": {
+        "title": "Submit or suggest a brand",
+        "body": "Share basic brand details, links, images, and value tags so the community can find them."
+      },
+      "review": {
+        "title": "Review and approval",
+        "body": "Our team checks submissions for accuracy, Taiwan relevance, and listing quality before publishing."
+      },
+      "manage": {
+        "title": "Claim and manage your listing",
+        "body": "Approved brand owners can claim their listing and keep information current from their dashboard."
+      }
+    },
+    "questions": {
+      "heading": "Common questions",
+      "eligibility": {
+        "question": "Who can submit a brand?",
+        "answer": "Anyone can suggest a Taiwan-made brand. You do not need to own the brand to submit it for review."
+      },
+      "details": {
+        "question": "What information should I prepare?",
+        "answer": "Prepare the brand name, description, official website or social links, product photos, purchase links, and any details that show the brand's Taiwan connection."
+      },
+      "review": {
+        "question": "How long does review take?",
+        "answer": "Most submissions are reviewed within 3 business days. We may contact you by email if we need more information."
+      },
+      "approval": {
+        "question": "What happens after approval?",
+        "answer": "The brand appears in the Formoria directory where visitors can discover it, save it, and follow links to learn more or buy."
+      },
+      "claim": {
+        "question": "Can I claim a brand listing?",
+        "answer": "Yes. Brand owners can request ownership after a listing is published, then manage updates through their account."
+      }
+    },
+    "tips": {
+      "heading": "Before you submit",
+      "accurate": "Use accurate, public-facing brand information.",
+      "photos": "Upload clear photos that show the product or brand experience.",
+      "links": "Include official links so reviewers can verify the submission."
+    },
+    "cta": {
+      "heading": "Ready to add a Taiwan-made brand?",
+      "body": "Start with the submission form, or review the FAQ if you need more detail.",
+      "submit": "Submit a brand",
+      "faq": "Read the FAQ"
+    }
+  },
   "admin": {
     "pendingEdits": {
       "title": "Brand Edit Review",

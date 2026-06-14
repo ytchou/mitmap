@@ -1312,6 +1312,73 @@
       "cta": "提交您的品牌"
     }
   },
+  "gettingStarted": {
+    "metadata": {
+      "title": "新手指南",
+      "description": "了解 Formoria 如何運作、如何提交台灣品牌，以及審核後會發生什麼事。"
+    },
+    "hero": {
+      "eyebrow": "Formoria 新手導覽",
+      "title": "Getting Started guide",
+      "intro": "透過這份指南了解如何探索、提交、認領並維護 Formoria 上的台灣品牌列表。",
+      "primaryCta": "提交品牌",
+      "secondaryCta": "瀏覽品牌"
+    },
+    "steps": {
+      "heading": "Formoria 如何運作",
+      "discover": {
+        "title": "探索台灣品牌",
+        "body": "依分類、品牌價值、地點與購買管道探索經審核的品牌列表。"
+      },
+      "submit": {
+        "title": "提交或推薦品牌",
+        "body": "分享基本品牌資訊、連結、圖片與品牌價值標籤，讓更多人找到它們。"
+      },
+      "review": {
+        "title": "審核與核准",
+        "body": "我們會在發布前檢查提交內容的準確性、台灣關聯與列表品質。"
+      },
+      "manage": {
+        "title": "認領並管理列表",
+        "body": "審核通過後，品牌主可以認領列表，並透過儀表板維護最新資訊。"
+      }
+    },
+    "questions": {
+      "heading": "常見問題",
+      "eligibility": {
+        "question": "誰可以提交品牌？",
+        "answer": "任何人都可以推薦台灣品牌。您不需要是品牌主，也可以提交品牌供我們審核。"
+      },
+      "details": {
+        "question": "我應該準備哪些資訊？",
+        "answer": "請準備品牌名稱、介紹、官方網站或社群連結、產品照片、購買連結，以及能說明品牌台灣關聯的資訊。"
+      },
+      "review": {
+        "question": "審核需要多久？",
+        "answer": "多數提交會在 3 個工作天內完成審核。如需更多資訊，我們可能會透過 Email 與您聯繫。"
+      },
+      "approval": {
+        "question": "審核通過後會發生什麼事？",
+        "answer": "品牌會出現在 Formoria 目錄中，訪客可以探索、收藏，並透過連結進一步了解或購買。"
+      },
+      "claim": {
+        "question": "我可以認領品牌列表嗎？",
+        "answer": "可以。品牌主可在列表發布後申請所有權，之後透過帳號管理更新內容。"
+      }
+    },
+    "tips": {
+      "heading": "提交前檢查",
+      "accurate": "使用準確且對外公開的品牌資訊。",
+      "photos": "上傳清楚呈現產品或品牌體驗的照片。",
+      "links": "提供官方連結，協助審核人員驗證提交內容。"
+    },
+    "cta": {
+      "heading": "準備新增台灣品牌了嗎？",
+      "body": "從提交表單開始，或先閱讀常見問題了解更多細節。",
+      "submit": "提交品牌",
+      "faq": "閱讀常見問題"
+    }
+  },
   "admin": {
     "pendingEdits": {
       "title": "品牌編輯審核",
