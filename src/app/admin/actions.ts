@@ -32,6 +32,7 @@ import type { CuratedSubmissionInput, SimilarBrand } from '@/lib/services/brands
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
 import { scanContent, saveModerationFlags, markFlagsReviewed } from '@/lib/services/moderation'
 import type { ModerationFlag } from '@/lib/services/moderation'
+import { submitBrandForReview } from '@/lib/services/submission-pipeline'
 import {
   createTag,
   updateTag,
@@ -73,7 +74,7 @@ export type ImportPreviewRow = {
   validatedData: Record<string, unknown>
   status: ImportPreviewStatus
   reason?: string
-  moderationFlags?: Array<{ type: string; message: string }>
+  moderationFlags?: ModerationFlag[]
 }
 
 export type ImportExecuteResult = {
@@ -947,13 +948,6 @@ function buildBulkImportModerationPayload(data: BulkImportValidatedData) {
   }
 }
 
-function summarizeModerationFlags(flags: ModerationFlag[]): Array<{ type: string; message: string }> {
-  return flags.map((flag) => ({
-    type: flag.tier,
-    message: `${flag.fieldName}: ${flag.reason}`,
-  }))
-}
-
 function parseBulkImportValidatedData(data: Record<string, unknown>): BulkImportValidatedData {
   return curatedSubmissionSchema.parse(data) as BulkImportValidatedData
 }
@@ -1045,7 +1039,7 @@ export async function previewBulkImportAction(
           validatedData,
           status: 'error',
           reason: '內容審核風險過高',
-          moderationFlags: summarizeModerationFlags(moderationResult.flags),
+          moderationFlags: moderationResult.flags,
         })
         return
       }
@@ -1058,7 +1052,7 @@ export async function previewBulkImportAction(
           validatedData,
           status: 'needs-review',
           reason: '內容需人工審核',
-          moderationFlags: summarizeModerationFlags(moderationResult.flags),
+          moderationFlags: moderationResult.flags,
         })
         return
       }
@@ -1133,17 +1127,12 @@ export async function executeBulkImportAction(
           officialWebsite: data.socialLinks.website || undefined,
         }
 
-        const brand = await createBrand({
+        await submitBrandForReview({
           name: data.name,
           slug: row.slug,
           description: data.description,
           logoUrl: data.logoUrl ?? null,
-          heroImageUrl: null,
-          status: 'pending',
-          isVerified: false,
-          isDemo: false,
           category,
-          foundingYear: null,
           purchaseLinks: data.purchaseLinks.map((link) => ({
             ...link,
             label: link.platform,
@@ -1157,35 +1146,18 @@ export async function executeBulkImportAction(
           productPhotos: data.productPhotos,
           contactEmail: null,
           brandHighlights: data.brandHighlights,
-          siteContent: null,
           unifiedBusinessNumber: data.unifiedBusinessNumber ?? null,
-        })
-
-        if (row.moderationFlags && row.moderationFlags.length > 0) {
-          const moderationResult = scanContent(buildBulkImportModerationPayload(data))
-          if (moderationResult.flags.length > 0) {
-            await saveModerationFlags(brand.id, auth.userId, moderationResult.flags)
-          }
-        }
-
-        await createSubmission({
-          brandId: brand.id,
-          brandName: data.name,
           submitterEmail: auth.email,
           submitterName: 'Bulk Import',
-          description: data.description,
-          websiteUrl: data.socialLinks.website || null,
-          socialLinks,
-          suggestedTags: {
-            ...(data.region ? { region: data.region } : {}),
-            ...(data.valueTags?.length ? { values: data.valueTags } : {}),
-            ...(data.productTypes?.length ? { productTypes: data.productTypes } : {}),
-          },
           isBrandOwner: false,
           sourceAttribution: null,
           pdpaConsentAt: new Date().toISOString(),
+          region: data.region,
+          valueTags: data.valueTags,
+          productTypes: data.productTypes,
           productTypeNote: data.productTypeNote ?? null,
-          unifiedBusinessNumber: data.unifiedBusinessNumber ?? undefined,
+          moderationFlags: row.moderationFlags,
+          moderatorUserId: auth.userId,
         })
 
         results.push({
