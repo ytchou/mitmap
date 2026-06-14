@@ -72,7 +72,7 @@ describe('previewBulkImportAction', () => {
   it('returns parse error for empty CSV', async () => {
     vi.mocked(parseBrandCSV).mockReturnValue([])
     const result = await previewBulkImportAction('')
-    expect(result?.error).toMatch(/no rows/i)
+    expect(result?.error).toMatch(/沒有可匯入|no rows/i)
   })
 
   it('returns preview rows with status for valid CSV', async () => {

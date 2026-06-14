@@ -43,8 +43,8 @@ describe('BulkImportV2', () => {
       const checkboxes = screen.getAllByRole('checkbox')
       expect(checkboxes[1]).toBeChecked()
       expect(checkboxes[2]).not.toBeChecked()
+      expect(screen.getByRole('button', { name: /匯入已選|匯入中/ })).toBeInTheDocument()
     })
-    expect(screen.getByRole('button', { name: '匯入已選' })).toBeInTheDocument()
   })
 
   it('shows results table after import', async () => {

@@ -57,8 +57,7 @@ test.describe('Admin smoke', () => {
 
   test('admin dashboard loads', async ({ adminPage }) => {
     await adminPage.goto('/admin');
-    // Use level-only selector to avoid translated text mismatch
-    await expect(adminPage.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10_000 });
+    await expect(adminPage.getByRole('heading', { name: '管理後台' }).first()).toBeVisible({ timeout: 10_000 });
     // Stats should be visible — use stable text labels rather than fragile CSS class selectors
     await expect(adminPage.getByText('品牌總數').first()).toBeVisible();
   });
