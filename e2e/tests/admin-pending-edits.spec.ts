@@ -97,10 +97,9 @@ test.describe('Admin pending-edits review queue', () => {
 
     // Step 1: Owner submits an edit via the dashboard edit form
     await userPage.goto(`/dashboard/brands/${approveBrandSlug}/edit`, { timeout: 60_000 });
-    await expect(userPage.getByRole('main')).toBeVisible({ timeout: 60_000 });
 
     const descField = userPage.locator('textarea[name="description"]');
-    await expect(descField).toBeVisible({ timeout: 10_000 });
+    await expect(descField).toBeVisible({ timeout: 60_000 });
     await descField.fill('');
     await descField.fill(newDescription);
     await userPage.getByRole('button', { name: '儲存變更' }).click();
@@ -150,10 +149,9 @@ test.describe('Admin pending-edits review queue', () => {
 
     // Step 1: Owner submits edit for the reject brand
     await userPage.goto(`/dashboard/brands/${rejectBrandSlug}/edit`, { timeout: 60_000 });
-    await expect(userPage.getByRole('main')).toBeVisible({ timeout: 60_000 });
 
     const descField = userPage.locator('textarea[name="description"]');
-    await expect(descField).toBeVisible({ timeout: 10_000 });
+    await expect(descField).toBeVisible({ timeout: 60_000 });
     await descField.fill('');
     await descField.fill(editDescription);
     await userPage.getByRole('button', { name: '儲存變更' }).click();

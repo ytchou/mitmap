@@ -9,7 +9,7 @@ export const MIN_CJK_DESCRIPTION_CHARS = 10
 export const TRUSTED_OWNER_THRESHOLD = 3
 export const ENGLISH_SPAM_PHRASES = ['click here', 'buy now', 'free offer', 'limited time', 'act now']
 
-export type ModerationTier = 'tier1' | 'tier2'
+export type ModerationTier = 'block' | 'flag'
 export type RiskLevel = 'clean' | 'medium' | 'high'
 
 export interface ModerationFlag {
@@ -82,7 +82,7 @@ export function checkSuspiciousTlds(fields: Record<string, string | undefined>):
           flags.push(
             createFlag(
               fieldName,
-              'tier1',
+              'block',
               `Suspicious TLD detected: ${suspiciousTld}`,
               urlText
             )
@@ -112,7 +112,7 @@ export function checkExcessiveUrls(fields: Record<string, string | undefined>): 
       flags.push(
         createFlag(
           fieldName,
-          'tier1',
+          'block',
           `Too many URLs detected: ${urls.length}`,
           value
         )
@@ -140,7 +140,7 @@ export function checkEnglishSpam(fields: Record<string, string | undefined>): Mo
       flags.push(
         createFlag(
           fieldName,
-          'tier1',
+          'block',
           `English spam phrase detected: ${spamPhrase}`,
           value
         )
@@ -165,7 +165,7 @@ export function checkContactInjection(fields: Record<string, string | undefined>
       flags.push(
         createFlag(
           fieldName,
-          'tier2',
+          'flag',
           'Taiwan phone number detected',
           value
         )
@@ -176,7 +176,7 @@ export function checkContactInjection(fields: Record<string, string | undefined>
       flags.push(
         createFlag(
           fieldName,
-          'tier2',
+          'flag',
           'Email address detected',
           value
         )
@@ -201,7 +201,7 @@ export function checkExcessiveEmoji(fields: Record<string, string | undefined>):
       flags.push(
         createFlag(
           fieldName,
-          'tier2',
+          'flag',
           `Too many emoji detected: ${emojiCount}`,
           value
         )
@@ -229,7 +229,7 @@ export function checkShortOrIdenticalDescription(
     flags.push(
       createFlag(
         'description',
-        'tier2',
+        'flag',
         `Description has fewer than ${MIN_CJK_DESCRIPTION_CHARS} CJK characters`,
         description
       )
@@ -240,7 +240,7 @@ export function checkShortOrIdenticalDescription(
     flags.push(
       createFlag(
         'description',
-        'tier2',
+        'flag',
         'Description is identical to brand name',
         description
       )
