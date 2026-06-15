@@ -120,7 +120,7 @@ const brand = {
 const moderationFlags: ModerationFlag[] = [
   {
     fieldName: 'description',
-    tier: 'tier1',
+    tier: 'block',
     reason: 'Suspicious content',
     flaggedContent: 'suspicious',
   },

@@ -181,7 +181,7 @@ function makeFlag(overrides: Partial<FlaggedContentItem> = {}): FlaggedContentIt
     brandId: 'brand-5',
     brandName: 'Flagged Brand',
     fieldName: 'description',
-    tier: 'tier1',
+    tier: 'block',
     reason: 'Suspicious TLD detected: .tk',
     flaggedContent: 'https://example.tk',
     status: 'pending',

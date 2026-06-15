@@ -97,11 +97,11 @@ test.describe('Admin content moderation dashboard', () => {
     // The seeded brand's flag rows appear in the table
     await expect(adminPage.getByText(/\[E2E-TEST\] Moderation/).first()).toBeVisible({ timeout: 10_000 });
 
-    // High-risk badge (tier1 → riskHigh → "高風險") is visible
-    await expect(adminPage.getByText('高風險').first()).toBeVisible({ timeout: 5_000 });
+    // High-risk badge (block → riskHigh → "高風險") is visible in the table (not the filter dropdown)
+    await expect(adminPage.locator('table').getByText('高風險').first()).toBeVisible({ timeout: 5_000 });
 
-    // Medium-risk badge (tier2 → riskMedium → "中風險") is visible
-    await expect(adminPage.getByText('中風險').first()).toBeVisible({ timeout: 5_000 });
+    // Medium-risk badge (flag → riskMedium → "中風險") is visible in the table
+    await expect(adminPage.locator('table').getByText('中風險').first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('moderation dashboard filter by risk shows correct subset', async ({
@@ -112,8 +112,8 @@ test.describe('Admin content moderation dashboard', () => {
     await adminPage.goto('/admin/review-queue/moderation?risk=high', { timeout: 60_000 });
     await expect(adminPage.getByRole('main')).toBeVisible({ timeout: 60_000 });
 
-    // Only high-risk rows shown — tier1 flag for seeded brand visible
+    // Only high-risk rows shown — block flag for seeded brand visible
     await expect(adminPage.getByText(/\[E2E-TEST\] Moderation/).first()).toBeVisible({ timeout: 10_000 });
-    await expect(adminPage.getByText('高風險').first()).toBeVisible({ timeout: 5_000 });
+    await expect(adminPage.locator('table').getByText('高風險').first()).toBeVisible({ timeout: 5_000 });
   });
 });

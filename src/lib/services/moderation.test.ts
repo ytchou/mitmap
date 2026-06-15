@@ -33,7 +33,7 @@ describe('scanContent — Tier 1 hard blocks', () => {
     expect(result.riskLevel).toBe('high')
     expect(result.flags).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ tier: 'tier1', fieldName: 'website' }),
+        expect.objectContaining({ tier: 'block', fieldName: 'website' }),
       ])
     )
   })
@@ -43,7 +43,7 @@ describe('scanContent — Tier 1 hard blocks', () => {
       ...cleanPayload,
       fields: { ...cleanPayload.fields, purchaseUrl: 'https://buy.ml/product' },
     })
-    expect(result.flags.some(f => f.tier === 'tier1')).toBe(true)
+    expect(result.flags.some(f => f.tier === 'block')).toBe(true)
   })
 
   it('flags excessive URLs in description (>3 links)', () => {
@@ -55,7 +55,7 @@ describe('scanContent — Tier 1 hard blocks', () => {
     expect(result.riskLevel).toBe('high')
     expect(result.flags).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ tier: 'tier1', fieldName: 'description' }),
+        expect.objectContaining({ tier: 'block', fieldName: 'description' }),
       ])
     )
   })
@@ -66,7 +66,7 @@ describe('scanContent — Tier 1 hard blocks', () => {
       fields: { ...cleanPayload.fields, name: 'Click here to buy now free' },
       brandName: 'Click here to buy now free',
     })
-    expect(result.flags.some(f => f.tier === 'tier1' && f.fieldName === 'name')).toBe(true)
+    expect(result.flags.some(f => f.tier === 'block' && f.fieldName === 'name')).toBe(true)
   })
 })
 
@@ -79,7 +79,7 @@ describe('scanContent — Tier 2 zh-TW flagging', () => {
     expect(result.riskLevel).toBe('medium')
     expect(result.flags).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ tier: 'tier2', fieldName: 'description' }),
+        expect.objectContaining({ tier: 'flag', fieldName: 'description' }),
       ])
     )
   })
@@ -89,7 +89,7 @@ describe('scanContent — Tier 2 zh-TW flagging', () => {
       ...cleanPayload,
       fields: { ...cleanPayload.fields, brandHighlights: '聯繫我們：contact@spam.com 獲得優惠。' },
     })
-    expect(result.flags.some(f => f.tier === 'tier2' && f.fieldName === 'brandHighlights')).toBe(true)
+    expect(result.flags.some(f => f.tier === 'flag' && f.fieldName === 'brandHighlights')).toBe(true)
   })
 
   it('flags excessive emoji (>10) in any field', () => {
@@ -97,7 +97,7 @@ describe('scanContent — Tier 2 zh-TW flagging', () => {
       ...cleanPayload,
       fields: { ...cleanPayload.fields, description: '🌟✨💫🎉🎊🌸🌺🌻🌹🌷🌼 手工皂品牌' },
     })
-    expect(result.flags.some(f => f.tier === 'tier2')).toBe(true)
+    expect(result.flags.some(f => f.tier === 'flag')).toBe(true)
   })
 
   it('does not flag short English-style descriptions with fewer than 3 CJK chars', () => {
@@ -105,7 +105,7 @@ describe('scanContent — Tier 2 zh-TW flagging', () => {
       ...cleanPayload,
       fields: { ...cleanPayload.fields, description: '好皂' },
     })
-    expect(result.flags.some(f => f.tier === 'tier2' && f.fieldName === 'description')).toBe(false)
+    expect(result.flags.some(f => f.tier === 'flag' && f.fieldName === 'description')).toBe(false)
   })
 
   it('flags description with 3+ CJK characters but fewer than 10', () => {
@@ -113,7 +113,7 @@ describe('scanContent — Tier 2 zh-TW flagging', () => {
       ...cleanPayload,
       fields: { ...cleanPayload.fields, description: '好皂品' },
     })
-    expect(result.flags.some(f => f.tier === 'tier2' && f.fieldName === 'description')).toBe(true)
+    expect(result.flags.some(f => f.tier === 'flag' && f.fieldName === 'description')).toBe(true)
   })
 
   it('flags description identical to brand name', () => {
@@ -121,7 +121,7 @@ describe('scanContent — Tier 2 zh-TW flagging', () => {
       ...cleanPayload,
       fields: { ...cleanPayload.fields, description: '臺灣手工皂' },
     })
-    expect(result.flags.some(f => f.tier === 'tier2')).toBe(true)
+    expect(result.flags.some(f => f.tier === 'flag')).toBe(true)
   })
 })
 
@@ -172,7 +172,7 @@ describe('shouldAutoApprove', () => {
   it('returns false immediately when scan has flags', async () => {
     const flaggedResult: ModerationResult = {
       riskLevel: 'medium',
-      flags: [{ fieldName: 'description', tier: 'tier2', reason: 'short', flaggedContent: '好' }],
+      flags: [{ fieldName: 'description', tier: 'flag', reason: 'short', flaggedContent: '好' }],
     }
     const result = await shouldAutoApprove(flaggedResult, 'user-123')
     expect(result).toBe(false)

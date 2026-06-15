@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 }
 
 function getRiskLevel(flags: ModerationFlag[]): RiskLevel {
-  if (flags.some((flag) => flag.tier === 'tier1')) return 'high'
-  if (flags.some((flag) => flag.tier === 'tier2')) return 'medium'
+  if (flags.some((flag) => flag.tier === 'block')) return 'high'
+  if (flags.some((flag) => flag.tier === 'flag')) return 'medium'
   return 'clean'
 }
 

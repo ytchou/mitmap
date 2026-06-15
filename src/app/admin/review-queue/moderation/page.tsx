@@ -57,7 +57,7 @@ function truncateContent(value: string) {
 }
 
 function TierBadge({ tier }: { tier: ModerationTier }) {
-  if (tier === 'tier1') {
+  if (tier === 'block') {
     return <Badge variant="destructive">{tier}</Badge>
   }
 
@@ -65,7 +65,7 @@ function TierBadge({ tier }: { tier: ModerationTier }) {
 }
 
 function getRiskLevel(tier: ModerationTier): RiskFilter {
-  return tier === 'tier1' ? 'high' : 'medium'
+  return tier === 'block' ? 'high' : 'medium'
 }
 
 function normalizeRiskFilter(value?: string): RiskFilter | undefined {
@@ -73,7 +73,7 @@ function normalizeRiskFilter(value?: string): RiskFilter | undefined {
 }
 
 function normalizeTierFilter(value?: string): TierFilter | undefined {
-  return value === 'tier1' || value === 'tier2' ? value : undefined
+  return value === 'block' || value === 'flag' ? value : undefined
 }
 
 function RiskBadge({
@@ -83,7 +83,7 @@ function RiskBadge({
   tier: ModerationTier
   t: Awaited<ReturnType<typeof getTranslations<'admin.moderation'>>>
 }) {
-  if (tier === 'tier1') {
+  if (tier === 'block') {
     return <Badge className="bg-destructive text-white">{t('riskHigh')}</Badge>
   }
 
@@ -139,8 +139,8 @@ export default async function ReviewQueueModerationPage({ searchParams }: Modera
             className="rounded-md border bg-white px-3 py-2 text-foreground"
           >
             <option value="">{t('flagCount', { count: unfilteredItems.length })}</option>
-            <option value="tier1">tier1</option>
-            <option value="tier2">tier2</option>
+            <option value="block">block</option>
+            <option value="flag">flag</option>
           </select>
         </label>
         <button
