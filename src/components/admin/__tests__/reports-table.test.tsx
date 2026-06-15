@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 vi.mock('@/app/admin/actions', () => ({
   reviewReportAction: vi.fn(),
@@ -35,10 +35,11 @@ describe('ReportsTable', () => {
     expect(screen.getByText('非台灣製造')).toBeInTheDocument()
   })
 
-  it('renders Review and Dismiss buttons', () => {
+  it('renders Review and Dismiss buttons after expanding row', () => {
     render(<ReportsTable reports={mockReports} />)
-    expect(screen.getByRole('button', { name: /審核|reviewed/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /忽略|dismiss/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByText('非台灣製造'))
+    expect(screen.getByRole('button', { name: /審核/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /忽略/i })).toBeInTheDocument()
   })
 
   it('renders empty state when no reports', () => {

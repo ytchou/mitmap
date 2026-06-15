@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
-import { getSubmission, approveSubmission, rejectSubmission } from '@/lib/services/submissions'
+import { getSubmission, approveSubmission, rejectSubmission, createSubmission } from '@/lib/services/submissions'
 import {
   approveClaimRequest,
   getClaimRequest,
@@ -16,10 +16,8 @@ import {
 } from '@/lib/services/pending-edits'
 import { verifyMitStatus, rejectMitStatus } from '@/lib/services/mit-verification'
 import {
-  brandToInsert,
   createBrand,
   curatedSubmissionSchema,
-  curatedSubmissionToBrand,
   deleteBrand,
   findSimilarBrands,
   generateSlug,
@@ -33,6 +31,8 @@ import {
 import type { CuratedSubmissionInput, SimilarBrand } from '@/lib/services/brands'
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
 import { scanContent, saveModerationFlags, markFlagsReviewed } from '@/lib/services/moderation'
+import type { ModerationFlag } from '@/lib/services/moderation'
+import { submitBrandForReview } from '@/lib/services/submission-pipeline'
 import {
   createTag,
   updateTag,
@@ -63,21 +63,24 @@ import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedbac
 import type { FeedbackStatus } from '@/lib/services/feedback'
 import { checkAllServices } from '@/lib/services/health-checks'
 import type { TagCategory } from '@/lib/types'
-import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
+import { PRODUCT_TYPE_CATEGORIES, deriveCategoryFromProductTypes } from '@/lib/taxonomy/ontology'
 
-export type PreviewRow = {
+export type ImportPreviewStatus = 'valid' | 'duplicate' | 'needs-review' | 'error'
+
+export type ImportPreviewRow = {
   rowIndex: number
   name: string
   slug: string
-  validatedData: Partial<CuratedSubmissionInput>
-  status: 'new' | 'potential-duplicate' | 'error'
-  match?: SimilarBrand
-  error?: string
+  validatedData: Record<string, unknown>
+  status: ImportPreviewStatus
+  reason?: string
+  moderationFlags?: ModerationFlag[]
 }
 
-export type ImportResult = {
+export type ImportExecuteResult = {
+  rowIndex: number
   name: string
-  status: 'imported' | 'skipped' | 'error'
+  status: 'created' | 'error'
   error?: string
 }
 
@@ -927,20 +930,42 @@ export async function syncSentryFeedbackAction(): Promise<
   }
 }
 
+type BulkImportValidatedData = CuratedSubmissionInput & {
+  productTypes?: string[]
+  productTypeNote?: string | null
+  unifiedBusinessNumber?: string | null
+}
+
+function buildBulkImportModerationPayload(data: BulkImportValidatedData) {
+  return {
+    fields: {
+      name: data.name,
+      description: data.description,
+      website: data.socialLinks.website,
+      purchaseUrl: data.purchaseLinks[0]?.url,
+    },
+    brandName: data.name,
+  }
+}
+
+function parseBulkImportValidatedData(data: Record<string, unknown>): BulkImportValidatedData {
+  return curatedSubmissionSchema.parse(data) as BulkImportValidatedData
+}
+
 export async function previewBulkImportAction(
   csvText: string
-): Promise<{ error?: string; rows: PreviewRow[] }> {
+): Promise<{ error?: string; rows: ImportPreviewRow[] }> {
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return { error: auth.error, rows: [] }
 
     const rawRows = parseBrandCSV(csvText)
     if (rawRows.length === 0) {
-      return { error: 'No rows found in CSV', rows: [] }
+      return { error: 'CSV 沒有可匯入的資料列', rows: [] }
     }
 
-    const rows: PreviewRow[] = []
-    const validRows: PreviewRow[] = []
+    const rows: ImportPreviewRow[] = []
+    const duplicateCandidates: ImportPreviewRow[] = []
 
     rawRows.forEach((rawRow, index) => {
       let normalized: CuratedSubmissionInput
@@ -960,7 +985,7 @@ export async function previewBulkImportAction(
           slug: '',
           validatedData: {},
           status: 'error',
-          error: err instanceof Error ? err.message : 'Unknown validation error',
+          reason: err instanceof Error ? err.message : '資料格式錯誤',
         })
         return
       }
@@ -973,7 +998,7 @@ export async function previewBulkImportAction(
           slug: '',
           validatedData: {},
           status: 'error',
-          error: parsed.error.issues.map((issue) => issue.message).join('; '),
+          reason: parsed.error.issues.map((issue) => issue.message).join('; '),
         })
         return
       }
@@ -986,7 +1011,7 @@ export async function previewBulkImportAction(
           slug,
           validatedData: parsed.data,
           status: 'error',
-          error: 'Unable to generate slug',
+          reason: '無法產生品牌網址代稱',
         })
         return
       }
@@ -998,23 +1023,52 @@ export async function previewBulkImportAction(
           slug,
           validatedData: parsed.data,
           status: 'error',
-          error: `Slug conflicts with reserved route: ${slug}`,
+          reason: `品牌網址代稱與保留路由衝突：${slug}`,
         })
         return
       }
 
-      const previewRow: PreviewRow = {
+      const validatedData = { ...parsed.data, slug } as BulkImportValidatedData
+      const moderationResult = scanContent(buildBulkImportModerationPayload(validatedData))
+
+      if (moderationResult.riskLevel === 'high') {
+        rows.push({
+          rowIndex: index + 1,
+          name: parsed.data.name,
+          slug,
+          validatedData,
+          status: 'error',
+          reason: '內容審核風險過高',
+          moderationFlags: moderationResult.flags,
+        })
+        return
+      }
+
+      if (moderationResult.riskLevel === 'medium') {
+        rows.push({
+          rowIndex: index + 1,
+          name: parsed.data.name,
+          slug,
+          validatedData,
+          status: 'needs-review',
+          reason: '內容需人工審核',
+          moderationFlags: moderationResult.flags,
+        })
+        return
+      }
+
+      const previewRow: ImportPreviewRow = {
         rowIndex: index + 1,
         name: parsed.data.name,
         slug,
-        validatedData: { ...parsed.data, slug },
-        status: 'new',
+        validatedData,
+        status: 'valid',
       }
       rows.push(previewRow)
-      validRows.push(previewRow)
+      duplicateCandidates.push(previewRow)
     })
 
-    const similarBrands = await findSimilarBrands(validRows.map((row) => row.name))
+    const similarBrands = await findSimilarBrands(duplicateCandidates.map((row) => row.name))
     const bestMatches = new Map<string, SimilarBrand>()
 
     for (const match of similarBrands) {
@@ -1024,11 +1078,11 @@ export async function previewBulkImportAction(
       }
     }
 
-    for (const row of validRows) {
+    for (const row of duplicateCandidates) {
       const match = bestMatches.get(row.name)
       if (match) {
-        row.status = 'potential-duplicate'
-        row.match = match
+        row.status = 'duplicate'
+        row.reason = `可能與「${match.brandName}」重複（${Math.round(match.score * 100)}%）`
       }
     }
 
@@ -1043,8 +1097,8 @@ export async function previewBulkImportAction(
 }
 
 export async function executeBulkImportAction(
-  selectedRows: PreviewRow[]
-): Promise<{ error?: string; results: ImportResult[] }> {
+  selectedRows: ImportPreviewRow[]
+): Promise<{ error?: string; results: ImportExecuteResult[] }> {
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return { error: auth.error, results: [] }
@@ -1053,63 +1107,75 @@ export async function executeBulkImportAction(
       return { results: [] }
     }
 
-    const supabase = createServiceClient()
-    const results: ImportResult[] = selectedRows.map((row) => ({
-      name: row.name,
-      status: 'imported',
-    }))
+    const results: ImportExecuteResult[] = []
 
-    const preparedRows: Array<{ index: number; slug: string; insert: Record<string, unknown> }> = []
-    selectedRows.forEach((row, index) => {
+    for (const row of selectedRows) {
       try {
-        const brand = curatedSubmissionToBrand(
-          row.validatedData as Parameters<typeof curatedSubmissionToBrand>[0]
+        if (row.status === 'error') {
+          throw new Error(row.reason ?? '此列不可匯入')
+        }
+
+        const data = parseBulkImportValidatedData(row.validatedData)
+        const category = deriveCategoryFromProductTypes(
+          data.productTypes ?? [],
+          data.productTypeNote,
         )
-        preparedRows.push({
-          index,
+        const socialLinks = {
+          instagram: data.socialLinks.instagram || undefined,
+          threads: data.socialLinks.threads || undefined,
+          facebook: data.socialLinks.facebook || undefined,
+          officialWebsite: data.socialLinks.website || undefined,
+        }
+
+        await submitBrandForReview({
+          name: data.name,
           slug: row.slug,
-          insert: {
-            ...brandToInsert(brand),
-            approved_at: new Date().toISOString(),
-          },
+          description: data.description,
+          logoUrl: data.logoUrl ?? null,
+          category,
+          purchaseLinks: data.purchaseLinks.map((link) => ({
+            ...link,
+            label: link.platform,
+          })),
+          socialLinks,
+          retailLocations: data.retailLocations.map((location) => ({
+            ...location,
+            latitude: 0,
+            longitude: 0,
+          })),
+          productPhotos: data.productPhotos,
+          contactEmail: null,
+          brandHighlights: data.brandHighlights,
+          unifiedBusinessNumber: data.unifiedBusinessNumber ?? null,
+          submitterEmail: auth.email,
+          submitterName: 'Bulk Import',
+          isBrandOwner: false,
+          sourceAttribution: null,
+          pdpaConsentAt: new Date().toISOString(),
+          region: data.region,
+          valueTags: data.valueTags,
+          productTypes: data.productTypes,
+          productTypeNote: data.productTypeNote ?? null,
+          moderationFlags: row.moderationFlags,
+          moderatorUserId: auth.userId,
+        })
+
+        results.push({
+          rowIndex: row.rowIndex,
+          name: data.name,
+          status: 'created',
         })
       } catch (err) {
-        results[index] = {
+        results.push({
+          rowIndex: row.rowIndex,
           name: row.name,
           status: 'error',
-          error: err instanceof Error ? err.message : 'Unknown import error',
-        }
-      }
-    })
-
-    for (let batchStart = 0; batchStart < preparedRows.length; batchStart += 100) {
-      const batch = preparedRows.slice(batchStart, batchStart + 100)
-      const { data: insertedRows, error } = await supabase
-        .from('brands')
-        .upsert(batch.map((row) => row.insert), { onConflict: 'slug', ignoreDuplicates: true })
-        .select('slug')
-
-      if (error) {
-        for (const row of batch) {
-          results[row.index] = {
-            name: selectedRows[row.index].name,
-            status: 'error',
-            error: error.message,
-          }
-        }
-      } else {
-        const insertedSlugs = new Set((insertedRows ?? []).map((r: { slug: string }) => r.slug))
-        for (const row of batch) {
-          const wasInserted = insertedSlugs.has(row.slug)
-          results[row.index] = {
-            name: selectedRows[row.index].name,
-            status: wasInserted ? 'imported' : 'skipped',
-          }
-        }
+          error: err instanceof Error ? err.message : '匯入失敗',
+        })
       }
     }
 
-    revalidatePath('/admin/catalog/brands')
+    revalidatePath('/admin/review-queue/submissions')
     revalidatePath('/admin')
     return { results }
   } catch (err) {

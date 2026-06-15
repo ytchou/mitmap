@@ -3,9 +3,9 @@
 import { getTranslations } from 'next-intl/server'
 import { createSubmissionSchema, type SubmissionFormData } from '@/lib/validations/submission'
 import { deriveCategoryFromProductTypes } from '@/lib/taxonomy/ontology'
-import { createBrand } from '@/lib/services/brands'
-import { scanContent, saveModerationFlags } from '@/lib/services/moderation'
-import { checkBrandDuplicates, createSubmission } from '@/lib/services/submissions'
+import { scanContent } from '@/lib/services/moderation'
+import { submitBrandForReview } from '@/lib/services/submission-pipeline'
+import { checkBrandDuplicates } from '@/lib/services/submissions'
 import { createClient } from '@/lib/supabase/server'
 import { verifyTurnstileToken } from '@/lib/security/turnstile'
 import { createInMemoryRateLimiter } from '@/lib/security/rate-limiter'
@@ -86,18 +86,12 @@ export async function submitBrand(
       return { error: t('validation') }
     }
 
-    // Create brand with pending status
-    const brand = await createBrand({
+    await submitBrandForReview({
       name: parsed.name,
       slug: '',
       description: parsed.description,
       logoUrl: parsed.logoUrl ?? null,
-      heroImageUrl: null,
-      status: 'pending',
-      isVerified: false,
-      isDemo: false,
       category: derivedCategory,
-      foundingYear: null,
       purchaseLinks: parsed.purchaseLinks.map((l) => ({
         ...l,
         label: l.platform,
@@ -116,42 +110,21 @@ export async function submitBrand(
       productPhotos: parsed.productPhotos,
       contactEmail: user.email ?? null,
       brandHighlights: null,
-      siteContent: null,
       unifiedBusinessNumber: parsed.unifiedBusinessNumber ?? null,
-    })
-
-    if (moderationResult.flags.length > 0) {
-      try {
-        await saveModerationFlags(brand.id, user.id, moderationResult.flags)
-      } catch (err) {
-        console.error('Save moderation flags error:', err)
-      }
-    }
-
-    // Create submission audit record
-    await createSubmission({
-      brandId: brand.id,
-      brandName: parsed.name,
       submitterEmail: user.email ?? '',
       submitterName: user.user_metadata?.full_name ?? null,
-      description: parsed.description,
-      websiteUrl: parsed.socialLinks.website || null,
-      socialLinks: {
-        instagram: parsed.socialLinks.instagram || undefined,
-        threads: parsed.socialLinks.threads || undefined,
-        facebook: parsed.socialLinks.facebook || undefined,
-        officialWebsite: parsed.socialLinks.website || undefined,
-      },
-      suggestedTags: {
-        ...(parsed.region ? { region: parsed.region } : {}),
-        ...(parsed.valueTags?.length ? { values: parsed.valueTags } : {}),
-        ...(parsed.productTypes?.length ? { productTypes: parsed.productTypes } : {}),
-      },
-      pdpaConsentAt: new Date().toISOString(),
       isBrandOwner: isOwner,
-      sourceAttribution: data.sourceAttribution ?? undefined,
+      sourceAttribution: data.sourceAttribution ?? null,
+      pdpaConsentAt: new Date().toISOString(),
+      region: parsed.region,
+      valueTags: parsed.valueTags,
+      productTypes: parsed.productTypes,
       productTypeNote: parsed.productTypeNote ?? null,
-      unifiedBusinessNumber: parsed.unifiedBusinessNumber,
+      moderationFlags: moderationResult.flags,
+      moderatorUserId: user.id,
+      onModerationFlagsError: (err) => {
+        console.error('Save moderation flags error:', err)
+      },
     })
 
     return undefined // Success — no error

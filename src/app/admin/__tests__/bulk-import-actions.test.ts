@@ -72,7 +72,7 @@ describe('previewBulkImportAction', () => {
   it('returns parse error for empty CSV', async () => {
     vi.mocked(parseBrandCSV).mockReturnValue([])
     const result = await previewBulkImportAction('')
-    expect(result?.error).toMatch(/no rows/i)
+    expect(result?.error).toMatch(/沒有可匯入|no rows/i)
   })
 
   it('returns preview rows with status for valid CSV', async () => {
@@ -87,10 +87,10 @@ describe('previewBulkImportAction', () => {
     vi.mocked(findSimilarBrands).mockResolvedValue([])
     const result = await previewBulkImportAction('name,description,category\n...')
     expect(result?.rows).toHaveLength(1)
-    expect(result?.rows[0].status).toBe('new')
+    expect(result?.rows[0].status).toBe('valid')
   })
 
-  it('marks row as potential-duplicate when similarity match found', async () => {
+  it('marks row as duplicate when similarity match found', async () => {
     vi.mocked(parseBrandCSV).mockReturnValue([
       {
         name: 'Taiwan Tea',
@@ -103,8 +103,8 @@ describe('previewBulkImportAction', () => {
       { inputName: 'Taiwan Tea', brandName: 'Taiwan Tea Co', brandSlug: 'taiwan-tea-co', score: 0.75 },
     ])
     const result = await previewBulkImportAction('...')
-    expect(result?.rows[0].status).toBe('potential-duplicate')
-    expect(result?.rows[0].match?.brandName).toBe('Taiwan Tea Co')
+    expect(result?.rows[0].status).toBe('duplicate')
+    expect(result?.rows[0].reason).toContain('Taiwan Tea Co')
   })
 })
 

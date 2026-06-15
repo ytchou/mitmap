@@ -58,6 +58,8 @@ const ALLOWLIST = [
   'app/(microsite)/',
   // Sentry feedback widget: static SDK config outside next-intl (zh-TW default).
   'instrumentation-client.ts',
+  // Tally webhook matches Chinese form field labels (external form, not UI copy).
+  'app/api/webhooks/tally/route.ts',
 ]
 
 function isAllowlisted(relPath: string): boolean {

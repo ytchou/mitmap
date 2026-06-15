@@ -13,8 +13,10 @@ const TALLY_PAYLOAD = JSON.stringify({
   data: {
     responseId: 'resp_001',
     fields: [
-      { label: 'type', type: 'MULTIPLE_CHOICE', value: 'feedback' },
-      { label: 'message', type: 'TEXTAREA', value: 'Really helpful directory!' },
+      { label: '回饋類型', type: 'MULTIPLE_CHOICE', value: 'feedback' },
+      { label: '詳細說明', type: 'TEXTAREA', value: 'Really helpful directory!' },
+      { label: '標題', type: 'INPUT_TEXT', value: 'Great site' },
+      { label: '電子信箱', type: 'INPUT_EMAIL', value: 'user@test.com' },
     ],
     pageContext: { url: 'https://formoria.com/brands/some-brand' },
   },
@@ -87,6 +89,8 @@ describe('POST /api/webhooks/tally', () => {
         tallyResponseId: 'resp_001',
         type: 'feedback',
         body: 'Really helpful directory!',
+        title: 'Great site',
+        userEmail: 'user@test.com',
       })
     )
   })
