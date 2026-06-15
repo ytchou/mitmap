@@ -321,7 +321,7 @@ describe('server action schema routing', () => {
     const flags = [
       {
         fieldName: 'description',
-        tier: 'tier2',
+        tier: 'flag',
         reason: 'Email address detected',
         flaggedContent: 'Email us at spam@example.com',
       },
@@ -379,7 +379,7 @@ describe('server action schema routing', () => {
     const flags = [
       {
         fieldName: 'name',
-        tier: 'tier1',
+        tier: 'block',
         reason: 'English spam phrase detected: buy now',
         flaggedContent: 'Buy Now Brand',
       },

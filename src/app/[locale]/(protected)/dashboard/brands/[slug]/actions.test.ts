@@ -531,7 +531,7 @@ describe('updateBrandAction — edit gating', () => {
     const flags = [
       {
         fieldName: 'description',
-        tier: 'tier2',
+        tier: 'flag',
         reason: 'Email address detected',
         flaggedContent: 'Contact owner@example.com',
       },
@@ -622,7 +622,7 @@ describe('updateBrandAction — edit gating', () => {
   it('blocks non-admin update immediately when scan returns high risk (tier-1 hard block)', async () => {
     isActingAsAdmin.mockResolvedValue(false)
     scanContent.mockReturnValue({ riskLevel: 'high', flags: [
-      { fieldName: 'name', tier: 'tier1', reason: 'spam', flaggedContent: 'Buy Now Brand' },
+      { fieldName: 'name', tier: 'block', reason: 'spam', flaggedContent: 'Buy Now Brand' },
     ] })
 
     const { updateBrandAction } = await import('./actions')
@@ -706,7 +706,7 @@ describe('publishDraftAction — edit gating', () => {
   it('blocks non-admin publish immediately when draft scan returns high risk (tier-1 hard block)', async () => {
     isActingAsAdmin.mockResolvedValue(false)
     scanContent.mockReturnValue({ riskLevel: 'high', flags: [
-      { fieldName: 'description', tier: 'tier1', reason: 'spam', flaggedContent: 'Buy Now' },
+      { fieldName: 'description', tier: 'block', reason: 'spam', flaggedContent: 'Buy Now' },
     ] })
 
     const { publishDraftAction } = await import('./actions')
