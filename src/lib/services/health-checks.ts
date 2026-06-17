@@ -110,17 +110,17 @@ export async function checkUpstashRedis(): Promise<ServiceHealthResult> {
     const latencyMs = Math.round(performance.now() - start)
 
     if (!response.ok) {
-      return result('Upstash Redis', 'down', `連線失敗: ${response.statusText}`)
+      return result('Upstash Redis', 'down', `Connection failed: ${response.statusText}`)
     }
 
     return latencyMs < 500
-      ? result('Upstash Redis', 'healthy', `已連線 (${latencyMs}ms)`)
-      : result('Upstash Redis', 'degraded', `已連線，延遲較高 (${latencyMs}ms)`)
+      ? result('Upstash Redis', 'healthy', `Connected (${latencyMs}ms)`)
+      : result('Upstash Redis', 'degraded', `Connected, high latency (${latencyMs}ms)`)
   } catch (error) {
     return result(
       'Upstash Redis',
       'down',
-      `連線錯誤: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`
     )
   }
 }

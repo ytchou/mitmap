@@ -155,7 +155,7 @@ describe('checkAllServices', () => {
       const results = await checkAllServices()
       const upstashRedis = results.find((r) => r.service === 'Upstash Redis')
       expect(upstashRedis?.status).toBe('healthy')
-      expect(upstashRedis?.message).toMatch(/已連線 \(\d+ms\)/)
+      expect(upstashRedis?.message).toMatch(/Connected \(\d+ms\)/)
     })
 
     it('returns degraded when latency is >=500ms', async () => {
@@ -170,7 +170,7 @@ describe('checkAllServices', () => {
       const results = await checkAllServices()
       const upstashRedis = results.find((r) => r.service === 'Upstash Redis')
       expect(upstashRedis?.status).toBe('degraded')
-      expect(upstashRedis?.message).toMatch(/已連線，延遲較高 \(\d+ms\)/)
+      expect(upstashRedis?.message).toMatch(/Connected, high latency \(\d+ms\)/)
       nowSpy.mockRestore()
     })
 
@@ -186,7 +186,7 @@ describe('checkAllServices', () => {
       const results = await checkAllServices()
       const upstashRedis = results.find((r) => r.service === 'Upstash Redis')
       expect(upstashRedis?.status).toBe('down')
-      expect(upstashRedis?.message).toMatch(/連線錯誤/)
+      expect(upstashRedis?.message).toMatch(/Connection error/)
     })
   })
 
