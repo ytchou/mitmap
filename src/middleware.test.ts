@@ -31,7 +31,7 @@ vi.mock('@/i18n/routing', () => ({
 
 vi.mock('@/lib/security/rate-limiter', () => ({
   checkRateLimit: vi.fn(() => null),
-  checkSoftRateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 29 }),
+  checkSoftRateLimit: vi.fn().mockResolvedValue(false),
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
