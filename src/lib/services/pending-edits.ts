@@ -1,4 +1,4 @@
-import type { Brand, PendingBrandEdit, PendingBrandEditWithBrand } from '@/lib/types/brand'
+import type { Brand, BrandFlatLinkColumns, PendingBrandEdit, PendingBrandEditWithBrand } from '@/lib/types/brand'
 import type { Database } from '@/lib/supabase/database.types'
 import { createServiceClient } from '@/lib/supabase/server'
 import { deleteBrandImages } from '@/lib/services/image-upload'
@@ -11,15 +11,6 @@ import { deriveCategoryFromProductType } from '@/lib/taxonomy/ontology'
 
 type PendingBrandEditRow = Database['public']['Tables']['pending_brand_edits']['Row']
 type BrandRow = Database['public']['Tables']['brands']['Row']
-type BrandFlatLinkColumns = {
-  social_instagram?: string | null
-  social_threads?: string | null
-  social_facebook?: string | null
-  purchase_website?: string | null
-  purchase_pinkoi?: string | null
-  purchase_shopee?: string | null
-  other_urls?: unknown
-}
 type PendingBrandEditStatus = PendingBrandEdit['status']
 
 type PendingBrandEditRowInput = Pick<PendingBrandEditRow, 'id'> &

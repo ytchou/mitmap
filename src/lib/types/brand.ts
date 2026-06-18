@@ -8,6 +8,16 @@ export type OtherUrl = {
   url: string
 }
 
+export type BrandFlatLinkColumns = {
+  social_instagram?: string | null
+  social_threads?: string | null
+  social_facebook?: string | null
+  purchase_website?: string | null
+  purchase_pinkoi?: string | null
+  purchase_shopee?: string | null
+  other_urls?: unknown
+}
+
 export type RetailLocation = {
   name: string
   address: string

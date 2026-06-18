@@ -44,20 +44,6 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
   const showSubmittedForReviewNotice =
     publishState?.success === true &&
     publishState.message === "brandEditSubmittedForReview";
-  const purchaseLinks = [
-    ...(purchaseWebsite.trim()
-      ? [{ platform: "official", url: purchaseWebsite.trim(), label: tx("fieldOfficialWebsite", "Official Website") }]
-      : []),
-    ...(purchasePinkoi.trim()
-      ? [{ platform: "pinkoi", url: purchasePinkoi.trim(), label: "Pinkoi" }]
-      : []),
-    ...(purchaseShopee.trim()
-      ? [{ platform: "shopee", url: purchaseShopee.trim(), label: tx("fieldShopee", "Shopee") }]
-      : []),
-    ...otherUrls
-      .filter((link) => link.label.trim() || link.url.trim())
-      .map((link) => ({ platform: link.label.trim() || "other", url: link.url.trim(), label: link.label.trim() })),
-  ];
   const addOtherUrl = () => {
     setOtherUrls((links) => (
       links.length >= 3 ? links : [...links, { label: "", url: "" }]
@@ -337,13 +323,6 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
             <input type="hidden" name="instagram" value={socialInstagram} />
             <input type="hidden" name="threads" value={socialThreads} />
             <input type="hidden" name="facebook" value={socialFacebook} />
-            {purchaseLinks.map((link, index) => (
-              <span key={`${link.platform}-${index}`}>
-                <input type="hidden" name={`purchaseLinks[${index}].platform`} value={link.platform} />
-                <input type="hidden" name={`purchaseLinks[${index}].url`} value={link.url} />
-                <input type="hidden" name={`purchaseLinks[${index}].label`} value={link.label} />
-              </span>
-            ))}
           </div>
         </section>
 
