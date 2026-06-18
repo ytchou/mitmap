@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
-import { getSubmission, approveSubmission, rejectSubmission, createSubmission } from '@/lib/services/submissions'
+import { getSubmission, approveSubmission, rejectSubmission } from '@/lib/services/submissions'
 import {
   approveClaimRequest,
   getClaimRequest,
@@ -63,7 +63,7 @@ import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedbac
 import type { FeedbackStatus } from '@/lib/services/feedback'
 import { checkAllServices } from '@/lib/services/health-checks'
 import type { TagCategory } from '@/lib/types'
-import { PRODUCT_TYPE_CATEGORIES, deriveCategoryFromProductTypes } from '@/lib/taxonomy/ontology'
+import { PRODUCT_TYPE_CATEGORIES, deriveCategoryFromProductType } from '@/lib/taxonomy/ontology'
 
 export type ImportPreviewStatus = 'valid' | 'duplicate' | 'needs-review' | 'error'
 
@@ -84,7 +84,7 @@ export type ImportExecuteResult = {
   error?: string
 }
 
-function isStructuredTags(v: unknown): v is { region?: string; values?: string[]; productTypes?: string[] } {
+function isStructuredTags(v: unknown): v is { region?: string; values?: string[]; productType?: string } {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
@@ -197,13 +197,14 @@ export async function approveSubmissionAction(
           )
         }
 
-        if (Array.isArray(structuredTags.productTypes)) {
-          await Promise.all(
-            structuredTags.productTypes.map(async (slug: string) => {
-              const tag = await getTagBySlug(slug)
-              if (tag) await addTagToBrand(brand.id, tag.id)
-            })
-          )
+        if (structuredTags.productType) {
+          const supabase = await createClient()
+          const { error } = await supabase
+            .from('brands')
+            .update({ product_type: structuredTags.productType })
+            .eq('id', brand.id)
+
+          if (error) throw error
         }
       }
     } catch (err) {
@@ -931,7 +932,7 @@ export async function syncSentryFeedbackAction(): Promise<
 }
 
 type BulkImportValidatedData = CuratedSubmissionInput & {
-  productTypes?: string[]
+  productType?: string
   productTypeNote?: string | null
   unifiedBusinessNumber?: string | null
 }
@@ -1116,8 +1117,8 @@ export async function executeBulkImportAction(
         }
 
         const data = parseBulkImportValidatedData(row.validatedData)
-        const category = deriveCategoryFromProductTypes(
-          data.productTypes ?? [],
+        const category = deriveCategoryFromProductType(
+          data.productType ?? '',
           data.productTypeNote,
         )
         const socialLinks = {
@@ -1154,11 +1155,11 @@ export async function executeBulkImportAction(
           pdpaConsentAt: new Date().toISOString(),
           region: data.region,
           valueTags: data.valueTags,
-          productTypes: data.productTypes,
+          productType: data.productType,
           productTypeNote: data.productTypeNote ?? null,
           moderationFlags: row.moderationFlags,
           moderatorUserId: auth.userId,
-        })
+        } as Parameters<typeof submitBrandForReview>[0])
 
         results.push({
           rowIndex: row.rowIndex,
