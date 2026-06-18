@@ -31,6 +31,10 @@ export function buildBrandJsonLd(brand: Brand, locale: Locale = 'zh-TW'): JsonLd
     .filter(([key]) => key !== 'officialWebsite')
     .map(([, url]) => url)
     .filter(Boolean)
+  const purchaseUrls = brand.purchaseLinks
+    .map((purchaseLink) => purchaseLink.url)
+    .filter(Boolean)
+  const allSameAs = [...socialUrls, ...purchaseUrls]
 
   const jsonLd: JsonLdObject = {
     '@context': 'https://schema.org',
@@ -46,14 +50,28 @@ export function buildBrandJsonLd(brand: Brand, locale: Locale = 'zh-TW'): JsonLd
   if (brand.heroImageUrl) jsonLd.image = brand.heroImageUrl
   if (brand.foundingYear) jsonLd.foundingDate = String(brand.foundingYear)
   if (brand.contactEmail) jsonLd.email = brand.contactEmail
-  if (socialUrls.length > 0) jsonLd.sameAs = socialUrls
+  if (allSameAs.length > 0) jsonLd.sameAs = allSameAs
+  if (brand.tags.length > 0) {
+    jsonLd.keywords = brand.tags.map((tag) => tag.name).join(', ')
+  }
+  if (brand.brandHighlights) {
+    jsonLd.additionalProperty = {
+      '@type': 'PropertyValue',
+      name: 'highlights',
+      value: brand.brandHighlights,
+    }
+  }
 
-  if (brand.retailLocations.length > 0) {
-    const loc = brand.retailLocations[0]
+  if (brand.retailLocations.length === 1) {
     jsonLd.address = {
       '@type': 'PostalAddress',
-      streetAddress: loc.address,
+      streetAddress: brand.retailLocations[0].address,
     }
+  } else if (brand.retailLocations.length > 1) {
+    jsonLd.address = brand.retailLocations.map((location) => ({
+      '@type': 'PostalAddress',
+      streetAddress: location.address,
+    }))
   }
 
   return jsonLd

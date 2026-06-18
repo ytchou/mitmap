@@ -53,8 +53,95 @@ describe('buildBrandJsonLd', () => {
     expect(jsonLd.sameAs).toContain('https://facebook.com/chatzutang')
   })
 
+  it('includes keywords from tags', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand({
+      tags: [
+        {
+          id: 'tag-1',
+          name: 'Beauty',
+          nameZh: '美妝',
+          slug: 'beauty',
+          category: 'product_type',
+          isActive: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'tag-2',
+          name: 'Handmade',
+          nameZh: '手作',
+          slug: 'handmade',
+          category: 'value',
+          isActive: true,
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    }))
+    expect(jsonLd.keywords).toBe('Beauty, Handmade')
+  })
+
+  it('omits keywords when tags is empty', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand({ tags: [] }))
+    expect(jsonLd.keywords).toBeUndefined()
+  })
+
+  it('includes additionalProperty from brandHighlights', () => {
+    const brandHighlights = 'Cold-pressed camellia oil and local herbs'
+    const jsonLd = buildBrandJsonLd(makeBrand({ brandHighlights }))
+    expect(jsonLd.additionalProperty).toEqual({
+      '@type': 'PropertyValue',
+      name: 'highlights',
+      value: brandHighlights,
+    })
+  })
+
+  it('omits additionalProperty when brandHighlights is null', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand({ brandHighlights: null }))
+    expect(jsonLd.additionalProperty).toBeUndefined()
+  })
+
+  it('includes purchase link URLs in sameAs alongside social links', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand({
+      purchaseLinks: [
+        { platform: 'Pinkoi', url: 'https://pinkoi.com/chatzutang', label: 'Pinkoi' },
+        { platform: 'Shopee', url: 'https://shopee.tw/chatzutang', label: 'Shopee' },
+      ],
+    }))
+    expect(jsonLd.sameAs).toContain('https://instagram.com/chatzutang')
+    expect(jsonLd.sameAs).toContain('https://facebook.com/chatzutang')
+    expect(jsonLd.sameAs).toContain('https://pinkoi.com/chatzutang')
+    expect(jsonLd.sameAs).toContain('https://shopee.tw/chatzutang')
+  })
+
   it('includes PostalAddress from first retail location', () => {
     const jsonLd = buildBrandJsonLd(makeBrand())
+    expect(jsonLd.address).toEqual({
+      '@type': 'PostalAddress',
+      streetAddress: '苗栗縣南庄鄉',
+    })
+  })
+
+  it('includes all retail locations as PostalAddress array when multiple', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand({
+      retailLocations: [
+        { name: 'Nanzhuang Store', address: '苗栗縣南庄鄉', latitude: 24.59, longitude: 120.99 },
+        { name: 'Taipei Store', address: '台北市信義區', latitude: 25.03, longitude: 121.56 },
+      ],
+    }))
+    expect(jsonLd.address).toEqual([
+      {
+        '@type': 'PostalAddress',
+        streetAddress: '苗栗縣南庄鄉',
+      },
+      {
+        '@type': 'PostalAddress',
+        streetAddress: '台北市信義區',
+      },
+    ])
+  })
+
+  it('keeps single retail location as PostalAddress object (backward-compatible)', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand())
+    expect(Array.isArray(jsonLd.address)).toBe(false)
     expect(jsonLd.address).toEqual({
       '@type': 'PostalAddress',
       streetAddress: '苗栗縣南庄鄉',
@@ -69,7 +156,7 @@ describe('buildBrandJsonLd', () => {
   it('omits optional fields when null', () => {
     const jsonLd = buildBrandJsonLd(makeBrand({
       logoUrl: null, heroImageUrl: null, foundingYear: null,
-      contactEmail: null, socialLinks: {}, retailLocations: [],
+      contactEmail: null, socialLinks: {}, retailLocations: [], purchaseLinks: [],
     }))
     expect(jsonLd.logo).toBeUndefined()
     expect(jsonLd.image).toBeUndefined()
