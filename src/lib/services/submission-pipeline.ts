@@ -52,12 +52,19 @@ function getSubmittedProductType(params: SubmitBrandForReviewParams): string | u
 
   const legacyProductTypes = (params as SubmitBrandForReviewParams & { productTypes?: unknown })
     .productTypes
-  if (!Array.isArray(legacyProductTypes)) {
-    return undefined
+  const productType = Array.isArray(legacyProductTypes)
+    ? legacyProductTypes.find((item): item is string => typeof item === 'string')
+    : undefined
+
+  if (productType) {
+    return productType
   }
 
-  const productType = legacyProductTypes.find((item): item is string => typeof item === 'string')
-  return productType || undefined
+  if (params.productTypeNote?.trim()) {
+    return 'crafts'
+  }
+
+  return undefined
 }
 
 export async function submitBrandForReview(

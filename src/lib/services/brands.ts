@@ -543,7 +543,7 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
       }
     })
 
-  return {
+  const brand = {
     id: row.id,
     name: row.name,
     slug: row.slug,
@@ -552,6 +552,7 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
     heroImageUrl: row.hero_image_url ?? null,
     // status is text in the DB — cast to BrandStatus at the boundary
     status: row.status as Brand['status'],
+    product_type: row.product_type ?? null,
     category: deriveCategoryFromProductType(row.product_type ?? '') ?? row.product_type ?? null,
     isVerified: owners.length > 0,
     mitStatus: (row.mit_status as Brand['mitStatus']) ?? 'unverified',
@@ -574,6 +575,7 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
     createdAt: row.created_at ?? '',
     updatedAt: row.updated_at ?? '',
   }
+  return brand
 }
 
 export function brandToInsert(data: BrandWriteInput): Record<string, unknown> {
@@ -774,7 +776,7 @@ export async function createBrand(
   return brandToDomain(inserted)
 }
 
-export async function updateBrand(id: string, data: Partial<Brand>): Promise<Brand> {
+export async function updateBrand(id: string, data: BrandWriteInput): Promise<Brand> {
   const supabase = createServiceClient()
   const row = brandToUpdate(data)
   const { data: updated, error } = await supabase

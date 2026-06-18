@@ -198,13 +198,7 @@ export async function approveSubmissionAction(
         }
 
         if (structuredTags.productType) {
-          const supabase = await createClient()
-          const { error } = await supabase
-            .from('brands')
-            .update({ product_type: structuredTags.productType })
-            .eq('id', brand.id)
-
-          if (error) throw error
+          await updateBrand(brand.id, { productType: structuredTags.productType })
         }
       }
     } catch (err) {
@@ -576,6 +570,7 @@ export async function updateBrandAction(
     brandHighlights?: string
     website?: string
     purchaseUrl?: string
+    productType?: string
   }
 ): Promise<{ error: string } | undefined> {
   try {

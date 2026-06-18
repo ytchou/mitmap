@@ -23,10 +23,6 @@ type BrandEditDialogProps = {
   onOpenChange: (open: boolean) => void
 }
 
-type UpdateBrandData = Parameters<typeof updateBrandAction>[1] & {
-  productType?: string
-}
-
 export function BrandEditDialog({
   brand,
   open,
@@ -35,8 +31,13 @@ export function BrandEditDialog({
   const [name, setName] = useState(brand?.name ?? '')
   const [description, setDescription] = useState(brand?.description ?? '')
   const [productType, setProductType] = useState(() => {
+    const productTypeSlug = (brand as (Brand & { product_type?: string | null }) | null)?.product_type
     const match = PRODUCT_TYPE_CATEGORIES.find(
-      (c) => c.slug === brand?.category || c.nameZh === brand?.category || c.name === brand?.category
+      (c) =>
+        c.slug === productTypeSlug ||
+        c.slug === brand?.category ||
+        c.nameZh === brand?.category ||
+        c.name === brand?.category
     )
     return match?.slug ?? ''
   })
@@ -47,7 +48,7 @@ export function BrandEditDialog({
     if (!brand) return
     startTransition(async () => {
       setError(null)
-      const data: UpdateBrandData = {
+      const data: Parameters<typeof updateBrandAction>[1] = {
         name,
         description,
         productType: productType || undefined,
