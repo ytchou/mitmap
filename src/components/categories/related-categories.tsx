@@ -11,7 +11,7 @@ export async function RelatedCategories({ categories }: RelatedCategoriesProps) 
   const t = await getTranslations('categories.relatedCategories')
 
   return (
-    <section className="mt-10 rounded-xl bg-[#F5F4F1] px-4 py-5">
+    <section className="mt-10 rounded-xl bg-muted px-4 py-5">
       <h2 className="font-heading text-base font-semibold text-foreground">
         {t('heading')}
       </h2>
