@@ -72,18 +72,18 @@ describe('FaqPage (zh-TW)', () => {
     expect(screen.getByRole('heading', { name: '常見問題' })).toBeInTheDocument()
   })
 
-  it('renders exactly 8 accordion items', async () => {
+  it('renders exactly 13 accordion items', async () => {
     const { container } = render(
       await FaqPage({ params: Promise.resolve({ locale: 'zh-TW' }) })
     )
-    expect(container.querySelectorAll('details')).toHaveLength(8)
+    expect(container.querySelectorAll('details')).toHaveLength(13)
   })
 
   it('each item has a summary child element', async () => {
     const { container } = render(
       await FaqPage({ params: Promise.resolve({ locale: 'zh-TW' }) })
     )
-    expect(container.querySelectorAll('details > summary')).toHaveLength(8)
+    expect(container.querySelectorAll('details > summary')).toHaveLength(13)
   })
 
   it('includes the 什麼是 Formoria question', async () => {
@@ -109,6 +109,22 @@ describe('FaqPage (zh-TW)', () => {
     expect(script).toBeInTheDocument()
     const jsonLd = JSON.parse(script!.textContent!)
     expect(jsonLd['@type']).toBe('FAQPage')
+  })
+
+  it('generateMetadata includes openGraph and twitter properties', async () => {
+    const { generateMetadata } = await import('./page')
+    const metadata = await generateMetadata({ params: Promise.resolve({ locale: 'zh-TW' }) })
+    expect(metadata.openGraph).toBeDefined()
+    expect(metadata.openGraph).toMatchObject({
+      title: expect.any(String),
+      description: expect.any(String),
+      locale: 'zh_TW',
+    })
+    expect(metadata.twitter).toBeDefined()
+    expect(metadata.twitter).toMatchObject({
+      card: 'summary_large_image',
+      title: expect.any(String),
+    })
   })
 })
 
