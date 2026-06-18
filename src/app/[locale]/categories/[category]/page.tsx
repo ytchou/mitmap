@@ -6,13 +6,14 @@ import { getBrands } from '@/lib/services/brands'
 import { getTags, getActiveCategories } from '@/lib/services/taxonomy'
 import { buildCategoryItemListJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld'
 import type { BreadcrumbItem } from '@/lib/json-ld'
-import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
+import { PRODUCT_TYPE_CATEGORIES, getRelatedCategorySlugs } from '@/lib/taxonomy/ontology'
 import { buildAlternates } from '@/lib/seo/alternates'
 import type { Locale } from '@/lib/seo/alternates'
 import { parsePageParam, parseSortParam, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import { BrandGrid } from '@/components/brands/brand-grid'
 import { Pagination } from '@/components/brands/pagination'
 import { ViewItemListTracker } from '@/components/analytics/view-item-list-tracker'
+import { RelatedCategories } from '@/components/categories/related-categories'
 
 // ISR: revalidate every hour
 export const revalidate = 3600
@@ -111,6 +112,16 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const shortDescription = t('description', { category: categoryDescription })
   const hasEditorialDescription = t.has(`descriptions.${slug}`)
   const editorialDescription = resolveEditorialDescription(t, slug, shortDescription)
+  const relatedCategories = getRelatedCategorySlugs(slug)
+    .map((relatedSlug) => {
+      const relatedTag = allTags.find((t) => t.slug === relatedSlug)
+      if (!relatedTag) return null
+      return {
+        slug: relatedTag.slug,
+        name: safeLocale === 'en' ? relatedTag.name : relatedTag.nameZh ?? relatedTag.name,
+      }
+    })
+    .filter((category): category is { slug: string; name: string } => category !== null)
 
   // Pagination params (excluding page)
   const paginationParams: Record<string, string> = {}
@@ -216,6 +227,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         pageSize={DEFAULT_PAGE_SIZE}
         searchParams={paginationParams}
       />
+
+      <RelatedCategories categories={relatedCategories} />
     </main>
   )
 }
