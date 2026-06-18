@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createElement } from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import enMessages from '../../../../messages/en.json'
@@ -7,7 +8,7 @@ import zhMessages from '../../../../messages/zh-TW.json'
 const mockGetTranslations = vi.hoisted(() => vi.fn())
 
 vi.mock('next/image', () => ({
-  default: (props: Record<string, unknown>) => <img {...props} />,
+  default: (props: Record<string, unknown>) => createElement('img', props),
 }))
 
 vi.mock('@/i18n/navigation', () => ({

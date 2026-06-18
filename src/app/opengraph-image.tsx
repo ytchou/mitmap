@@ -42,7 +42,7 @@ export default async function OgImage() {
             padding: '96px',
           }}
         >
-          <img width={96} height={96} src={markDataUri} />
+          <img width={96} height={96} src={markDataUri} alt="Formoria mark" />
 
           <div
             style={{
