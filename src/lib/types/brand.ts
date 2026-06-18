@@ -3,17 +3,9 @@ import type { BrandSortOption } from '@/lib/pagination'
 
 export type BrandStatus = 'pending' | 'approved' | 'rejected' | 'hidden'
 
-export type PurchaseLink = {
-  platform: string
-  url: string
+export type OtherUrl = {
   label: string
-}
-
-export type SocialLinks = {
-  instagram?: string
-  threads?: string
-  facebook?: string
-  officialWebsite?: string
+  url: string
 }
 
 export type RetailLocation = {
@@ -69,8 +61,13 @@ export type Brand = {
   mitVerified?: boolean
   isDemo: boolean
   foundingYear: number | null
-  purchaseLinks: PurchaseLink[]
-  socialLinks: SocialLinks
+  socialInstagram: string | null
+  socialThreads: string | null
+  socialFacebook: string | null
+  purchaseWebsite: string | null
+  purchasePinkoi: string | null
+  purchaseShopee: string | null
+  otherUrls: OtherUrl[]
   retailLocations: RetailLocation[]
   productPhotos: string[]
   contactEmail: string | null
@@ -121,8 +118,13 @@ export type PendingBrandEditWithBrand = PendingBrandEdit & {
     | 'contactEmail'
     | 'brandHighlights'
     | 'foundingYear'
-    | 'purchaseLinks'
-    | 'socialLinks'
+    | 'socialInstagram'
+    | 'socialThreads'
+    | 'socialFacebook'
+    | 'purchaseWebsite'
+    | 'purchasePinkoi'
+    | 'purchaseShopee'
+    | 'otherUrls'
     | 'retailLocations'
     | 'productPhotos'
     | 'siteContent'

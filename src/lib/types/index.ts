@@ -2,12 +2,11 @@ export type {
   Brand,
   BrandFilters,
   BrandStatus,
-  PurchaseLink,
+  OtherUrl,
   RetailLocation,
   SiteContent,
   SiteProduct,
   SiteTokens,
-  SocialLinks,
 } from './brand'
 
 export type { TagCategory, TaxonomyTag } from './taxonomy'

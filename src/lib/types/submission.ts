@@ -1,4 +1,4 @@
-import type { SocialLinks } from './brand'
+import type { OtherUrl } from './brand'
 
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected'
 export type ValidationStatus = 'valid' | 'incomplete'
@@ -24,8 +24,13 @@ export type BrandSubmission = {
   submitterEmail: string
   submitterName: string | null
   description: string | null
-  websiteUrl: string | null
-  socialLinks: SocialLinks
+  socialInstagram: string | null
+  socialThreads: string | null
+  socialFacebook: string | null
+  purchaseWebsite: string | null
+  purchasePinkoi: string | null
+  purchaseShopee: string | null
+  otherUrls: OtherUrl[]
   suggestedTags: string[] | { region?: string; values?: string[] }
   status: SubmissionStatus
   reviewerNotes: string | null
@@ -41,18 +46,19 @@ export type BrandSubmission = {
   unifiedBusinessNumber?: string
 }
 
-/** Form-level purchase link (no label field required) */
+/** Form-level purchase link fields */
 export type FormPurchaseLink = {
-  platform: string
-  url: string
+  purchaseWebsite: string
+  purchasePinkoi: string
+  purchaseShopee: string
+  otherUrls: OtherUrl[]
 }
 
-/** Form-level social links (all strings, not optional) */
+/** Form-level social link fields */
 export type FormSocialLinks = {
-  instagram: string
-  threads: string
-  facebook: string
-  website: string
+  socialInstagram: string
+  socialThreads: string
+  socialFacebook: string
 }
 
 /** Form-level retail location */

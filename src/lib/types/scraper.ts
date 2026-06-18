@@ -4,11 +4,9 @@ export interface ScrapedBrandData {
   story: string | null
   heroImageUrl: string | null
   galleryImageUrls: string[]
-  socialLinks: {
-    instagram: string | null
-    threads: string | null
-    facebook: string | null
-  }
+  socialInstagram: string | null
+  socialThreads: string | null
+  socialFacebook: string | null
   categoryHints: string[]
   websiteUrl: string
   rawJsonLd: Record<string, unknown> | null
