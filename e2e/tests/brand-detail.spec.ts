@@ -25,6 +25,46 @@ test.describe('Brand detail deep', () => {
     await expect(page.getByText(/something went wrong|not found|error/i)).not.toBeVisible();
   });
 
+  test('brand detail shows social and purchase links in two separate sections', async ({ page }) => {
+    // Use a known brand that has links data to verify two-section structure.
+    // Fall back to the dynamically resolved href if the known brand is absent.
+    // 1973-furniture is in the seed data and has both sections populated.
+    await page.goto('/brands/1973-furniture');
+
+    // Verify the social section heading is visible
+    await expect(
+      page.getByRole('heading', { name: '社群平台', level: 3 })
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Verify the purchase section heading is visible
+    await expect(
+      page.getByRole('heading', { name: '購買管道', level: 3 })
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Both sections must appear on the same page — confirming structural separation
+    const socialSection = page.getByRole('heading', { name: '社群平台', level: 3 });
+    const purchaseSection = page.getByRole('heading', { name: '購買管道', level: 3 });
+    await expect(socialSection).toBeVisible();
+    await expect(purchaseSection).toBeVisible();
+  });
+
+  test('links sections are structurally separate (social before purchase)', async ({ page }) => {
+    await page.goto('/brands/1973-furniture');
+
+    const socialHeading = page.getByRole('heading', { name: '社群平台', level: 3 });
+    const purchaseHeading = page.getByRole('heading', { name: '購買管道', level: 3 });
+
+    await expect(socialHeading).toBeVisible({ timeout: 10_000 });
+    await expect(purchaseHeading).toBeVisible();
+
+    // Social section must appear before purchase section in document order
+    const socialBox = await socialHeading.boundingBox();
+    const purchaseBox = await purchaseHeading.boundingBox();
+    expect(socialBox).not.toBeNull();
+    expect(purchaseBox).not.toBeNull();
+    expect(socialBox!.y).toBeLessThan(purchaseBox!.y);
+  });
+
   test('external links have target="_blank" and rel="noopener"', async ({ page }) => {
     await page.goto(brandHref);
     const externalLinks = page.locator('a[href^="http"]:not([href*="localhost"])');

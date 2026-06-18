@@ -22,18 +22,16 @@ test.describe('UrlStep link pre-fill', () => {
       // Re-navigate through the shared helper so the hydration signal is respected.
       await gotoSubmitWizard(userPage, { timeout: 90_000 });
 
-      // --- UrlStep: fill social + purchase fields before skipping ---
+      // --- UrlStep: fixed fields (no platform dropdown in the redesigned UrlStep) ---
+      // Social section: dedicated inputs for each platform
       await userPage.locator('#url-instagram').fill('@e2e_url_links');
       await userPage.locator('#url-threads').fill('@e2e_threads');
       await userPage.locator('#url-facebook').fill('https://facebook.com/e2e-url-links');
 
-      // Purchase link: native <select role="combobox"> then the url input in the same section.
-      // index 0 is the website-url input; index 1 is the first purchase-link url input.
-      await userPage.locator('select[role="combobox"]').first().selectOption('pinkoi');
-      await userPage.locator('input[type="url"]').nth(1).fill('https://pinkoi.com/e2e-test-store');
+      // Purchase section: dedicated URL inputs per platform
+      await userPage.locator('#purchase-pinkoi').fill('https://pinkoi.com/e2e-test-store');
 
-      // Skip to the form wizard (hand-fill mode).  handleUrlSkip sets socialLinks +
-      // purchaseLinks on the react-hook-form before mounting the step-based wizard.
+      // Skip to the form wizard (hand-fill mode).
       await userPage.getByRole('button', { name: manualEntryButtonName, exact: true }).click();
 
       // --- Step 0: BrandInfoStep (required fields) ---
@@ -44,7 +42,7 @@ test.describe('UrlStep link pre-fill', () => {
       await userPage.getByLabel('品牌名稱', { exact: true }).fill(brandName);
       await userPage
         .getByLabel('品牌描述', { exact: true })
-        .fill('E2E test brand for UrlStep link pre-fill journey. Verifies PR #132 wiring.');
+        .fill('E2E test brand for UrlStep link pre-fill journey. Verifies DEV-826 fixed fields.');
 
       const logoUploadInput = userPage.locator('input[type="file"]');
       await Promise.all([
@@ -68,23 +66,52 @@ test.describe('UrlStep link pre-fill', () => {
       await userPage.getByLabel('服飾鞋履').click();
       await userPage.getByRole('button', { name: nextButtonName, exact: true }).click();
 
-      // --- Step 2: ReviewStep — assert the pre-filled links are rendered ---
-      // The panel heading for the links section is "連結與社群" (submit.review.linksAndSocial).
+      // --- Step 2: ReviewStep — assert links appear in two separate sub-sections ---
+      // Section heading is "連結與社群" (submit.review.linksAndSocial)
       await expect(userPage.getByText('連結與社群', { exact: true })).toBeVisible({
         timeout: 5_000,
       });
 
-      // Purchase link: ReviewRow renders the platform as label and the URL as an anchor.
-      await expect(userPage.getByRole('link', { name: 'https://pinkoi.com/e2e-test-store' })).toBeVisible();
+      // Social sub-section heading (submit.review.socialLinks)
+      await expect(userPage.getByText('社群連結', { exact: true })).toBeVisible();
 
-      // Instagram: ReviewRow label="Instagram", value=formData.socialLinks.instagram
+      // Purchase sub-section heading (submit.review.purchaseLinks)
+      await expect(userPage.getByText('購買連結', { exact: true })).toBeVisible();
+
+      // Instagram: ReviewRow label="Instagram", value=@e2e_url_links (handle stripped of @)
       await expect(userPage.getByText('e2e_url_links')).toBeVisible();
 
-      // Website: ReviewRow label="Website", value=formData.socialLinks.website.
-      // The website field in UrlStep is the #website-url input; we left it empty in this test
-      // so the Website row is omitted (conditional render).  No assertion needed.
+      // Pinkoi purchase link: rendered as anchor with the URL
+      await expect(
+        userPage.getByRole('link', { name: 'https://pinkoi.com/e2e-test-store' })
+      ).toBeVisible();
     }
   );
+
+  test('UrlStep fixed fields are present — no platform dropdown', async ({ userPage }) => {
+    test.setTimeout(90_000);
+
+    const probe = await userPage.goto('/submit/form');
+    if (probe?.status() === 503) {
+      test.skip(true, 'PREVIEW_MODE active — submit route returns 503');
+      return;
+    }
+
+    await gotoSubmitWizard(userPage, { timeout: 90_000 });
+
+    // Social section: all three platform inputs must be individually addressable by ID
+    await expect(userPage.locator('#url-instagram')).toBeVisible({ timeout: 5_000 });
+    await expect(userPage.locator('#url-threads')).toBeVisible();
+    await expect(userPage.locator('#url-facebook')).toBeVisible();
+
+    // Purchase section: dedicated fields (no platform combobox/dropdown)
+    await expect(userPage.locator('#purchase-website')).toBeVisible();
+    await expect(userPage.locator('#purchase-pinkoi')).toBeVisible();
+    await expect(userPage.locator('#purchase-shopee')).toBeVisible();
+
+    // No platform select/combobox should exist in UrlStep
+    await expect(userPage.locator('select[role="combobox"]')).toHaveCount(0);
+  });
 
   test(
     'wizard step indicator labels are visible',
