@@ -224,12 +224,18 @@ export type Database = {
           id: string
           is_brand_owner: boolean | null
           notified_at: string | null
+          other_urls: Json
           pdpa_consent_at: string | null
           product_type_note: string | null
+          purchase_pinkoi: string | null
+          purchase_shopee: string | null
+          purchase_website: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           reviewer_notes: string | null
-          social_links: Json | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_threads: string | null
           source_attribution: string | null
           status: string
           submitted_at: string | null
@@ -248,12 +254,18 @@ export type Database = {
           id?: string
           is_brand_owner?: boolean | null
           notified_at?: string | null
+          other_urls?: Json
           pdpa_consent_at?: string | null
           product_type_note?: string | null
+          purchase_pinkoi?: string | null
+          purchase_shopee?: string | null
+          purchase_website?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           reviewer_notes?: string | null
-          social_links?: Json | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_threads?: string | null
           source_attribution?: string | null
           status?: string
           submitted_at?: string | null
@@ -272,12 +284,18 @@ export type Database = {
           id?: string
           is_brand_owner?: boolean | null
           notified_at?: string | null
+          other_urls?: Json
           pdpa_consent_at?: string | null
           product_type_note?: string | null
+          purchase_pinkoi?: string | null
+          purchase_shopee?: string | null
+          purchase_website?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           reviewer_notes?: string | null
-          social_links?: Json | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_threads?: string | null
           source_attribution?: string | null
           status?: string
           submitted_at?: string | null
@@ -349,13 +367,18 @@ export type Database = {
           mit_status: string
           mit_verified_at: string | null
           name: string
+          other_urls: Json
           product_photos: Json | null
           product_type: string
-          purchase_links: Json | null
+          purchase_pinkoi: string | null
+          purchase_shopee: string | null
+          purchase_website: string | null
           retail_locations: Json | null
           site_content: Json | null
           slug: string
-          social_links: Json | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_threads: string | null
           source: string | null
           status: string
           submitted_at: string | null
@@ -382,13 +405,18 @@ export type Database = {
           mit_status?: string
           mit_verified_at?: string | null
           name: string
+          other_urls?: Json
           product_photos?: Json | null
           product_type: string
-          purchase_links?: Json | null
+          purchase_pinkoi?: string | null
+          purchase_shopee?: string | null
+          purchase_website?: string | null
           retail_locations?: Json | null
           site_content?: Json | null
           slug: string
-          social_links?: Json | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_threads?: string | null
           source?: string | null
           status?: string
           submitted_at?: string | null
@@ -415,13 +443,18 @@ export type Database = {
           mit_status?: string
           mit_verified_at?: string | null
           name?: string
+          other_urls?: Json
           product_photos?: Json | null
           product_type?: string
-          purchase_links?: Json | null
+          purchase_pinkoi?: string | null
+          purchase_shopee?: string | null
+          purchase_website?: string | null
           retail_locations?: Json | null
           site_content?: Json | null
           slug?: string
-          social_links?: Json | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_threads?: string | null
           source?: string | null
           status?: string
           submitted_at?: string | null

@@ -77,7 +77,7 @@ export default async function OgImage({
               fontFamily: 'Bricolage Grotesque',
             }}
           >
-            <img width={36} height={36} src={markDataUri} />
+            <img width={36} height={36} src={markDataUri} alt="Formoria mark" />
             <div
               style={{
                 marginLeft: 14,

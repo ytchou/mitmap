@@ -1,13 +1,13 @@
 export type {
   Brand,
   BrandFilters,
+  BrandFlatLinkColumns,
   BrandStatus,
-  PurchaseLink,
+  OtherUrl,
   RetailLocation,
   SiteContent,
   SiteProduct,
   SiteTokens,
-  SocialLinks,
 } from './brand'
 
 export type { TagCategory, TaxonomyTag } from './taxonomy'

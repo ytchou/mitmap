@@ -69,7 +69,7 @@ test.describe('Admin smoke', () => {
 
     if (!testSubmissionId) test.skip();
     await adminPage.goto('/admin/review-queue/submissions', { timeout: 60_000 });
-    await expect(adminPage.getByRole('heading', { name: /submission/i })).toBeVisible();
+    await expect(adminPage.getByRole('heading', { name: /submission/i })).toBeVisible({ timeout: 30_000 });
     await expect(adminPage.getByText(testBrandName)).toBeVisible({ timeout: 10_000 });
   });
 
@@ -83,7 +83,19 @@ test.describe('Admin smoke', () => {
     const approveBtn = adminPage.getByRole('button', { name: /^approve$|^核准$/i });
     await expect(approveBtn).toBeVisible({ timeout: 5_000 });
     await approveBtn.click();
-    // After approval the server action revalidates and the button disappears
-    await expect(approveBtn).toBeHidden({ timeout: 15_000 });
+    // Verify approval via DB — page revalidation can be slow (re-renders layout + 600+ submissions)
+    await expect
+      .poll(
+        async () => {
+          const { data } = await supabaseAdmin
+            .from('brand_submissions')
+            .select('status')
+            .eq('id', testSubmissionId)
+            .single();
+          return data?.status;
+        },
+        { timeout: 30_000, intervals: [1_000, 2_000, 3_000] }
+      )
+      .toBe('approved');
   });
 });

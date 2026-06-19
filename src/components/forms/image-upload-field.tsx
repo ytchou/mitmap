@@ -84,7 +84,7 @@ export function ImageUploadField({
       // Reset file input so the same file can be selected again
       e.target.value = ''
     },
-    [upload]
+    [t, upload]
   )
 
   const handleRemove = useCallback(() => {

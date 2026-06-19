@@ -225,12 +225,11 @@ test.describe('Submission happy path', () => {
     await gotoSubmitWizard(userPage, { timeout: 90_000 });
 
     // UrlStep: fill official website, Instagram, and a purchase link BEFORE skipping.
-    // (PR #132 moved social + purchase links from LinksStep to UrlStep.)
+    // DEV-826: redesigned UrlStep has fixed fields per platform — no platform dropdown.
     await userPage.locator('#website-url').fill(websiteUrl);
     await userPage.locator('#url-instagram').fill('@e2e_happy_path');
-    // Purchase link — native <select> followed by the url input in the same row
-    await userPage.locator('select[role="combobox"]').first().selectOption('official');
-    await userPage.locator('input[type="url"]').nth(1).fill(purchaseUrl);
+    // Purchase link — dedicated input for official website (no select/combobox)
+    await userPage.locator('#purchase-website').fill(purchaseUrl);
 
     await userPage.getByRole('checkbox', { name: ownerCheckboxName, exact: true }).check();
     await userPage.getByRole('button', { name: manualEntryButtonName, exact: true }).click();

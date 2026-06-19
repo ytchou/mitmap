@@ -1,4 +1,4 @@
-import type { Brand, BrandFilters, SocialLinks } from '@/lib/types'
+import type { Brand, BrandFilters, OtherUrl } from '@/lib/types'
 import type { SiteContent, SiteProduct, SiteTokens } from '@/lib/types/brand'
 import type { TaxonomyTag } from '@/lib/types'
 import type { Database } from '@/lib/supabase/database.types'
@@ -27,6 +27,15 @@ type BrandRow = Database['public']['Tables']['brands']['Row']
 type BrandDraftData = BrandRow['draft_data']
 type TaxonomyTagRow = Database['public']['Tables']['taxonomy_tags']['Row']
 type RawSeedRow = Record<string, unknown>
+type BrandFlatLinkColumns = {
+  social_instagram?: string | null
+  social_threads?: string | null
+  social_facebook?: string | null
+  purchase_website?: string | null
+  purchase_pinkoi?: string | null
+  purchase_shopee?: string | null
+  other_urls?: unknown
+}
 
 export const curatedSubmissionSchema = createSubmissionSchema(false).omit({
   _honeypot: true,
@@ -55,8 +64,13 @@ export type CuratedSubmissionInput = {
 type CuratedBrand = Partial<Brand> &
   Pick<
     Brand,
-    | 'purchaseLinks'
-    | 'socialLinks'
+    | 'socialInstagram'
+    | 'socialThreads'
+    | 'socialFacebook'
+    | 'purchaseWebsite'
+    | 'purchasePinkoi'
+    | 'purchaseShopee'
+    | 'otherUrls'
     | 'status'
     | 'heroImageUrl'
     | 'contactEmail'
@@ -81,6 +95,7 @@ type BrandOwnerRef = { user_id: string }
  * ?? defaults for all optional fields.
  */
 export type BrandRowWithJoins = Partial<BrandRow> &
+  BrandFlatLinkColumns &
   Pick<BrandRow, 'id' | 'name' | 'slug' | 'status' | 'submitted_at' | 'created_at' | 'updated_at'> & {
     brand_taxonomy?: BrandTaxonomyWithTag[] | null
     brand_owners?: BrandOwnerRef | BrandOwnerRef[] | null
@@ -119,7 +134,7 @@ export function generateSlug(name: string): string {
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9一-鿿㐀-䶿]+/g, '-')
+    .replace(/[^a-z0-9\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 }
@@ -320,6 +335,18 @@ export function normalizeRow(rawRow: RawSeedRow): CuratedSubmissionInput {
 }
 
 export function curatedSubmissionToBrand(input: CuratedSubmissionInput): CuratedBrand {
+  const purchaseWebsite =
+    input.socialLinks.website ||
+    input.purchaseLinks.find((link) => ['website', 'official'].includes(link.platform.toLowerCase()))?.url ||
+    null
+  const purchasePinkoi =
+    input.purchaseLinks.find((link) => link.platform.toLowerCase() === 'pinkoi')?.url ?? null
+  const purchaseShopee =
+    input.purchaseLinks.find((link) => link.platform.toLowerCase() === 'shopee')?.url ?? null
+  const otherUrls = input.purchaseLinks
+    .filter((link) => !['website', 'official', 'pinkoi', 'shopee'].includes(link.platform.toLowerCase()))
+    .map((link) => ({ label: link.platform, url: link.url }))
+
   return {
     name: input.name,
     slug: input.slug,
@@ -330,16 +357,13 @@ export function curatedSubmissionToBrand(input: CuratedSubmissionInput): Curated
     category: input.category,
     productType: input.productType ?? input.category,
     foundingYear: null,
-    purchaseLinks: input.purchaseLinks.map((link) => ({
-      ...link,
-      label: link.platform,
-    })),
-    socialLinks: {
-      instagram: input.socialLinks.instagram || undefined,
-      threads: input.socialLinks.threads || undefined,
-      facebook: input.socialLinks.facebook || undefined,
-      officialWebsite: input.socialLinks.website || undefined,
-    },
+    socialInstagram: input.socialLinks.instagram || null,
+    socialThreads: input.socialLinks.threads || null,
+    socialFacebook: input.socialLinks.facebook || null,
+    purchaseWebsite,
+    purchasePinkoi,
+    purchaseShopee,
+    otherUrls,
     retailLocations: input.retailLocations.map((location) => ({
       ...location,
       latitude: 0,
@@ -355,35 +379,21 @@ export function curatedSubmissionToBrand(input: CuratedSubmissionInput): Curated
 // Mappers
 // ---------------------------------------------------------------------------
 
-function mapSocialLinksToDomain(raw: Record<string, string | undefined>): SocialLinks {
-  const result: SocialLinks = {}
-  if (raw.instagram) result.instagram = raw.instagram
-  if (raw.threads) result.threads = raw.threads
-  if (raw.facebook) result.facebook = raw.facebook
-  if (raw.official_website) result.officialWebsite = raw.official_website
-  if (raw.officialWebsite) result.officialWebsite = raw.officialWebsite
-  return result
-}
-
-function mapSocialLinksToDb(links: SocialLinks): Record<string, string | undefined> {
-  const result: Record<string, string | undefined> = {}
-  if (links.instagram) result.instagram = links.instagram
-  if (links.threads) result.threads = links.threads
-  if (links.facebook) result.facebook = links.facebook
-  if (links.officialWebsite) result.official_website = links.officialWebsite
-  return result
-}
-
 const BRAND_DRAFT_EDITABLE_KEYS = [
   'name',
   'description',
   'foundingYear',
-  'socialLinks',
+  'socialInstagram',
+  'socialThreads',
+  'socialFacebook',
   'logoUrl',
   'heroImageUrl',
   'productPhotos',
   'brandHighlights',
-  'purchaseLinks',
+  'purchaseWebsite',
+  'purchasePinkoi',
+  'purchaseShopee',
+  'otherUrls',
   'retailLocations',
 ] as const satisfies readonly (keyof Brand)[]
 
@@ -445,26 +455,6 @@ export function normalizeSiteContent(raw: unknown): SiteContent | null {
   return result
 }
 
-function normalizeDraftSocialLinks(value: unknown, base: SocialLinks = {}): SocialLinks {
-  if (!isRecord(value)) return base
-
-  const result: SocialLinks = { ...base }
-  if ('officialWebsite' in value) {
-    result.officialWebsite =
-      typeof value.officialWebsite === 'string' ? value.officialWebsite : undefined
-  }
-  if ('instagram' in value) {
-    result.instagram = typeof value.instagram === 'string' ? value.instagram : undefined
-  }
-  if ('threads' in value) {
-    result.threads = typeof value.threads === 'string' ? value.threads : undefined
-  }
-  if ('facebook' in value) {
-    result.facebook = typeof value.facebook === 'string' ? value.facebook : undefined
-  }
-  return result
-}
-
 function draftDataToSnapshot(value: BrandDraftData): Record<string, unknown> | null {
   return isRecord(value) ? value : null
 }
@@ -481,8 +471,9 @@ export function brandToDraftSnapshot(data: Partial<Brand>): Record<string, unkno
 
 export function draftSnapshotToDomain(
   snapshot: Record<string, unknown>,
-  base: Brand
+  _base?: Brand
 ): Partial<Brand> {
+  void _base
   const partial: Partial<Brand> = {}
 
   for (const key of BRAND_DRAFT_EDITABLE_KEYS) {
@@ -498,8 +489,14 @@ export function draftSnapshotToDomain(
       case 'foundingYear':
         partial.foundingYear = snapshot.foundingYear as Brand['foundingYear']
         break
-      case 'socialLinks':
-        partial.socialLinks = normalizeDraftSocialLinks(snapshot.socialLinks, base.socialLinks)
+      case 'socialInstagram':
+        partial.socialInstagram = snapshot.socialInstagram as Brand['socialInstagram']
+        break
+      case 'socialThreads':
+        partial.socialThreads = snapshot.socialThreads as Brand['socialThreads']
+        break
+      case 'socialFacebook':
+        partial.socialFacebook = snapshot.socialFacebook as Brand['socialFacebook']
         break
       case 'logoUrl':
         partial.logoUrl = snapshot.logoUrl as Brand['logoUrl']
@@ -513,8 +510,17 @@ export function draftSnapshotToDomain(
       case 'brandHighlights':
         partial.brandHighlights = snapshot.brandHighlights as Brand['brandHighlights']
         break
-      case 'purchaseLinks':
-        partial.purchaseLinks = snapshot.purchaseLinks as Brand['purchaseLinks']
+      case 'purchaseWebsite':
+        partial.purchaseWebsite = snapshot.purchaseWebsite as Brand['purchaseWebsite']
+        break
+      case 'purchasePinkoi':
+        partial.purchasePinkoi = snapshot.purchasePinkoi as Brand['purchasePinkoi']
+        break
+      case 'purchaseShopee':
+        partial.purchaseShopee = snapshot.purchaseShopee as Brand['purchaseShopee']
+        break
+      case 'otherUrls':
+        partial.otherUrls = snapshot.otherUrls as Brand['otherUrls']
         break
       case 'retailLocations':
         partial.retailLocations = snapshot.retailLocations as Brand['retailLocations']
@@ -529,7 +535,7 @@ export function mergeDraftOverBrand(
   brand: Brand,
   snapshot: Record<string, unknown> | null
 ): Brand {
-  return snapshot ? { ...brand, ...draftSnapshotToDomain(snapshot, brand) } : brand
+  return snapshot ? { ...brand, ...draftSnapshotToDomain(snapshot) } : brand
 }
 
 export function diffRemovedImageUrls(previous: string[], next: string[]): string[] {
@@ -578,9 +584,13 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
     mitVerified: row.mit_status === 'verified',
     isDemo: row.is_demo ?? false,
     foundingYear: row.founding_year ?? null,
-    // Json columns are cast to domain types at the service boundary
-    purchaseLinks: (row.purchase_links as Brand['purchaseLinks']) ?? [],
-    socialLinks: mapSocialLinksToDomain((row.social_links as Record<string, string | undefined>) ?? {}),
+    socialInstagram: row.social_instagram ?? null,
+    socialThreads: row.social_threads ?? null,
+    socialFacebook: row.social_facebook ?? null,
+    purchaseWebsite: row.purchase_website ?? null,
+    purchasePinkoi: row.purchase_pinkoi ?? null,
+    purchaseShopee: row.purchase_shopee ?? null,
+    otherUrls: (row.other_urls as OtherUrl[]) ?? [],
     retailLocations: (row.retail_locations as Brand['retailLocations']) ?? [],
     productPhotos: (row.product_photos as string[]) ?? [],
     contactEmail: row.contact_email ?? null,
@@ -609,8 +619,13 @@ export function brandToInsert(data: BrandWriteInput): Record<string, unknown> {
     row.product_type = data.category
   }
   if (data.foundingYear !== undefined) row.founding_year = data.foundingYear
-  if (data.purchaseLinks !== undefined) row.purchase_links = data.purchaseLinks
-  if (data.socialLinks !== undefined) row.social_links = mapSocialLinksToDb(data.socialLinks)
+  if (data.socialInstagram !== undefined) row.social_instagram = data.socialInstagram
+  if (data.socialThreads !== undefined) row.social_threads = data.socialThreads
+  if (data.socialFacebook !== undefined) row.social_facebook = data.socialFacebook
+  if (data.purchaseWebsite !== undefined) row.purchase_website = data.purchaseWebsite
+  if (data.purchasePinkoi !== undefined) row.purchase_pinkoi = data.purchasePinkoi
+  if (data.purchaseShopee !== undefined) row.purchase_shopee = data.purchaseShopee
+  if (data.otherUrls !== undefined) row.other_urls = data.otherUrls
   if (data.retailLocations !== undefined) row.retail_locations = data.retailLocations
   if (data.productPhotos !== undefined) row.product_photos = data.productPhotos
   if (data.contactEmail !== undefined) row.contact_email = data.contactEmail
@@ -633,10 +648,21 @@ function brandToUpdate(data: BrandWriteInput): Record<string, unknown> {
 // Service functions
 // ---------------------------------------------------------------------------
 
+const BRAND_COLUMNS = [
+  'id', 'name', 'slug', 'description', 'logo_url', 'hero_image_url',
+  'product_type', 'contact_email', 'purchase_website', 'purchase_pinkoi',
+  'purchase_shopee', 'social_instagram', 'social_threads', 'social_facebook',
+  'other_urls', 'retail_locations', 'product_photos', 'site_content',
+  'status', 'submitted_at', 'approved_at', 'created_at', 'updated_at',
+  'draft_data', 'draft_updated_at', 'founder', 'founding_year',
+  'brand_highlights', 'mit_status', 'mit_claimed_at', 'mit_verified_at',
+  'mit_evidence', 'source', 'tag_slugs', 'unified_business_number', 'is_demo',
+].join(', ')
+
 export const BRAND_SELECT =
-  '*, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)'
+  `${BRAND_COLUMNS}, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)` as unknown as '*'
 const VERIFIED_BRAND_SELECT =
-  '*, brand_taxonomy(taxonomy_tags(*)), brand_owners!inner(user_id)'
+  `${BRAND_COLUMNS}, brand_taxonomy(taxonomy_tags(*)), brand_owners!inner(user_id)` as unknown as '*'
 
 export async function getBrandEnrichmentBatch(brandIds: string[]): Promise<Map<string, BrandEnrichment>> {
   if (brandIds.length === 0) {
@@ -644,15 +670,22 @@ export async function getBrandEnrichmentBatch(brandIds: string[]): Promise<Map<s
   }
 
   const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('brands')
-    .select('id, product_type, logo_url, hero_image_url, product_photos, tag_slugs')
-    .in('id', brandIds)
+  const BATCH_SIZE = 100
+  const uniqueIds = Array.from(new Set(brandIds))
+  const allRows: { id: string; product_type: string | null; logo_url: string | null; hero_image_url: string | null; product_photos: unknown; tag_slugs: string[] | null }[] = []
 
-  if (error) throw error
+  for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+    const chunk = uniqueIds.slice(i, i + BATCH_SIZE)
+    const { data, error } = await supabase
+      .from('brands')
+      .select('id, product_type, logo_url, hero_image_url, product_photos, tag_slugs')
+      .in('id', chunk)
+    if (error) throw error
+    if (data) allRows.push(...data)
+  }
 
   return new Map(
-    (data ?? []).map((row) => [
+    allRows.map((row) => [
       row.id,
       {
         productType: row.product_type ?? '',
@@ -884,8 +917,7 @@ export async function publishDraft(brandId: string): Promise<Brand> {
   const snapshot = draftDataToSnapshot(data.draft_data)
   if (!snapshot) throw new ValidationError('No draft to publish')
 
-  const currentBrand = await getBrandById(brandId)
-  const partial = draftSnapshotToDomain(snapshot, currentBrand)
+  const partial = draftSnapshotToDomain(snapshot)
   const published = await updateBrand(brandId, partial)
 
   const { error: clearError, count } = await supabase
@@ -1241,7 +1273,7 @@ export async function getBrandStats(): Promise<{ brandCount: number; categoryCou
   const [{ count, error }, categories] = await Promise.all([
     supabase
       .from('brands')
-      .select('*', { count: 'exact', head: true })
+      .select(BRAND_COLUMNS as '*', { count: 'exact', head: true })
       .eq('status', 'approved'),
     getActiveCategories(),
   ])
