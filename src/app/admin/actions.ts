@@ -62,6 +62,7 @@ import { updateReportStatus } from '@/lib/services/reports'
 import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedback'
 import type { FeedbackStatus } from '@/lib/services/feedback'
 import { checkAllServices } from '@/lib/services/health-checks'
+import { rateLimit } from '@/lib/security/rate-limiter'
 import type { TagCategory } from '@/lib/types'
 import { PRODUCT_TYPE_CATEGORIES, deriveCategoryFromProductType } from '@/lib/taxonomy/ontology'
 
@@ -1104,6 +1105,16 @@ export async function executeBulkImportAction(
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return { error: auth.error, results: [] }
+
+    const limit = await rateLimit(auth.email || auth.userId, {
+      windowMs: 60_000,
+      maxRequests: 5,
+      prefix: 'admin:bulk-import',
+    })
+
+    if (!limit.allowed) {
+      return { error: 'Too many requests', results: [] }
+    }
 
     if (selectedRows.length === 0) {
       return { results: [] }
