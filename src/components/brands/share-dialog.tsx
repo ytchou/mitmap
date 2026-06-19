@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type MouseEvent, type SVGProps } from 'react'
+import { useEffect, useRef, useState, type SVGProps } from 'react'
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 import { useTranslations } from 'next-intl'
 import {
@@ -58,10 +58,8 @@ export function ShareDialog({ brandSlug, brandName, brandImageUrl }: ShareDialog
     trackBrandPageShared(brandSlug)
   }
 
-  const handleTriggerClick = async (event: MouseEvent<HTMLButtonElement>) => {
+  const handleTriggerClick = async () => {
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      event.preventDefault()
-
       try {
         await navigator.share({ title: brandName, url: shareUrl })
         trackShare()
@@ -71,24 +69,28 @@ export function ShareDialog({ brandSlug, brandName, brandImageUrl }: ShareDialog
           return
         }
       }
-
-      setOpen(true)
     }
+
+    setOpen(true)
   }
 
   const handleCopyLink = async () => {
-    await navigator.clipboard.writeText(shareUrl)
-    trackShare()
-    setCopied(true)
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      trackShare()
+      setCopied(true)
 
-    if (copiedTimeoutRef.current) {
-      clearTimeout(copiedTimeoutRef.current)
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current)
+      }
+
+      copiedTimeoutRef.current = setTimeout(() => {
+        setCopied(false)
+        copiedTimeoutRef.current = null
+      }, 2000)
+    } catch {
+      // Ignore copy failures so the UI only shows success after an actual copy.
     }
-
-    copiedTimeoutRef.current = setTimeout(() => {
-      setCopied(false)
-      copiedTimeoutRef.current = null
-    }, 2000)
   }
 
   const handleLineShare = () => {
@@ -120,14 +122,15 @@ export function ShareDialog({ brandSlug, brandName, brandImageUrl }: ShareDialog
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Trigger
+      <button
+        type="button"
         className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-secondary px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80"
         aria-label={t('trigger')}
         onClick={handleTriggerClick}
       >
         <Share2 size={16} />
         {t('trigger')}
-      </DialogPrimitive.Trigger>
+      </button>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <DialogPrimitive.Popup className="fixed top-1/2 left-1/2 z-50 w-80 max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-popover p-0 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
