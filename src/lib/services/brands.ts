@@ -670,15 +670,22 @@ export async function getBrandEnrichmentBatch(brandIds: string[]): Promise<Map<s
   }
 
   const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('brands')
-    .select('id, product_type, logo_url, hero_image_url, product_photos, tag_slugs')
-    .in('id', brandIds)
+  const BATCH_SIZE = 100
+  const uniqueIds = Array.from(new Set(brandIds))
+  const allRows: { id: string; product_type: string | null; logo_url: string | null; hero_image_url: string | null; product_photos: unknown; tag_slugs: string[] | null }[] = []
 
-  if (error) throw error
+  for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+    const chunk = uniqueIds.slice(i, i + BATCH_SIZE)
+    const { data, error } = await supabase
+      .from('brands')
+      .select('id, product_type, logo_url, hero_image_url, product_photos, tag_slugs')
+      .in('id', chunk)
+    if (error) throw error
+    if (data) allRows.push(...data)
+  }
 
   return new Map(
-    (data ?? []).map((row) => [
+    allRows.map((row) => [
       row.id,
       {
         productType: row.product_type ?? '',
