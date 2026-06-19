@@ -75,6 +75,31 @@ describe('previewBulkImportAction', () => {
     expect(result?.error).toMatch(/沒有可匯入|no rows/i)
   })
 
+  it('rejects CSV text larger than 2MB before parsing', async () => {
+    const oversizedCsv = 'a'.repeat(2 * 1024 * 1024 + 1)
+
+    const result = await previewBulkImportAction(oversizedCsv)
+
+    expect(result?.error).toMatch(/2MB/i)
+    expect(parseBrandCSV).not.toHaveBeenCalled()
+  })
+
+  it('rejects CSV imports with more than 500 rows', async () => {
+    vi.mocked(parseBrandCSV).mockReturnValue(
+      Array.from({ length: 501 }, (_, index) => ({
+        name: `Brand ${index}`,
+        description: 'A wonderful brand that meets the minimum length requirement here.',
+        category: 'Food',
+        productType: 'fashion',
+      }))
+    )
+
+    const result = await previewBulkImportAction('name,description,category\n...')
+
+    expect(result?.error).toMatch(/500/)
+    expect(result?.rows).toHaveLength(0)
+  })
+
   it('returns preview rows with status for valid CSV', async () => {
     vi.mocked(parseBrandCSV).mockReturnValue([
       {
@@ -135,6 +160,21 @@ describe('executeBulkImportAction', () => {
 
   it('returns empty results for empty selection', async () => {
     const result = await executeBulkImportAction([])
+    expect(result?.results).toHaveLength(0)
+  })
+
+  it('rejects execution with more than 500 selected rows', async () => {
+    const selectedRows = Array.from({ length: 501 }, (_, index) => ({
+      rowIndex: index + 1,
+      name: `Brand ${index}`,
+      slug: `brand-${index}`,
+      validatedData: {},
+      status: 'valid' as const,
+    }))
+
+    const result = await executeBulkImportAction(selectedRows)
+
+    expect(result?.error).toMatch(/500/)
     expect(result?.results).toHaveLength(0)
   })
 })

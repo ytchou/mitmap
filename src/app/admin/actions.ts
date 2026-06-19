@@ -85,6 +85,9 @@ export type ImportExecuteResult = {
   error?: string
 }
 
+const BULK_IMPORT_MAX_ROWS = 500
+const BULK_IMPORT_MAX_FILE_BYTES = 2 * 1024 * 1024
+
 function isStructuredTags(v: unknown): v is { region?: string; values?: string[]; productType?: string } {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
@@ -962,7 +965,15 @@ export async function previewBulkImportAction(
     const auth = await requireAdmin()
     if ('error' in auth) return { error: auth.error, rows: [] }
 
+    if (new TextEncoder().encode(csvText).byteLength > BULK_IMPORT_MAX_FILE_BYTES) {
+      return { error: 'CSV 檔案大小不可超過 2MB', rows: [] }
+    }
+
     const rawRows = parseBrandCSV(csvText)
+    if (rawRows.length > BULK_IMPORT_MAX_ROWS) {
+      return { error: `CSV 一次最多可匯入 ${BULK_IMPORT_MAX_ROWS} 筆資料`, rows: [] }
+    }
+
     if (rawRows.length === 0) {
       return { error: 'CSV 沒有可匯入的資料列', rows: [] }
     }
@@ -1114,6 +1125,10 @@ export async function executeBulkImportAction(
 
     if (!limit.allowed) {
       return { error: 'Too many requests', results: [] }
+    }
+
+    if (selectedRows.length > BULK_IMPORT_MAX_ROWS) {
+      return { error: `一次最多可匯入 ${BULK_IMPORT_MAX_ROWS} 筆資料`, results: [] }
     }
 
     if (selectedRows.length === 0) {
