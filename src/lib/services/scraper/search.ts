@@ -22,11 +22,19 @@ export const NOISE_DOMAINS = new Set([
   'gov.tw',
 ])
 
+const ALL_BLOCKED_DOMAINS = new Set([
+  ...MARKETPLACE_DOMAINS,
+  ...SOCIAL_DOMAINS,
+  ...NOISE_DOMAINS,
+])
+
 export function isOfficialUrl(url: string): boolean {
   try {
     const hostname = new URL(url).hostname.toLowerCase()
-    const allBlocked = [...MARKETPLACE_DOMAINS, ...SOCIAL_DOMAINS, ...NOISE_DOMAINS]
-    return !allBlocked.some((d) => hostname === d || hostname.endsWith('.' + d))
+    for (const d of ALL_BLOCKED_DOMAINS) {
+      if (hostname === d || hostname.endsWith('.' + d)) return false
+    }
+    return true
   } catch {
     return false
   }

@@ -34,6 +34,13 @@ describe('extractPurchaseLinks', () => {
     expect(links.purchasePinkoi).toBeNull()
   })
 
+  it('extracts Shopee com.tw link from href', () => {
+    const $ = cheerio.load('<a href="https://shopee.com.tw/mybrand">Shopee</a>')
+    const links = extractPurchaseLinks($)
+    expect(links.purchaseShopee).toBe('https://shopee.com.tw/mybrand')
+    expect(links.purchasePinkoi).toBeNull()
+  })
+
   it('extracts both Pinkoi and Shopee links', () => {
     const $ = cheerio.load(
       '<a href="https://www.pinkoi.com/store/mybrand">Pinkoi</a><a href="https://shopee.tw/mybrand">Shopee</a>'

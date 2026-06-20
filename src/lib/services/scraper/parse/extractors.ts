@@ -42,7 +42,7 @@ export function extractPurchaseLinks($: cheerio.CheerioAPI): {
     if (!pinkoi && /pinkoi\.com\//i.test(href)) {
       pinkoi = href
     }
-    if (!shopee && /shopee\.tw\//i.test(href)) {
+    if (!shopee && /shopee\.(com\.)?tw\//i.test(href)) {
       shopee = href
     }
   })
