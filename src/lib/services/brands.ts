@@ -27,6 +27,20 @@ type BrandRow = Database['public']['Tables']['brands']['Row']
 type BrandDraftData = BrandRow['draft_data']
 type TaxonomyTagRow = Database['public']['Tables']['taxonomy_tags']['Row']
 type RawSeedRow = Record<string, unknown>
+type BrandSlugRedirectRow = { new_slug: string }
+type BrandSlugRedirectTable = {
+  select: (columns: 'new_slug') => {
+    eq: (column: 'old_slug', value: string) => {
+      single: () => Promise<{
+        data: BrandSlugRedirectRow | null
+        error: { code?: string; message?: string } | null
+      }>
+    }
+  }
+  upsert: (row: { old_slug: string; new_slug: string }) => Promise<{
+    error: { code?: string; message?: string } | null
+  }>
+}
 type BrandFlatLinkColumns = {
   social_instagram?: string | null
   social_threads?: string | null
@@ -814,6 +828,32 @@ export async function getBrandBySlug(slug: string): Promise<Brand> {
 
   if (error || !data) throw new NotFoundError('Brand', slug)
   return brandToDomain(data)
+}
+
+function brandSlugRedirectsTable(client: unknown): BrandSlugRedirectTable {
+  return (client as { from: (table: 'brand_slug_redirects') => BrandSlugRedirectTable }).from('brand_slug_redirects')
+}
+
+export async function findBrandByOldSlug(oldSlug: string): Promise<string | null> {
+  const supabase = createServiceClient()
+  const { data, error } = await brandSlugRedirectsTable(supabase)
+    .select('new_slug')
+    .eq('old_slug', oldSlug)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
+
+  return data?.new_slug ?? null
+}
+
+export async function insertSlugRedirect(oldSlug: string, newSlug: string): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await brandSlugRedirectsTable(supabase).upsert({ old_slug: oldSlug, new_slug: newSlug })
+
+  if (error) throw error
 }
 
 export async function createBrand(

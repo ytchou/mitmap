@@ -1,7 +1,7 @@
 import type { Brand } from '@/lib/types'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
 import { writeFile } from 'node:fs/promises'
-import { getBrands, hideVisibleBrands, updateBrand } from '@/lib/services/brands'
+import { getBrands, hideVisibleBrands, insertSlugRedirect, updateBrand } from '@/lib/services/brands'
 import { addTagToBrandIgnoringDuplicates, getTags } from '@/lib/services/taxonomy'
 import { scrapeBrandUrl, scrapeBrandUrls } from '@/lib/services/scraper'
 import { downloadAndStoreImages } from '@/lib/services/image-download'
@@ -593,6 +593,7 @@ async function normalizeSlugs(dryRun: boolean, scrapeFirst: boolean, stopAfter?:
     if (!brand) continue
 
     await updateBrand(brand.id, { slug: result.newSlug })
+    await insertSlugRedirect(result.slug, result.newSlug)
     updated++
     console.log(`  [OK] ${result.slug} → ${result.newSlug}`)
   }
