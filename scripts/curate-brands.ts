@@ -44,6 +44,24 @@ function hasLinkValue(value: string | null | undefined): value is string {
   return value != null && value.trim() !== ''
 }
 
+export async function validateLink(url: string, brandName: string): Promise<boolean> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 10_000)
+
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    const html = await response.text()
+    const normalizedHtml = html.toLowerCase().replace(/\s+/g, ' ')
+    const normalizedName = brandName.toLowerCase().replace(/\s+/g, ' ')
+
+    return normalizedHtml.includes(normalizedName)
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Scoring
 // ---------------------------------------------------------------------------

@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest'
+/// <reference types="vitest/globals" />
+
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import type { Brand, BrandFlatLinkColumns } from '@/lib/types'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
 import {
@@ -11,6 +13,7 @@ import {
   findBrandsNeedingEnrichment,
   findBrandsNeedingLinks,
   findSlugsNeedingNormalization,
+  validateLink,
 } from '../curate-brands'
 
 type BrandWithLinkColumns = Brand & BrandFlatLinkColumns
@@ -481,5 +484,35 @@ describe('matchCategory', () => {
   it('respects priority order — clothing before footwear for overlapping text', () => {
     // clothing comes before footwear in CATEGORY_KEYWORDS
     expect(matchCategory('衣鞋品牌')).toBe('clothing')
+  })
+})
+
+describe('validateLink', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('returns true when brand name found in page content', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('<html><body>Welcome to Hanchor official store</body></html>')
+    ))
+    expect(await validateLink('https://pinkoi.com/store/hanchor', 'Hanchor')).toBe(true)
+  })
+
+  it('returns false when brand name not found', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('<html><body>Some unrelated page</body></html>')
+    ))
+    expect(await validateLink('https://pinkoi.com/store/other', 'Hanchor')).toBe(false)
+  })
+
+  it('returns false when fetch fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
+    expect(await validateLink('https://broken.com', 'Hanchor')).toBe(false)
+  })
+
+  it('matches brand name case-insensitively', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('<html><body>HANCHOR brand page</body></html>')
+    ))
+    expect(await validateLink('https://example.com', 'hanchor')).toBe(true)
   })
 })
