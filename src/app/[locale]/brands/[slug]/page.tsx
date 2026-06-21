@@ -87,9 +87,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     }
   } catch (error) {
-    const redirectSlug = await findBrandByOldSlug(slug)
-    if (redirectSlug) {
-      permanentRedirect(`/${locale}/brands/${encodeURIComponent(redirectSlug)}`)
+    try {
+      const redirectSlug = await findBrandByOldSlug(slug)
+      if (redirectSlug) {
+        permanentRedirect(`/${locale}/brands/${encodeURIComponent(redirectSlug)}`)
+      }
+    } catch {
+      // Fall through to original error handling.
     }
 
     if (error instanceof NotFoundError) {
@@ -124,9 +128,13 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
   try {
     brand = await getBrandBySlug(slug)
   } catch (error) {
-    const redirectSlug = await findBrandByOldSlug(slug)
-    if (redirectSlug) {
-      permanentRedirect(`/${locale}/brands/${encodeURIComponent(redirectSlug)}`)
+    try {
+      const redirectSlug = await findBrandByOldSlug(slug)
+      if (redirectSlug) {
+        permanentRedirect(`/${locale}/brands/${encodeURIComponent(redirectSlug)}`)
+      }
+    } catch {
+      // Fall through to original error handling.
     }
 
     if (error instanceof NotFoundError) {
