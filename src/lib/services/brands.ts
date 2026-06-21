@@ -1112,7 +1112,7 @@ export async function completeBrandClaim({
 
   if (insertError) {
     if (insertError.code === '23505') {
-      throw new ValidationError('This brand has already been claimed')
+      throw new ValidationError('This brand has already been claimed', { cause: insertError })
     }
     throw insertError
   }

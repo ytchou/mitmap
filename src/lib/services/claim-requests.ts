@@ -419,7 +419,7 @@ export async function createClaimRequest(input: {
 
   if (error) {
     if (error.code === '23505') {
-      throw new ValidationError(DUPLICATE_PENDING_CLAIM_ERROR)
+      throw new ValidationError(DUPLICATE_PENDING_CLAIM_ERROR, { cause: error })
     }
     throw error
   }
@@ -572,7 +572,7 @@ export async function getClaimRequest(id: string): Promise<ClaimRequest> {
     .eq('id', id)
     .single()
 
-  if (error || !data) throw new NotFoundError('ClaimRequest', id)
+  if (error || !data) throw new NotFoundError('ClaimRequest', id, { cause: error })
 
   const [request] = await attachRequesterEmails([data as ClaimRequestRowWithJoins])
   return request
@@ -590,15 +590,15 @@ export async function approveClaimRequest(id: string, reviewerId: string): Promi
   }
 
   if (error.code === '23505' || error.message.includes('already been claimed')) {
-    throw new ValidationError('This brand has already been claimed')
+    throw new ValidationError('This brand has already been claimed', { cause: error })
   }
 
   if (error.message.includes(CLAIM_ALREADY_REVIEWED_ERROR)) {
-    throw new ValidationError(CLAIM_ALREADY_REVIEWED_ERROR)
+    throw new ValidationError(CLAIM_ALREADY_REVIEWED_ERROR, { cause: error })
   }
 
   if (error.message.includes(CLAIM_REQUESTER_EMAIL_NOT_FOUND_ERROR)) {
-    throw new ValidationError(CLAIM_REQUESTER_EMAIL_NOT_FOUND_ERROR)
+    throw new ValidationError(CLAIM_REQUESTER_EMAIL_NOT_FOUND_ERROR, { cause: error })
   }
 
   throw error

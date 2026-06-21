@@ -250,7 +250,7 @@ export async function getSubmission(id: string): Promise<BrandSubmission> {
     .eq('id', id)
     .single()
 
-  if (error || !data) throw new NotFoundError('BrandSubmission', id)
+  if (error || !data) throw new NotFoundError('BrandSubmission', id, { cause: error })
   return submissionToDomain(data)
 }
 
@@ -289,7 +289,7 @@ export async function approveSubmission(id: string, reviewerId: string): Promise
     .select('*')
     .single()
 
-  if (error || !data) throw new NotFoundError('BrandSubmission', id)
+  if (error || !data) throw new NotFoundError('BrandSubmission', id, { cause: error })
   return submissionToDomain(data)
 }
 
@@ -311,7 +311,7 @@ export async function rejectSubmission(
     .select('*')
     .single()
 
-  if (error || !data) throw new NotFoundError('BrandSubmission', id)
+  if (error || !data) throw new NotFoundError('BrandSubmission', id, { cause: error })
   return submissionToDomain(data)
 }
 

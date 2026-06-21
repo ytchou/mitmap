@@ -36,7 +36,7 @@ async function updateMitStatus(brandId: string, update: BrandUpdate): Promise<Br
     .single()
 
   if (error || !data) {
-    throw new NotFoundError('Brand', brandId)
+    throw new NotFoundError('Brand', brandId, { cause: error })
   }
 
   return mapBrandRowToDomain(data as BrandRowWithJoins)
