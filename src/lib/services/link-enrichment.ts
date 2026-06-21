@@ -1,0 +1,143 @@
+import type { Brand, BrandFlatLinkColumns } from '@/lib/types'
+import type { ScrapedBrandData } from '@/lib/types/scraper'
+
+const MAX_PRODUCT_PHOTOS = 5
+
+export const LINK_FIELDS = [
+  'socialInstagram',
+  'socialThreads',
+  'socialFacebook',
+  'purchaseWebsite',
+  'purchasePinkoi',
+  'purchaseShopee',
+] as const
+
+export type LinkField = (typeof LINK_FIELDS)[number]
+export type LinkColumn = Exclude<keyof BrandFlatLinkColumns, 'other_urls'>
+
+const LINK_FIELD_TO_COLUMN = {
+  socialInstagram: 'social_instagram',
+  socialThreads: 'social_threads',
+  socialFacebook: 'social_facebook',
+  purchaseWebsite: 'purchase_website',
+  purchasePinkoi: 'purchase_pinkoi',
+  purchaseShopee: 'purchase_shopee',
+} as const satisfies Record<LinkField, LinkColumn>
+
+type ImageEnrichBrand = {
+  heroImageUrl: string | null
+  productPhotos: string[] | null
+}
+
+type StoredImageEntry = {
+  storedUrl: string
+  isHeroImage: boolean
+}
+
+export function linkColumnFor(field: LinkField): LinkColumn {
+  return LINK_FIELD_TO_COLUMN[field]
+}
+
+export function hasLinkValue(value: string | null | undefined): value is string {
+  return value != null && value.trim() !== ''
+}
+
+export function buildLinkEnrichPatch(
+  brand: BrandFlatLinkColumns,
+  scraped: Pick<ScrapedBrandData, LinkField>
+): Partial<BrandFlatLinkColumns> {
+  const patch: Partial<BrandFlatLinkColumns> = {}
+
+  for (const field of LINK_FIELDS) {
+    const column = linkColumnFor(field)
+    const existingValue = brand[column]
+    const scrapedValue = scraped[field]
+
+    if (!hasLinkValue(existingValue) && hasLinkValue(scrapedValue)) {
+      patch[column] = scrapedValue
+    }
+  }
+
+  return patch
+}
+
+export function buildImageEnrichPatch(
+  brand: ImageEnrichBrand,
+  storedUrls: Array<string | null>
+): Partial<Pick<Brand, 'heroImageUrl' | 'productPhotos'>>
+export function buildImageEnrichPatch(
+  brand: ImageEnrichBrand,
+  scraped: Pick<ScrapedBrandData, 'heroImageUrl' | 'galleryImageUrls'>,
+  storedUrls: Array<string | null>
+): Partial<Pick<Brand, 'heroImageUrl' | 'productPhotos'>>
+export function buildImageEnrichPatch(
+  brand: ImageEnrichBrand,
+  scrapedOrStoredUrls: Pick<ScrapedBrandData, 'heroImageUrl' | 'galleryImageUrls'> | Array<string | null>,
+  maybeStoredUrls?: Array<string | null>
+): Partial<Pick<Brand, 'heroImageUrl' | 'productPhotos'>> {
+  const patch: Partial<Pick<Brand, 'heroImageUrl' | 'productPhotos'>> = {}
+  const existingProductPhotos = Array.isArray(brand.productPhotos) ? brand.productPhotos : []
+  const storedImageEntries = Array.isArray(scrapedOrStoredUrls)
+    ? buildStoredImageEntries(scrapedOrStoredUrls)
+    : buildScrapedImageEntries(scrapedOrStoredUrls, maybeStoredUrls ?? [])
+
+  if (storedImageEntries.length === 0) {
+    return patch
+  }
+
+  const promotedHeroUrl = !brand.heroImageUrl ? storedImageEntries[0].storedUrl : null
+  if (promotedHeroUrl) {
+    patch.heroImageUrl = promotedHeroUrl
+  }
+
+  const newProductPhotos = storedImageEntries
+    .filter((entry) => entry.storedUrl !== promotedHeroUrl)
+    .map((entry) => entry.storedUrl)
+  const mergedProductPhotos = [
+    ...existingProductPhotos,
+    ...newProductPhotos,
+  ].slice(0, MAX_PRODUCT_PHOTOS)
+
+  if (newProductPhotos.length > 0 && mergedProductPhotos.length > existingProductPhotos.length) {
+    patch.productPhotos = mergedProductPhotos
+  }
+
+  return patch
+}
+
+function buildStoredImageEntries(storedUrls: Array<string | null>): StoredImageEntry[] {
+  return storedUrls
+    .filter(hasLinkValue)
+    .map((storedUrl, index) => ({
+      storedUrl,
+      isHeroImage: index === 0,
+    }))
+}
+
+function buildScrapedImageEntries(
+  scraped: Pick<ScrapedBrandData, 'heroImageUrl' | 'galleryImageUrls'>,
+  storedUrls: Array<string | null>
+): StoredImageEntry[] {
+  const galleryImageUrls = scraped.galleryImageUrls.filter(hasLinkValue)
+  const hasScrapedHero = hasLinkValue(scraped.heroImageUrl)
+  const imageUrls = [
+    scraped.heroImageUrl,
+    ...galleryImageUrls,
+  ].filter(hasLinkValue)
+
+  if (imageUrls.length === 0) {
+    return []
+  }
+
+  const galleryStoredUrlOffset = hasScrapedHero ? 1 : 0
+
+  return [
+    ...(hasScrapedHero
+      ? [{ storedUrl: storedUrls[0], isHeroImage: true }]
+      : []),
+    ...galleryImageUrls.map((_, index) => ({
+      storedUrl: storedUrls[galleryStoredUrlOffset + index],
+      isHeroImage: false,
+    })),
+  ].filter((entry): entry is StoredImageEntry => hasLinkValue(entry.storedUrl))
+}
