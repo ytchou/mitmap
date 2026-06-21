@@ -94,4 +94,14 @@ describe('deleteBrandImages', () => {
     expect(mockFrom).not.toHaveBeenCalled()
     expect(mockRemove).not.toHaveBeenCalled()
   })
+
+  it('throws when storage deletion fails', async () => {
+    const storageError = new Error('storage deletion failed')
+    mockRemove.mockResolvedValueOnce({ data: null, error: storageError })
+
+    await expect(deleteBrandImages([publicUrl('brands/x/a.webp')])).rejects.toThrow(storageError)
+
+    expect(mockFrom).toHaveBeenCalledWith('brand-images')
+    expect(mockRemove).toHaveBeenCalledWith(['brands/x/a.webp'])
+  })
 })

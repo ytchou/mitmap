@@ -63,15 +63,11 @@ export async function deleteBrandImages(urls: string[]): Promise<void> {
     return
   }
 
-  try {
-    const supabase = createServiceClient()
-    const { error } = await supabase.storage.from(BRAND_IMAGES_BUCKET).remove(keys)
+  const supabase = createServiceClient()
+  const { error } = await supabase.storage.from(BRAND_IMAGES_BUCKET).remove(keys)
 
-    if (error) {
-      throw error
-    }
-  } catch (error) {
-    console.error('Failed to delete brand images from storage', error)
+  if (error) {
+    throw error
   }
 }
 
