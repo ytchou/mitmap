@@ -1,7 +1,8 @@
 'use client'
 
-import { Fragment, useState, useTransition } from 'react'
+import { Fragment, useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
+import { MoreHorizontal } from 'lucide-react'
 import type { Brand, BrandStatus } from '@/lib/types'
 import { StatusBadge } from './status-badge'
 import { BrandEditDialog } from './brand-edit-dialog'
@@ -11,6 +12,13 @@ import {
   unhideBrandAction,
   deleteBrandAction,
 } from '@/app/admin/actions'
+import { startCurationJobAction } from '@/app/admin/operations/actions'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -27,6 +35,14 @@ import { cn } from '@/lib/utils'
 
 type TabValue = 'all' | BrandStatus
 type MitStatus = NonNullable<Brand['mitStatus']>
+type CurationOperation = 'score-and-scrape' | 'enrich-links' | 'enrich-images' | 'clean-names'
+
+const CURATION_ACTIONS: Array<{ label: string; operation: CurationOperation }> = [
+  { label: 'Enrich Brand', operation: 'score-and-scrape' },
+  { label: 'Enrich Links', operation: 'enrich-links' },
+  { label: 'Enrich Images', operation: 'enrich-images' },
+  { label: 'Clean Name', operation: 'clean-names' },
+]
 
 const MIT_STATUS_CONFIG: Record<MitStatus, { label: string; className: string }> = {
   unverified: {
@@ -75,7 +91,17 @@ export function BrandList({ brands }: { brands: Brand[] }) {
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null)
   const [deletingBrand, setDeletingBrand] = useState<Brand | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showCurationToast, setShowCurationToast] = useState(false)
+  const curationToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    return () => {
+      if (curationToastTimeoutRef.current) {
+        clearTimeout(curationToastTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const categories = Array.from(
     new Set(brands.map((b) => b.category).filter(Boolean) as string[])
@@ -110,6 +136,26 @@ export function BrandList({ brands }: { brands: Brand[] }) {
       const result = await deleteBrandAction(deletingBrand.id)
       if (result?.error) setError(result.error)
       else setDeletingBrand(null)
+    })
+  }
+
+  function handleStartCurationJob(brand: Brand, operation: CurationOperation) {
+    startTransition(async () => {
+      setError(null)
+      const result = await startCurationJobAction(operation, { slugs: [brand.slug] }, false)
+
+      if ('error' in result) {
+        setError(result.error)
+        return
+      }
+
+      setShowCurationToast(true)
+      if (curationToastTimeoutRef.current) {
+        clearTimeout(curationToastTimeoutRef.current)
+      }
+      curationToastTimeoutRef.current = setTimeout(() => {
+        setShowCurationToast(false)
+      }, 5000)
     })
   }
 
@@ -252,6 +298,32 @@ export function BrandList({ brands }: { brands: Brand[] }) {
                           取消隱藏
                         </Button>
                       )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          aria-label={`Open curation actions for ${brand.name}`}
+                          className={cn(
+                            buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
+                            'rounded-full'
+                          )}
+                        >
+                          <MoreHorizontal className="size-4" aria-hidden />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-40 min-w-40 rounded-lg border border-border bg-white shadow-md"
+                        >
+                          {CURATION_ACTIONS.map((action) => (
+                            <DropdownMenuItem
+                              key={action.operation}
+                              disabled={isPending}
+                              className="text-foreground hover:bg-muted focus:bg-muted"
+                              onClick={() => handleStartCurationJob(brand, action.operation)}
+                            >
+                              {action.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="outline"
                         size="sm"
@@ -278,6 +350,18 @@ export function BrandList({ brands }: { brands: Brand[] }) {
           </TableBody>
         </Table>
       </div>
+
+      {showCurationToast && (
+        <div
+          role="status"
+          className="fixed right-4 bottom-4 z-50 rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground shadow-md"
+        >
+          Job started — view progress on{' '}
+          <Link href="/admin/operations" className="font-medium underline underline-offset-4">
+            Operations page
+          </Link>
+        </div>
+      )}
 
       <BrandEditDialog
         key={editingBrand?.id ?? 'none'}

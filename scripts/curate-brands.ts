@@ -1,5 +1,6 @@
 import type { Brand, BrandFlatLinkColumns } from '@/lib/types'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
+import type { LinkColumn } from '@/lib/services/link-enrichment'
 import { writeFile } from 'node:fs/promises'
 import { getBrands, hideVisibleBrands, insertSlugRedirect, updateBrand } from '@/lib/services/brands'
 import { addTagToBrandIgnoringDuplicates, getTags } from '@/lib/services/taxonomy'
@@ -8,43 +9,22 @@ import { searchBrandWebsite, SEARCH_DELAY_MS } from '@/lib/services/scraper/sear
 import { classifyByDomain } from '@/lib/services/scraper/input-detector'
 import { downloadAndStoreImages } from '@/lib/services/image-download'
 import { cleanBrandName, detectNonBrand, matchCategory, normalizeSlug } from '@/lib/services/brand-cleanup'
+import {
+  buildImageEnrichPatch,
+  buildLinkEnrichPatch,
+  hasLinkValue,
+  LINK_FIELDS,
+  linkColumnFor,
+} from '@/lib/services/link-enrichment'
 
-export { matchCategory }
+export { buildImageEnrichPatch, buildLinkEnrichPatch, matchCategory }
 
 const TOP_N = 30
 const SCRAPE_DELAY_MS = 1_000
 const MAX_PRODUCT_PHOTOS = 5
 const BRAND_FETCH_LIMIT = 10_000
 
-const LINK_FIELDS = [
-  'socialInstagram',
-  'socialThreads',
-  'socialFacebook',
-  'purchaseWebsite',
-  'purchasePinkoi',
-  'purchaseShopee',
-] as const
-
-type LinkField = (typeof LINK_FIELDS)[number]
-type LinkColumn = Exclude<keyof BrandFlatLinkColumns, 'other_urls'>
-
-const LINK_FIELD_TO_COLUMN: Record<LinkField, LinkColumn> = {
-  socialInstagram: 'social_instagram',
-  socialThreads: 'social_threads',
-  socialFacebook: 'social_facebook',
-  purchaseWebsite: 'purchase_website',
-  purchasePinkoi: 'purchase_pinkoi',
-  purchaseShopee: 'purchase_shopee',
-} as const satisfies Record<LinkField, LinkColumn>
 type BrandWithLinkColumns = Brand & BrandFlatLinkColumns
-
-function linkColumnFor(field: LinkField): LinkColumn {
-  return LINK_FIELD_TO_COLUMN[field]
-}
-
-function hasLinkValue(value: string | null | undefined): value is string {
-  return value != null && value.trim() !== ''
-}
 
 function withFlatLinkColumns(brand: Brand): BrandWithLinkColumns {
   return {
@@ -225,77 +205,6 @@ export function buildEnrichPatch(
   return patch
 }
 
-export function buildLinkEnrichPatch(
-  brand: BrandWithLinkColumns,
-  scraped: ScrapedBrandData
-): Partial<BrandFlatLinkColumns> {
-  const patch: Partial<BrandFlatLinkColumns> = {}
-
-  for (const field of LINK_FIELDS) {
-    const column = linkColumnFor(field)
-    const existingValue = brand[column]
-    const scrapedValue = scraped[field]
-
-    if (!hasLinkValue(existingValue) && scrapedValue) {
-      patch[column] = scrapedValue
-    }
-  }
-
-  return patch
-}
-
-export function buildImageEnrichPatch(
-  brand: Brand,
-  scraped: ScrapedBrandData,
-  storedUrls: Array<string | null>
-): Partial<Brand> {
-  const patch: Partial<Brand> = {}
-  const galleryImageUrls = scraped.galleryImageUrls.filter(hasLinkValue)
-  const hasScrapedHero = hasLinkValue(scraped.heroImageUrl)
-  const imageUrls = [
-    scraped.heroImageUrl,
-    ...galleryImageUrls,
-  ].filter(hasLinkValue)
-
-  if (imageUrls.length === 0) {
-    return patch
-  }
-
-  const galleryStoredUrlOffset = hasScrapedHero ? 1 : 0
-  const storedImageEntries = [
-    ...(hasScrapedHero
-      ? [{ storedUrl: storedUrls[0], isHeroImage: true }]
-      : []),
-    ...galleryImageUrls.map((_, index) => ({
-      storedUrl: storedUrls[galleryStoredUrlOffset + index],
-      isHeroImage: false,
-    })),
-  ].filter((entry): entry is { storedUrl: string; isHeroImage: boolean } => hasLinkValue(entry.storedUrl))
-
-  if (storedImageEntries.length === 0) {
-    return patch
-  }
-
-  const promotedHeroUrl = !brand.heroImageUrl ? storedImageEntries[0].storedUrl : null
-  if (promotedHeroUrl) {
-    patch.heroImageUrl = promotedHeroUrl
-  }
-
-  const existingProductPhotos = Array.isArray(brand.productPhotos) ? brand.productPhotos : []
-  const newProductPhotos = storedImageEntries
-    .filter((entry) => !entry.isHeroImage && entry.storedUrl !== promotedHeroUrl)
-    .map((entry) => entry.storedUrl)
-  const mergedProductPhotos = [
-    ...existingProductPhotos,
-    ...newProductPhotos,
-  ].slice(0, MAX_PRODUCT_PHOTOS)
-
-  if (newProductPhotos.length > 0 && mergedProductPhotos.length > existingProductPhotos.length) {
-    patch.productPhotos = mergedProductPhotos
-  }
-
-  return patch
-}
 
 // ---------------------------------------------------------------------------
 // Cleanup helpers

@@ -52,6 +52,26 @@ Content management and moderation.
 - Content moderation dashboard (`/admin/moderation`) — pending flags with risk badges
 - System health monitoring — real-time service status card showing health of all 8 integrated services (Supabase, Sentry, Resend, Turnstile, Tally, Browserless, Railway, Upstash Redis)
 
+#### Data Curation
+Admin UI provides 9 data curation operations:
+- `clean-names`
+- `detect-non-brands`
+- `normalize-slugs`
+- `enrich-descriptions`
+- `auto-tag`
+- `enrich-links`
+- `enrich-images`
+- `score-and-scrape`
+- `set-visibility`
+
+Curation operations use a **dry-run -> confirm -> execute** workflow so admins can preview proposed changes before mutating production data.
+
+Long-running curation work runs through a background job system with progress tracking persisted in the `curation_jobs` table.
+
+The admin brand list exposes per-brand enrichment actions for targeted cleanup and enrichment without running a bulk operation.
+
+The quality dashboard tracks curation health metrics: hero image coverage, link coverage, description completeness, and completeness distribution.
+
 #### Admin god-mode ⇄ viewer-mode (DEV-764)
 By default an admin operates in **god mode**: they may act as the **owner of any brand** through the owner dashboard UI, managing any listing without owning it. This is gated by auth primitives backed by an `fm_mode` cookie:
 - `isActingAsAdmin(email) = isAdmin && !viewerMode` — true admin power, suppressible by viewer mode.
@@ -72,6 +92,7 @@ Middleware provisions `fm_mode=god` for real admins and deletes the cookie for n
 5. Taxonomy categories are admin-defined; brands can suggest new tags during submission (admin reviews and either adds or maps to existing)
 6. Brand owners authenticate via Supabase Auth to manage their listing post-approval
 7. Admin role is hardcoded (specific email addresses in env var)
+8. Auto-tagging assigns product categories via keyword matching as an automated supplement to admin-defined taxonomy. Admin can override auto-assigned categories.
 
 ### Taxonomy Closed Vocabularies (DEV-802)
 - `region`: closed vocabulary of Taiwan's 22 cities/counties plus `全台灣`; max 1 per brand.

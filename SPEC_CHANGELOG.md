@@ -1,5 +1,9 @@
 # SPEC Changelog
 
+## 2026-06-21
+
+Added admin data curation module (9 operations), quality dashboard, auto-tag rule clarification.
+
 ## 2026-06-18
 
 Refactored productTypes from array (via brand_taxonomy) to single product_type column on brands table.
