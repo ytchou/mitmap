@@ -1,0 +1,120 @@
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "🔍 Sentry Daily Triage — 2026-06-20 to 2026-06-21",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Issues with 24h activity:* 6"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Tickets created:* 4"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Critical:* 1  |  *Moderate:* 2  |  *Trivial:* 1  |  *Noise:* 2"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Incident mode:* No"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "🔴 *CRITICAL*"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*<https://yung-tang-chou.sentry.io/issues/MIT-MAP-1J|MIT-MAP-1J: Pagination offset overflow crashing /brands>*\n15 events · Recurring · 8 users affected\n→ Linear: <https://linear.app/ytchou/issue/DEV-863/fix-pagination-offset-overflow-crashing-brands-listing-page|DEV-863>\n_Action: Add server-side bounds check before passing offset to PostgREST; redirect to last valid page when offset ≥ row count._"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "🟠 *MODERATE*"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*<https://yung-tang-chou.sentry.io/issues/MIT-MAP-1B|MIT-MAP-1B: Missing brand_slug_redirects table on brand detail pages>*\n12 events · Recurring · 2 users affected\n→ Linear: <https://linear.app/ytchou/issue/DEV-864/resolve-missing-brand-slug-redirects-table-breaking-brand-detail-pages|DEV-864>\n_Action: Apply the missing DB migration and reload the PostgREST schema cache (`NOTIFY pgrst, 'reload schema'`)._"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*<https://yung-tang-chou.sentry.io/issues/MIT-MAP-1C|MIT-MAP-1C: Truncated PostgREST error on brand detail page>*\n5 events · Recurring · 1 user affected\n→ Linear: <https://linear.app/ytchou/issue/DEV-865/investigate-truncated-postgrest-error-on-brand-detail-page|DEV-865>\n_Action: Inspect error serialization in the brand slug route; may be related to DEV-864 (same route)._"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "🟡 *TRIVIAL*"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*<https://yung-tang-chou.sentry.io/issues/MIT-MAP-1V|MIT-MAP-1V: ReferenceError: AboutHero is not defined>*\n6 events · New · 0 users tracked\n→ Linear: <https://linear.app/ytchou/issue/DEV-866/fix-missing-abouthero-import-causing-about-page-crash|DEV-866>\n_Action: Add missing import for AboutHero component in the about page file._"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "⚪ *NOISE (no ticket)*"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*<https://yung-tang-chou.sentry.io/issues/MIT-MAP-8|MIT-MAP-8: Error: aborted>* — 25 events · Recurring · 0 users\n_HTTP connection aborts from client disconnects (`abortIncoming` handler) — expected server behavior._\n\n*<https://yung-tang-chou.sentry.io/issues/MIT-MAP-21|MIT-MAP-21: NS_ERROR_FAILURE>* — 6 events · New · 0 users\n_Firefox-specific network error on `/brands/:slug`, no error message — likely downstream of DEV-864._"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Created 4 tickets (DEV-863 – DEV-866) · Skipped 0 duplicates · Sentry project: <https://yung-tang-chou.sentry.io/issues/?project=mit-map&query=is%3Aunresolved|mit-map> · Run: 2026-06-21 06:00 TST"
+        }
+      ]
+    }
+  ]
+}
