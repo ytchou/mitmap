@@ -30,6 +30,7 @@ interface OperationCardProps {
   title: string
   description: string
   children?: ReactNode
+  showValidateToggle?: boolean
 }
 
 type Scope = 'all' | 'specific'
@@ -94,10 +95,12 @@ export function OperationCard({
   title,
   description,
   children,
+  showValidateToggle = false,
 }: OperationCardProps) {
   const [scope, setScope] = useState<Scope>('all')
   const [slugInput, setSlugInput] = useState('')
   const [stopAfterInput, setStopAfterInput] = useState('')
+  const [validateLinks, setValidateLinks] = useState(false)
   const [job, setJob] = useState<CurationJob | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -116,8 +119,12 @@ export function OperationCard({
       nextParams.stopAfter = stopAfter
     }
 
+    if (showValidateToggle) {
+      nextParams.validate = validateLinks
+    }
+
     return nextParams
-  }, [scope, slugInput, stopAfterInput])
+  }, [scope, slugInput, stopAfterInput, showValidateToggle, validateLinks])
 
   const progress = readProgress(job?.progress ?? null)
   const result = readResult(job?.result ?? null)
@@ -242,6 +249,18 @@ export function OperationCard({
             className="min-h-12 focus-visible:ring-2 focus-visible:ring-primary"
           />
         </div>
+
+        {showValidateToggle && (
+          <Label className="min-h-12 cursor-pointer rounded-lg border border-border px-3 py-2 focus-within:ring-2 focus-within:ring-primary">
+            <input
+              type="checkbox"
+              checked={validateLinks}
+              onChange={(event) => setValidateLinks(event.target.checked)}
+              className="size-4 accent-primary"
+            />
+            <span>Validate links</span>
+          </Label>
+        )}
 
         {children}
 
