@@ -5,8 +5,10 @@ import {
   extractGalleryImages,
   extractJsonLd,
   extractPurchaseLinks,
+  extractShopeeProductImages,
   extractSocialLinks,
   filterHeroImage,
+  MAX_GALLERY_IMAGES,
 } from '../../parse/extractors'
 import type { PlatformAdapter } from './types'
 
@@ -130,7 +132,10 @@ export const shopeeAdapter: PlatformAdapter = {
     const result = emptyResult(url)
     const rawJsonLd = extractJsonLd($)
     const structuredStore = findStructuredStore(rawJsonLd)
-    const galleryImageUrls = extractGalleryImages($, url)
+    const shopeeProductImageUrls = extractShopeeProductImages($)
+    const galleryImageUrls = [
+      ...new Set([...shopeeProductImageUrls, ...extractGalleryImages($, url)]),
+    ].slice(0, MAX_GALLERY_IMAGES)
 
     const brandName = cleanShopeeTitle(
       metaContent($, 'meta[property="og:title"]') ||

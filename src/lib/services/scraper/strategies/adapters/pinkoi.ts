@@ -4,9 +4,11 @@ import {
   extractCategoryHints,
   extractGalleryImages,
   extractJsonLd,
+  extractPinkoiProductImages,
   extractPurchaseLinks,
   extractSocialLinks,
   filterHeroImage,
+  MAX_GALLERY_IMAGES,
 } from '../../parse/extractors'
 import type { PlatformAdapter } from './types'
 
@@ -131,7 +133,10 @@ export const pinkoiAdapter: PlatformAdapter = {
     const result = emptyResult(url)
     const rawJsonLd = extractJsonLd($)
     const structuredStore = findStructuredStore(rawJsonLd)
-    const galleryImageUrls = extractGalleryImages($, url)
+    const pinkoiProductImageUrls = extractPinkoiProductImages($)
+    const galleryImageUrls = [
+      ...new Set([...pinkoiProductImageUrls, ...extractGalleryImages($, url)]),
+    ].slice(0, MAX_GALLERY_IMAGES)
 
     const brandName = cleanPinkoiTitle(
       metaContent($, 'meta[property="og:title"]') ||

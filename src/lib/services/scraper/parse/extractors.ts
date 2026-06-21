@@ -2,10 +2,10 @@ import * as cheerio from 'cheerio'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
 import { resolveUrl } from '../fetch-guards'
 
-const MAX_GALLERY_IMAGES = 5
+export const MAX_GALLERY_IMAGES = 5
 const MIN_IMAGE_DIMENSION = 200
 
-export const NON_PRODUCT_IMAGE_PATH_RE =
+const NON_PRODUCT_IMAGE_PATH_RE =
   /\/(logo|avatar|profile|banner|icon|favicon|placeholder|default|sprite|pixel)/i
 
 export function extractSocialLinks($: cheerio.CheerioAPI) {
@@ -92,6 +92,67 @@ export function extractGalleryImages(
     }
 
     urls.push(resolved)
+  })
+
+  return urls
+}
+
+export function extractPinkoiProductImages($: cheerio.CheerioAPI): string[] {
+  const urls: string[] = []
+
+  $('img').each((_, el) => {
+    if (urls.length >= MAX_GALLERY_IMAGES) return
+
+    const candidates = [$(el).attr('data-src'), $(el).attr('src')]
+
+    for (const raw of candidates) {
+      if (!raw) continue
+
+      let parsed: URL
+      try {
+        parsed = new URL(raw)
+      } catch {
+        continue
+      }
+
+      if (parsed.hostname.toLowerCase() !== 'cdn01.pinkoi.com') continue
+      if (!parsed.pathname.toLowerCase().startsWith('/product/')) continue
+      if (/(\/store\/|\/avatar\/|\/banner\/)/i.test(parsed.pathname)) continue
+
+      urls.push(raw)
+      break
+    }
+  })
+
+  return urls
+}
+
+export function extractShopeeProductImages($: cheerio.CheerioAPI): string[] {
+  const urls: string[] = []
+
+  $('img').each((_, el) => {
+    if (urls.length >= MAX_GALLERY_IMAGES) return
+
+    const candidates = [$(el).attr('data-src'), $(el).attr('src')]
+
+    for (const raw of candidates) {
+      if (!raw) continue
+
+      let parsed: URL
+      try {
+        parsed = new URL(raw)
+      } catch {
+        continue
+      }
+
+      const hostname = parsed.hostname.toLowerCase()
+      if (hostname !== 'susercontent.com' && !hostname.endsWith('.susercontent.com')) continue
+      if (!parsed.pathname.toLowerCase().startsWith('/file/')) continue
+      if (/(avatar|icon|logo|banner)/i.test(raw)) continue
+
+      urls.push(raw)
+      break
+    }
   })
 
   return urls

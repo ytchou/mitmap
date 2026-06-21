@@ -244,6 +244,59 @@ export function buildLinkEnrichPatch(
   return patch
 }
 
+export function buildImageEnrichPatch(
+  brand: Brand,
+  scraped: ScrapedBrandData,
+  storedUrls: Array<string | null>
+): Partial<Brand> {
+  const patch: Partial<Brand> = {}
+  const galleryImageUrls = scraped.galleryImageUrls.filter(hasLinkValue)
+  const hasScrapedHero = hasLinkValue(scraped.heroImageUrl)
+  const imageUrls = [
+    scraped.heroImageUrl,
+    ...galleryImageUrls,
+  ].filter(hasLinkValue)
+
+  if (imageUrls.length === 0) {
+    return patch
+  }
+
+  const galleryStoredUrlOffset = hasScrapedHero ? 1 : 0
+  const storedImageEntries = [
+    ...(hasScrapedHero
+      ? [{ storedUrl: storedUrls[0], isHeroImage: true }]
+      : []),
+    ...galleryImageUrls.map((_, index) => ({
+      storedUrl: storedUrls[galleryStoredUrlOffset + index],
+      isHeroImage: false,
+    })),
+  ].filter((entry): entry is { storedUrl: string; isHeroImage: boolean } => hasLinkValue(entry.storedUrl))
+
+  if (storedImageEntries.length === 0) {
+    return patch
+  }
+
+  const promotedHeroUrl = !brand.heroImageUrl ? storedImageEntries[0].storedUrl : null
+  if (promotedHeroUrl) {
+    patch.heroImageUrl = promotedHeroUrl
+  }
+
+  const existingProductPhotos = Array.isArray(brand.productPhotos) ? brand.productPhotos : []
+  const newProductPhotos = storedImageEntries
+    .filter((entry) => !entry.isHeroImage && entry.storedUrl !== promotedHeroUrl)
+    .map((entry) => entry.storedUrl)
+  const mergedProductPhotos = [
+    ...existingProductPhotos,
+    ...newProductPhotos,
+  ].slice(0, MAX_PRODUCT_PHOTOS)
+
+  if (newProductPhotos.length > 0 && mergedProductPhotos.length > existingProductPhotos.length) {
+    patch.productPhotos = mergedProductPhotos
+  }
+
+  return patch
+}
+
 // ---------------------------------------------------------------------------
 // Cleanup helpers
 // ---------------------------------------------------------------------------
@@ -307,6 +360,26 @@ export function findBrandsNeedingLinks(brands: BrandWithLinkColumns[]): BrandWit
 
     return filledLinkCount < LINK_FIELDS.length
   })
+}
+
+export function findBrandsNeedingImages(brands: Brand[]): Brand[] {
+  return brands.filter((brand) => {
+    if (brand.status !== 'approved') {
+      return false
+    }
+
+    const productPhotos = Array.isArray(brand.productPhotos) ? brand.productPhotos : []
+
+    return !brand.heroImageUrl || productPhotos.length < 2
+  })
+}
+
+export function collectPurchaseLinks(brand: Brand): string[] {
+  return [
+    brand.purchasePinkoi,
+    brand.purchaseShopee,
+    brand.purchaseWebsite,
+  ].filter((url): url is string => Boolean(url))
 }
 
 export function findSlugsNeedingNormalization(brands: Brand[]): Array<{
@@ -798,6 +871,126 @@ async function enrichLinks(
 }
 
 // ---------------------------------------------------------------------------
+// enrich-images
+// ---------------------------------------------------------------------------
+
+async function enrichImages(dryRun: boolean, targetSlugs?: string[], stopAfter?: number): Promise<void> {
+  console.log('Fetching approved brands...')
+  const { brands } = await getBrands({ limit: BRAND_FETCH_LIMIT, status: 'approved' })
+  console.log(`Found ${brands.length} approved brands`)
+
+  const needingImages = findBrandsNeedingImages(brands)
+  const filtered = targetSlugs
+    ? needingImages.filter((brand) => targetSlugs.includes(brand.slug))
+    : needingImages
+
+  if (targetSlugs) {
+    const found = filtered.map((brand) => brand.slug)
+    const missing = targetSlugs.filter((s) => !found.includes(s))
+    if (missing.length > 0) {
+      console.error(`Missing slugs: ${missing.join(', ')}`)
+      process.exit(1)
+    }
+  }
+
+  const ranked = filtered.slice(0, stopAfter)
+
+  console.log(`Found ${needingImages.length} brand(s) needing image enrichment\n`)
+
+  console.log('Slug                          | Purchase Links')
+  console.log('------------------------------|------------------------------------------------------------')
+  for (const brand of ranked) {
+    const slug = brand.slug.padEnd(30).slice(0, 30)
+    const purchaseLinks = collectPurchaseLinks(brand)
+    console.log(`${slug}| ${purchaseLinks.length > 0 ? purchaseLinks.join(', ') : '(none)'}`)
+  }
+
+  const summary = {
+    processed: 0,
+    heroesFilled: 0,
+    photosAdded: 0,
+    skipped: 0,
+    errors: [] as Array<{ slug: string; message: string }>,
+  }
+
+  for (const brand of ranked) {
+    summary.processed++
+
+    const purchaseLinks = collectPurchaseLinks(brand)
+    if (purchaseLinks.length === 0) {
+      summary.skipped++
+      console.log(`  [SKIP] ${brand.slug}: no purchase links`)
+      continue
+    }
+
+    if (dryRun) {
+      console.log(`  [DRY RUN] ${brand.slug}: would scrape ${purchaseLinks.join(', ')}`)
+      continue
+    }
+
+    console.log(`  [SCRAPE] ${brand.slug} → ${purchaseLinks.join(', ')}`)
+
+    try {
+      const { data: scraped } = await scrapeBrandUrls(purchaseLinks)
+      const imageUrls = [
+        scraped.heroImageUrl,
+        ...scraped.galleryImageUrls,
+      ].filter((url): url is string => Boolean(url))
+
+      if (imageUrls.length === 0) {
+        summary.skipped++
+        console.log(`  [SKIP] ${brand.slug}: no images found`)
+        await sleep(SCRAPE_DELAY_MS)
+        continue
+      }
+
+      const storedUrls = await downloadAndStoreImages(imageUrls, brand.id)
+      const patch = buildImageEnrichPatch(brand, scraped, storedUrls)
+      const enrichedFields = Object.keys(patch)
+
+      if (enrichedFields.length === 0) {
+        summary.skipped++
+        console.log(`  [SKIP] ${brand.slug}: no image gaps to fill`)
+        await sleep(SCRAPE_DELAY_MS)
+        continue
+      }
+
+      const existingProductPhotos = Array.isArray(brand.productPhotos) ? brand.productPhotos : []
+      await updateBrand(brand.id, patch)
+
+      if (patch.heroImageUrl) {
+        summary.heroesFilled++
+      }
+      if (patch.productPhotos) {
+        summary.photosAdded += Math.max(0, patch.productPhotos.length - existingProductPhotos.length)
+      }
+
+      console.log(`  [OK] ${brand.slug}: enriched ${enrichedFields.join(', ')}`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      summary.errors.push({ slug: brand.slug, message })
+      console.warn(`  [ERROR] ${brand.slug}: ${message}`)
+    }
+
+    await sleep(SCRAPE_DELAY_MS)
+  }
+
+  console.log('\n--- Summary ---')
+  console.log(`Brands processed: ${summary.processed}`)
+  console.log(`Heroes filled: ${summary.heroesFilled}`)
+  console.log(`Product photos added: ${summary.photosAdded}`)
+  console.log(`Skipped: ${summary.skipped}`)
+  console.log(`Errors: ${summary.errors.length}`)
+  for (const error of summary.errors) {
+    console.log(`  ${error.slug}: ${error.message}`)
+  }
+
+  if (dryRun) {
+    console.log('\nDry run — no changes made.')
+  }
+}
+
+// ---------------------------------------------------------------------------
 // normalize-slugs
 // ---------------------------------------------------------------------------
 
@@ -1009,6 +1202,7 @@ function printUsage(): void {
   console.log('  detect-non-brands [--dry-run] [--output-file=path]  Detect likely non-brand entries')
   console.log('  enrich-descriptions [--dry-run] [--stop-after=N]  Fill missing or weak descriptions from scraped URLs')
   console.log('  enrich-links [--dry-run] [--slugs=a,b,c] [--stop-after=N] [--validate]  Fill missing social & purchase links')
+  console.log('  enrich-images [--dry-run] [--slugs=a,b,c] [--stop-after=N]  Fill missing hero and product images')
   console.log('  normalize-slugs [--dry-run] [--scrape] [--stop-after=N]  Normalize CJK slugs from English names')
 }
 
@@ -1064,6 +1258,15 @@ async function main() {
       const stopAfter = stopArg ? parseInt(stopArg.replace('--stop-after=', ''), 10) : undefined
       const validate = args.includes('--validate')
       await enrichLinks(dryRun, targetSlugs, stopAfter, validate)
+      break
+    }
+    case 'enrich-images': {
+      const dryRun = args.includes('--dry-run')
+      const slugsArg = args.find((a) => a.startsWith('--slugs='))
+      const targetSlugs = slugsArg ? slugsArg.replace('--slugs=', '').split(',') : undefined
+      const stopArg = args.find((a) => a.startsWith('--stop-after='))
+      const stopAfter = stopArg ? parseInt(stopArg.replace('--stop-after=', ''), 10) : undefined
+      await enrichImages(dryRun, targetSlugs, stopAfter)
       break
     }
     case 'normalize-slugs': {

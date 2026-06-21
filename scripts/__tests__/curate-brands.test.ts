@@ -6,17 +6,31 @@ import type { ScrapedBrandData } from '@/lib/types/scraper'
 import {
   scoreBrand,
   buildEnrichPatch,
+  buildImageEnrichPatch,
   buildLinkEnrichPatch,
   matchCategory,
   cleanNames,
   detectNonBrands,
+  collectPurchaseLinks,
   findBrandsNeedingEnrichment,
+  findBrandsNeedingImages,
   findBrandsNeedingLinks,
   findSlugsNeedingNormalization,
   validateLink,
 } from '../curate-brands'
 
 type BrandWithLinkColumns = Brand & BrandFlatLinkColumns
+type ImageBrandFixture = {
+  id: string
+  status: string
+  heroImageUrl: string | null
+  productPhotos: string[] | null
+}
+type PurchaseLinkFixture = {
+  purchasePinkoi: string | null
+  purchaseShopee: string | null
+  purchaseWebsite: string | null
+}
 
 function makeBrand(overrides: Partial<BrandWithLinkColumns> = {}): BrandWithLinkColumns {
   return {
@@ -274,6 +288,88 @@ describe('buildLinkEnrichPatch', () => {
   })
 })
 
+describe('buildImageEnrichPatch', () => {
+  const baseBrand = {
+    id: 'brand-1',
+    heroImageUrl: null,
+    productPhotos: null,
+  }
+
+  it('sets heroImageUrl from scraped heroImageUrl when brand has none', () => {
+    const patch = buildImageEnrichPatch(
+      baseBrand as unknown as Brand,
+      { heroImageUrl: 'https://cdn01.pinkoi.com/product/hero.jpg', galleryImageUrls: [] } as unknown as ScrapedBrandData,
+      ['https://supabase.co/storage/hero-stored.webp']
+    )
+    expect(patch.heroImageUrl).toBe('https://supabase.co/storage/hero-stored.webp')
+  })
+
+  it('does not overwrite existing heroImageUrl', () => {
+    const patch = buildImageEnrichPatch(
+      { ...baseBrand, heroImageUrl: 'https://existing.com/hero.jpg' } as unknown as Brand,
+      { heroImageUrl: 'https://cdn01.pinkoi.com/product/new-hero.jpg', galleryImageUrls: [] } as unknown as ScrapedBrandData,
+      ['https://supabase.co/storage/new-hero-stored.webp']
+    )
+    expect(patch.heroImageUrl).toBeUndefined()
+  })
+
+  it('uses first gallery image as hero fallback and excludes it from productPhotos', () => {
+    const patch = buildImageEnrichPatch(
+      baseBrand as unknown as Brand,
+      {
+        heroImageUrl: null,
+        galleryImageUrls: ['https://cdn01.pinkoi.com/product/1.jpg', 'https://cdn01.pinkoi.com/product/2.jpg'],
+      } as unknown as ScrapedBrandData,
+      ['https://supabase.co/storage/photo1.webp', 'https://supabase.co/storage/photo2.webp']
+    )
+    expect(patch.heroImageUrl).toBe('https://supabase.co/storage/photo1.webp')
+    expect(patch.productPhotos).toEqual([
+      'https://supabase.co/storage/photo2.webp',
+    ])
+  })
+
+  it('appends to existing productPhotos without exceeding MAX_PRODUCT_PHOTOS', () => {
+    const existing = [
+      'https://supabase.co/storage/existing1.webp',
+      'https://supabase.co/storage/existing2.webp',
+      'https://supabase.co/storage/existing3.webp',
+      'https://supabase.co/storage/existing4.webp',
+    ]
+    const patch = buildImageEnrichPatch(
+      { ...baseBrand, heroImageUrl: 'https://existing.com/hero.jpg', productPhotos: existing } as unknown as Brand,
+      {
+        heroImageUrl: null,
+        galleryImageUrls: ['https://cdn01.pinkoi.com/product/new1.jpg', 'https://cdn01.pinkoi.com/product/new2.jpg'],
+      } as unknown as ScrapedBrandData,
+      ['https://supabase.co/storage/new1.webp', 'https://supabase.co/storage/new2.webp']
+    )
+    expect(patch.productPhotos).toHaveLength(5)
+    expect(patch.productPhotos![0]).toBe('https://supabase.co/storage/existing1.webp')
+    expect(patch.productPhotos![4]).toBe('https://supabase.co/storage/new1.webp')
+  })
+
+  it('returns empty patch when no images scraped', () => {
+    const patch = buildImageEnrichPatch(
+      baseBrand as unknown as Brand,
+      { heroImageUrl: null, galleryImageUrls: [] } as unknown as ScrapedBrandData,
+      []
+    )
+    expect(Object.keys(patch)).toHaveLength(0)
+  })
+
+  it('uses first gallery image as hero fallback when heroImageUrl is null but gallery has images', () => {
+    const patch = buildImageEnrichPatch(
+      baseBrand as unknown as Brand,
+      {
+        heroImageUrl: null,
+        galleryImageUrls: ['https://cdn01.pinkoi.com/product/1.jpg'],
+      } as unknown as ScrapedBrandData,
+      ['https://supabase.co/storage/photo1.webp']
+    )
+    expect(patch.heroImageUrl).toBe('https://supabase.co/storage/photo1.webp')
+  })
+})
+
 describe('findBrandsNeedingLinks', () => {
   it('excludes brands with all 6 links filled', () => {
     const brands = [
@@ -514,5 +610,65 @@ describe('validateLink', () => {
       new Response('<html><body>HANCHOR brand page</body></html>')
     ))
     expect(await validateLink('https://example.com', 'hanchor')).toBe(true)
+  })
+})
+
+describe('findBrandsNeedingImages', () => {
+  it('includes brands with no heroImageUrl', () => {
+    const brands: ImageBrandFixture[] = [
+      { id: '1', status: 'approved', heroImageUrl: null, productPhotos: null },
+      { id: '2', status: 'approved', heroImageUrl: 'https://supabase.co/hero.webp', productPhotos: ['a.webp', 'b.webp', 'c.webp'] },
+    ]
+    const result = findBrandsNeedingImages(brands as unknown as Brand[])
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
+
+  it('includes brands with fewer than 2 productPhotos', () => {
+    const brands: ImageBrandFixture[] = [
+      { id: '1', status: 'approved', heroImageUrl: 'https://supabase.co/hero.webp', productPhotos: null },
+      { id: '2', status: 'approved', heroImageUrl: 'https://supabase.co/hero.webp', productPhotos: ['a.webp'] },
+      { id: '3', status: 'approved', heroImageUrl: 'https://supabase.co/hero.webp', productPhotos: ['a.webp', 'b.webp'] },
+    ]
+    const result = findBrandsNeedingImages(brands as unknown as Brand[])
+    expect(result).toHaveLength(2)
+    expect(result.map((brand) => brand.id)).toEqual(['1', '2'])
+  })
+})
+
+describe('collectPurchaseLinks', () => {
+  it('collects non-null purchase links from brand', () => {
+    const brand: PurchaseLinkFixture = {
+      purchasePinkoi: 'https://www.pinkoi.com/store/abc',
+      purchaseShopee: null,
+      purchaseWebsite: 'https://brand.com',
+    }
+    const links = collectPurchaseLinks(brand as unknown as Brand)
+    expect(links).toEqual([
+      'https://www.pinkoi.com/store/abc',
+      'https://brand.com',
+    ])
+  })
+
+  it('returns empty array when no purchase links exist', () => {
+    const brand: PurchaseLinkFixture = {
+      purchasePinkoi: null,
+      purchaseShopee: null,
+      purchaseWebsite: null,
+    }
+    const links = collectPurchaseLinks(brand as unknown as Brand)
+    expect(links).toEqual([])
+  })
+
+  it('prioritizes Pinkoi first, then Shopee, then website', () => {
+    const brand: PurchaseLinkFixture = {
+      purchasePinkoi: 'https://pinkoi.com/store/abc',
+      purchaseShopee: 'https://shopee.tw/shop/123',
+      purchaseWebsite: 'https://brand.com',
+    }
+    const links = collectPurchaseLinks(brand as unknown as Brand)
+    expect(links[0]).toContain('pinkoi.com')
+    expect(links[1]).toContain('shopee.tw')
+    expect(links[2]).toContain('brand.com')
   })
 })
