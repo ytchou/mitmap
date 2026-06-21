@@ -59,7 +59,8 @@ const sections: OperationSection[] = [
         operation: 'set-visibility',
         title: 'Set Visibility',
         description: 'Final visibility approval',
-        warning: '⚠ This will hide ALL brands first, then approve only the specified slugs',
+        warning:
+          '⚠ Evaluates each brand individually for approved status, website, description, and name, then sets visibility accordingly.',
       },
     ],
   },

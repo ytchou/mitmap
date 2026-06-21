@@ -189,6 +189,8 @@ async function runOperation(supabase: Supabase, job: CurationJob): Promise<Opera
     case 'set-visibility':
       result = await runSetVisibility(config, operationSupabase(supabase))
       break
+    default:
+      throw new Error(`Unhandled operation: ${operation}`)
   }
 
   await progressUpdate
@@ -249,8 +251,19 @@ function normalizeOperationResult(result: CurationOperationResult): OperationRes
     failed: result.errors.length,
     changed: result.updated,
     changes: [],
-    errors: result.errors.map((error) => ({ slug: '', error })),
+    errors: result.errors.map(parseOperationError),
   }
+}
+
+function parseOperationError(error: string): { slug: string; error: string } {
+  const match = error.match(/^([^:]+):\s+(.+)$/)
+
+  if (!match) {
+    return { slug: '', error }
+  }
+
+  const [, slug, message] = match
+  return { slug: slug.trim(), error: message.trim() }
 }
 
 function progressJson(progress: Progress): Json {
