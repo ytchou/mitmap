@@ -9,9 +9,21 @@ export type CurationJobParams = Record<string, Json | undefined> & {
   slugs?: string[]
   stopAfter?: number
   phases?: string[]
+  status?: string
 }
 
-export type CurationOperation = 'cleanup' | 'enrich' | 'auto-tag' | 'set-visibility'
+export const ENRICH_PHASES = [
+  'clean',
+  'detect',
+  'slugs',
+  'tags',
+  'discover',
+  'links',
+  'images',
+  'descriptions',
+] as const
+
+export type CurationOperation = 'enrich' | 'auto-tag' | 'set-visibility'
 type StartCurationOperation = CurationOperation | 'clean-names'
 
 export type CurationJob = {

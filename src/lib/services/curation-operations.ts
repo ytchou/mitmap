@@ -1,4 +1,4 @@
-import { cleanBrandName, detectNonBrand, normalizeSlug } from './brand-cleanup'
+import { cleanBrandName } from './brand-cleanup'
 import { insertSlugRedirect } from './brands'
 import type { BrandFlatLinkColumns } from '@/lib/types'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
@@ -54,43 +54,11 @@ type CurationBrand = {
   non_brand_reason?: string | null
 }
 
-type CleanupPatch = Partial<Pick<CurationBrand, 'name' | 'slug'>>
 type AutoTagPatch = Partial<Pick<CurationBrand, 'product_type'>>
 type SetVisibilityPatch = Partial<Pick<CurationBrand, 'status'>>
 type TriagePatch = Partial<Pick<CurationBrand, 'slug' | 'product_type' | 'is_non_brand' | 'non_brand_reason'>>
-type CurationPatch = CleanupPatch & AutoTagPatch & SetVisibilityPatch & TriagePatch
-
-type CleanNamesPhase = {
-  changed: boolean
-  patch: CleanupPatch
-}
-
-type NormalizeSlugsPhase = {
-  changed: boolean
-  patch: Pick<CleanupPatch, 'slug'>
-}
-
-type DetectNonBrandsPhase = {
-  isNonBrand: boolean
-  reason: string | null
-  confidence: 'high' | 'medium' | 'low'
-}
-
-type CleanupPhases = {
-  cleanNames: CleanNamesPhase
-  normalizeSlugs: NormalizeSlugsPhase
-  detectNonBrands: DetectNonBrandsPhase
-}
-
-type ProcessCleanupOptions = {
-  scrapedName?: string | null
-}
-
-type ProcessCleanupResult = {
-  phases: CleanupPhases
-  hasChanges: boolean
-  patch: CleanupPatch
-}
+type NamePatch = Partial<Pick<CurationBrand, 'name'>>
+type CurationPatch = NamePatch & AutoTagPatch & SetVisibilityPatch & TriagePatch
 
 type SetVisibilityBrand = Pick<CurationBrand, 'id'> &
   Partial<Pick<CurationBrand, 'status' | 'name' | 'purchase_website' | 'description'>>
@@ -163,51 +131,6 @@ function purchaseWebsite(brand: { purchase_website?: string | null }): string | 
   return brand.purchase_website ?? (typeof legacyWebsite === 'string' ? legacyWebsite : null)
 }
 
-export function processCleanupBrand(
-  brand: CurationBrand,
-  opts: ProcessCleanupOptions = {}
-): ProcessCleanupResult {
-  const patch: CleanupPatch = {}
-  const currentName = brandName(brand)
-  const nameCleanup = cleanBrandName(currentName)
-  const slugCleanup = normalizeSlug(brand.slug, opts.scrapedName ?? null)
-  const nonBrandDetection = detectNonBrand({
-    name: currentName,
-    description: brand.description,
-    purchaseWebsite: brand.purchaseWebsite ?? brand.purchase_website,
-  })
-
-  const cleanNames: CleanNamesPhase = {
-    changed: nameCleanup.changed,
-    patch: {},
-  }
-
-  if (nameCleanup.changed) {
-    cleanNames.patch.name = nameCleanup.cleanedName
-    patch.name = nameCleanup.cleanedName
-  }
-
-  const normalizeSlugs: NormalizeSlugsPhase = {
-    changed: slugCleanup.newSlug !== null && slugCleanup.newSlug !== brand.slug,
-    patch: {},
-  }
-
-  if (normalizeSlugs.changed && slugCleanup.newSlug) {
-    normalizeSlugs.patch.slug = slugCleanup.newSlug
-    patch.slug = slugCleanup.newSlug
-  }
-
-  return {
-    phases: {
-      cleanNames,
-      normalizeSlugs,
-      detectNonBrands: nonBrandDetection,
-    },
-    hasChanges: Object.keys(patch).length > 0,
-    patch,
-  }
-}
-
 export function processSetVisibilityBrand(
   brand: SetVisibilityBrand
 ): ProcessSetVisibilityResult {
@@ -235,87 +158,6 @@ export function processSetVisibilityBrand(
     changed: true,
     patch: { status: 'hidden' },
   }
-}
-
-export async function runCleanup(
-  config: CurationConfig,
-  supabase: SupabaseLike
-): Promise<OperationResult> {
-  const result: OperationResult = {
-    processed: 0,
-    updated: 0,
-    skipped: 0,
-    errors: [],
-  }
-
-  let query = supabase
-    .from('brands')
-    .select('id, slug, name, status, description, purchase_website')
-
-  if (config.slugs && config.slugs.length > 0) {
-    query = query.in('slug', config.slugs)
-  }
-
-  if (config.limit !== undefined) {
-    query = query.limit(config.limit)
-  }
-
-  const { data, error } = await query
-
-  if (error) {
-    result.errors.push(error.message ?? 'Failed to fetch brands')
-    return result
-  }
-
-  for (const brand of data ?? []) {
-    result.processed += 1
-    config.onProgress?.(`Processing ${brand.slug}`)
-
-    try {
-      const cleanup = processCleanupBrand(brand)
-
-      if (cleanup.phases.detectNonBrands.isNonBrand) {
-        config.onProgress?.(`  [NON-BRAND] ${brand.slug}: ${cleanup.phases.detectNonBrands.reason} (${cleanup.phases.detectNonBrands.confidence})`)
-      }
-
-      if (!cleanup.hasChanges) {
-        result.skipped += 1
-        continue
-      }
-
-      if (cleanup.phases.cleanNames.changed) {
-        config.onProgress?.(`  [CLEAN] ${brand.slug}: "${brandName(brand)}" → "${cleanup.patch.name}"`)
-      }
-
-      if (cleanup.phases.normalizeSlugs.changed) {
-        config.onProgress?.(`  [SLUG] ${brand.slug} → ${cleanup.patch.slug}`)
-      }
-
-      if (!config.dryRun) {
-        const { error: updateError } = await supabase
-          .from('brands')
-          .update(cleanup.patch)
-          .eq('id', brand.id)
-
-        if (updateError) {
-          result.errors.push(`${brand.slug}: ${updateError.message ?? 'Failed to update brand'}`)
-          result.skipped += 1
-          continue
-        }
-
-        if (cleanup.phases.normalizeSlugs.changed && cleanup.phases.normalizeSlugs.patch.slug) {
-          await insertSlugRedirect(brand.slug, cleanup.phases.normalizeSlugs.patch.slug)
-        }
-      }
-
-      result.updated += 1
-    } catch (err) {
-      result.errors.push(`${brand.slug}: ${errorMessage(err)}`)
-      result.skipped += 1
-    }
-  }
-
-  return result
 }
 
 export async function runSetVisibility(

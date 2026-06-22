@@ -16,43 +16,14 @@ export interface NameCleanupResult {
   confidence: 'high' | 'medium' | 'low'
 }
 
-export interface NonBrandDetectionResult {
-  isNonBrand: boolean
-  reason: string | null
-  confidence: 'high' | 'medium' | 'low'
-}
-
-export interface SlugNormalizationResult {
-  newSlug: string | null
-  source: 'unchanged' | 'scraped-english-name'
-}
-
-interface BrandLike {
-  name: string
-  description?: string | null
-  purchaseWebsite?: string | null
-}
-
 const EMOJI_REGEX = /\p{Extended_Pictographic}/gu
 const VARIATION_SELECTOR_REGEX = /\uFE0F/g
 const DECORATIVE_SYMBOL_REGEX = /[◜◌☼✧◆★●•*♡♥❖✦✩✪✫✬✭✮✯✰]+/gu
 const BRACKET_NOISE_REGEX = /^【\s*([^】]+?)\s*】.*$/u
-const CJK_REGEX = /[\u4E00-\u9FFF\u3400-\u4DBF]/
-const ASCII_LATIN_REGEX = /^[\u0000-\u007F]+$/
 const STYLIZED_RUN_REGEX = /[\u{1D400}-\u{1D7FF}\u{1D00}-\u{1D22}][\u{1D400}-\u{1D7FF}\u{1D00}-\u{1D22}\s.'-]*[\u{1D400}-\u{1D7FF}\u{1D00}-\u{1D22}]|[\u{1D400}-\u{1D7FF}\u{1D00}-\u{1D22}]/gu
 const DECORATIVE_SPACING_REGEX = /^(?:[A-Za-z0-9]\s+){2,}[A-Za-z0-9]$/u
 const ENGLISH_CJK_BOUNDARY_REGEX = /(?<=[A-Za-z0-9]{2,})(?=[\u4E00-\u9FFF\u3400-\u4DBF]{2,})/gu
 const CJK_ENGLISH_BOUNDARY_REGEX = /(?<=[\u4E00-\u9FFF\u3400-\u4DBF]{2,})(?=[A-Za-z0-9]{2,})/gu
-const RESELLER_KEYWORDS = ['代理', '經銷', '批發', '代購']
-const CHARITY_KEYWORDS = ['基金會', '協會', '社團法人', '認養']
-const GOVERNMENT_KEYWORDS = ['鄉公所', '區公所', '市政府']
-const NOISE_NAMES = ['首頁', '關於我們']
-const NON_BRAND_KEYWORDS = [
-  ...RESELLER_KEYWORDS,
-  ...CHARITY_KEYWORDS,
-  ...GOVERNMENT_KEYWORDS,
-  ...NOISE_NAMES,
-]
 
 const MATH_LETTER_RANGES: Array<{ start: number; chars: string }> = [
   range(0x1D400, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
@@ -198,7 +169,7 @@ function removeMarketingSuffixes(value: string): string {
   // as a tagline and let removeTaglines() handle it instead.
   const brandPartWithoutSuffix = result.replace(/\s+\S+品牌$/u, '')
 
-  if (!CJK_REGEX.test(brandPartWithoutSuffix)) {
+  if (!/[\u4E00-\u9FFF\u3400-\u4DBF]/u.test(brandPartWithoutSuffix)) {
     result = result.replace(/\s*(?:原創品)?[^A-Za-z\s]{0,8}品牌$/u, '')
   }
 
@@ -331,55 +302,5 @@ export function cleanBrandName(name: string): NameCleanupResult {
     changed: cleanedName !== originalName,
     patternsMatched: cleanedName === originalName ? [] : patternsMatched,
     confidence: confidenceFor(patternsMatched),
-  }
-}
-
-export function detectNonBrand(brand: BrandLike): NonBrandDetectionResult {
-  const matchedKeyword = NON_BRAND_KEYWORDS.find((keyword) =>
-    NOISE_NAMES.includes(keyword) ? brand.name === keyword : brand.name.includes(keyword)
-  )
-
-  if (matchedKeyword) {
-    return {
-      isNonBrand: true,
-      reason: matchedKeyword,
-      confidence: 'high',
-    }
-  }
-
-  return {
-    isNonBrand: false,
-    reason: null,
-    confidence: 'high',
-  }
-}
-
-export function normalizeSlug(
-  slug: string,
-  scrapedBrandName: string | null
-): SlugNormalizationResult {
-  if (!CJK_REGEX.test(slug) || !scrapedBrandName || !ASCII_LATIN_REGEX.test(scrapedBrandName)) {
-    return {
-      newSlug: null,
-      source: 'unchanged',
-    }
-  }
-
-  const newSlug = scrapedBrandName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, '-')
-    .replace(/-{2,}/gu, '-')
-    .replace(/^-|-$/gu, '')
-
-  if (!newSlug || CJK_REGEX.test(newSlug)) {
-    return {
-      newSlug: null,
-      source: 'unchanged',
-    }
-  }
-
-  return {
-    newSlug,
-    source: 'scraped-english-name',
   }
 }
