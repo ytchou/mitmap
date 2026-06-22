@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Brand } from '@/lib/types'
-import type { ModerationFlag } from '@/lib/services/moderation'
 import type { SubmitBrandForReviewParams } from '@/lib/services/submission-pipeline'
 
 const testState = vi.hoisted(() => ({
@@ -88,7 +87,6 @@ vi.mock('@/lib/services/moderation', async (importOriginal) => {
 
 const { createBrand } = await import('@/lib/services/brands')
 const { createSubmission } = await import('@/lib/services/submissions')
-const { scanContent, saveModerationFlags } = await import('@/lib/services/moderation')
 const pipeline = await import('@/lib/services/submission-pipeline')
 const { submitBrand } = await import('@/app/[locale]/submit/actions')
 
@@ -122,49 +120,18 @@ const brand = {
   updatedAt: '',
 } satisfies Brand
 
-const moderationFlags: ModerationFlag[] = [
-  {
-    fieldName: 'description',
-    tier: 'block',
-    reason: 'Suspicious content',
-    flaggedContent: 'suspicious',
-  },
-]
-
 function buildParams(
   overrides: Partial<SubmitBrandForReviewParams> = {}
 ): SubmitBrandForReviewParams {
   return {
     name: 'Test Brand',
-    slug: 'test-brand',
-    description: 'A useful brand description.',
-    heroImageUrl: null,
-    category: 'Lifestyle',
-    purchaseLinks: [{ platform: 'Official', url: 'https://example.com/shop', label: 'Official' }],
-    socialLinks: { officialWebsite: 'https://example.com' },
-    retailLocations: [{ name: 'Store', address: 'Taipei', latitude: 0, longitude: 0 }],
-    productPhotos: ['https://example.com/photo.jpg'],
-    contactEmail: 'owner@example.com',
-    brandHighlights: 'Highlights',
-    unifiedBusinessNumber: '12345678',
-    socialInstagram: 'brand_ig',
-    socialThreads: '@brand_threads',
-    socialFacebook: 'https://fb.com/brand',
-    purchaseWebsite: 'https://brand.com',
-    purchasePinkoi: 'https://pinkoi.com/store/brand',
-    purchaseShopee: null,
-    otherUrls: [{ label: 'Wholesale', url: 'https://brand.com/wholesale' }],
-    submitterEmail: 'submitter@example.com',
-    submitterName: 'Submitter',
-    isBrandOwner: true,
-    sourceAttribution: 'found_online',
-    pdpaConsentAt: '2026-06-15T00:00:00.000Z',
+    website: 'https://brand.com',
     region: 'taipei',
-    valueTags: ['eco'],
-    productType: 'skincare',
-    productTypeNote: 'Other type',
-    moderationFlags,
-    moderatorUserId: 'user-1',
+    isOwner: true,
+    pdpaConsent: true,
+    sourceAttribution: null,
+    ubn: '12345678',
+    retailLocations: [{ name: 'Store', address: 'Taipei', latitude: 0, longitude: 0 }],
     ...overrides,
   }
 }
@@ -174,17 +141,17 @@ function buildSubmitInput() {
     name: 'User Brand',
     description: 'A submitted brand description.',
     category: 'Lifestyle',
+    website: 'https://user.example.com',
+    region: 'taipei',
     purchaseLinks: [{ platform: 'Official', url: 'https://user.example.com/shop' }],
     socialLinks: {
       instagram: '',
       threads: '',
       facebook: '',
-      website: 'https://user.example.com',
+      website: '',
     },
     retailLocations: [{ name: 'Store', address: 'Taipei' }],
     productPhotos: [],
-    region: 'taipei',
-    valueTags: ['eco'],
     productType: 'skincare',
     unifiedBusinessNumber: '12345678',
     isOwner: true,
@@ -203,10 +170,10 @@ describe('submitBrandForReview', () => {
       id: 'submission-1',
       brandId: brand.id,
       brandName: brand.name,
-      submitterEmail: 'submitter@example.com',
-      submitterName: 'Submitter',
-      description: brand.description,
-      websiteUrl: null,
+      submitterEmail: 'user@example.com',
+      submitterName: 'Test User',
+      description: null,
+      websiteUrl: 'https://brand.com',
       socialInstagram: null,
       socialThreads: null,
       socialFacebook: null,
@@ -214,7 +181,7 @@ describe('submitBrandForReview', () => {
       purchasePinkoi: null,
       purchaseShopee: null,
       otherUrls: [],
-      suggestedTags: {},
+      suggestedTags: { region: 'taipei' },
       status: 'pending',
       reviewerNotes: null,
       submittedAt: '',
@@ -225,19 +192,17 @@ describe('submitBrandForReview', () => {
       validationErrors: null,
       notifiedAt: null,
       isBrandOwner: true,
-      sourceAttribution: 'found_online',
+      sourceAttribution: null,
       productTypeNote: null,
     })
-    vi.mocked(saveModerationFlags).mockResolvedValue(undefined)
   })
 
-  it('creates a pending brand and submission with suggested tags', async () => {
+  it('creates a pending brand and submission with region tag', async () => {
     await pipeline.submitBrandForReview(buildParams())
 
     expect(createBrand).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'Test Brand',
-        slug: 'test-brand',
         status: 'pending',
         isVerified: false,
         isDemo: false,
@@ -245,6 +210,7 @@ describe('submitBrandForReview', () => {
         foundingYear: null,
         siteContent: null,
         unifiedBusinessNumber: '12345678',
+        purchaseWebsite: 'https://brand.com',
       })
     )
     expect(createSubmission).toHaveBeenCalledWith(
@@ -252,52 +218,40 @@ describe('submitBrandForReview', () => {
         brandId: 'brand-1',
         brandName: 'Test Brand',
         websiteUrl: 'https://brand.com',
-        suggestedTags: {
-          region: 'taipei',
-          values: ['eco'],
-          productType: 'skincare',
-        },
+        suggestedTags: { region: 'taipei' },
       })
     )
   })
 
-  it('carries flat link fields from submission params to the pending brand and submission', async () => {
+  it('passes retailLocations from submission params to the pending brand', async () => {
     await pipeline.submitBrandForReview(buildParams())
 
     expect(createBrand).toHaveBeenCalledWith(
       expect.objectContaining({
-        socialInstagram: 'brand_ig',
-        socialThreads: '@brand_threads',
-        socialFacebook: 'https://fb.com/brand',
-        purchaseWebsite: 'https://brand.com',
-        purchasePinkoi: 'https://pinkoi.com/store/brand',
-        purchaseShopee: null,
-        otherUrls: [{ label: 'Wholesale', url: 'https://brand.com/wholesale' }],
+        retailLocations: [{ name: 'Store', address: 'Taipei', latitude: 0, longitude: 0 }],
       })
     )
+  })
+
+  it('sets isBrandOwner and sourceAttribution on submission', async () => {
+    await pipeline.submitBrandForReview(buildParams({ isOwner: false, sourceAttribution: 'found_online' }))
+
     expect(createSubmission).toHaveBeenCalledWith(
       expect.objectContaining({
-        socialInstagram: 'brand_ig',
-        socialThreads: '@brand_threads',
-        socialFacebook: 'https://fb.com/brand',
-        purchaseWebsite: 'https://brand.com',
-        purchasePinkoi: 'https://pinkoi.com/store/brand',
-        purchaseShopee: null,
-        otherUrls: [{ label: 'Wholesale', url: 'https://brand.com/wholesale' }],
+        isBrandOwner: false,
+        sourceAttribution: 'found_online',
       })
     )
   })
 
-  it('saves moderation flags when present', async () => {
-    await pipeline.submitBrandForReview(buildParams())
+  it('sets pdpaConsentAt when pdpaConsent is true', async () => {
+    await pipeline.submitBrandForReview(buildParams({ pdpaConsent: true }))
 
-    expect(saveModerationFlags).toHaveBeenCalledWith('brand-1', 'user-1', moderationFlags)
-  })
-
-  it('does not save moderation flags when empty', async () => {
-    await pipeline.submitBrandForReview(buildParams({ moderationFlags: [] }))
-
-    expect(saveModerationFlags).not.toHaveBeenCalled()
+    expect(createSubmission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pdpaConsentAt: expect.any(String),
+      })
+    )
   })
 })
 
@@ -313,8 +267,8 @@ describe('brand submission callers', () => {
       brandName: brand.name,
       submitterEmail: 'user@example.com',
       submitterName: 'Test User',
-      description: brand.description,
-      websiteUrl: null,
+      description: null,
+      websiteUrl: 'https://user.example.com',
       socialInstagram: null,
       socialThreads: null,
       socialFacebook: null,
@@ -322,7 +276,7 @@ describe('brand submission callers', () => {
       purchasePinkoi: null,
       purchaseShopee: null,
       otherUrls: [],
-      suggestedTags: {},
+      suggestedTags: { region: 'taipei' },
       status: 'pending',
       reviewerNotes: null,
       submittedAt: '',
@@ -336,8 +290,6 @@ describe('brand submission callers', () => {
       sourceAttribution: 'found_online',
       productTypeNote: null,
     })
-    vi.mocked(saveModerationFlags).mockResolvedValue(undefined)
-    vi.mocked(scanContent).mockReturnValue({ riskLevel: 'clean', flags: moderationFlags })
   })
 
   it('user submission creates a pending brand and submission', async () => {
@@ -346,32 +298,23 @@ describe('brand submission callers', () => {
     expect(result).toBeUndefined()
     expect(createBrand).toHaveBeenCalledWith(expect.objectContaining({
       name: 'User Brand',
-      slug: '',
-      description: 'A submitted brand description.',
       status: 'pending',
       isVerified: false,
       isDemo: false,
       contactEmail: 'user@example.com',
       unifiedBusinessNumber: '12345678',
-      productType: 'skincare',
+      purchaseWebsite: 'https://user.example.com',
     }))
     expect(createSubmission).toHaveBeenCalledWith(expect.objectContaining({
       brandId: 'brand-1',
       brandName: 'User Brand',
       submitterEmail: 'user@example.com',
       submitterName: 'Test User',
-      description: 'A submitted brand description.',
       websiteUrl: 'https://user.example.com',
       isBrandOwner: true,
       sourceAttribution: 'found_online',
-      suggestedTags: {
-        region: 'taipei',
-        values: ['eco'],
-        productType: 'skincare',
-      },
-      unifiedBusinessNumber: '12345678',
+      suggestedTags: { region: 'taipei' },
     }))
-    expect(saveModerationFlags).toHaveBeenCalledWith('brand-1', 'user-1', moderationFlags)
 
     expect(createBrand).toHaveBeenCalledTimes(1)
     expect(createSubmission).toHaveBeenCalledTimes(1)

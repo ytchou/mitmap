@@ -9,8 +9,6 @@ const {
   mockCreateBrand,
   mockCreateSubmission,
   mockVerifyTurnstileToken,
-  mockScanContent,
-  mockSaveModerationFlags,
   mockRateLimiterCheck,
 } = vi.hoisted(() => {
   const mockRateLimiterCheck = vi.fn().mockReturnValue({ allowed: true })
@@ -21,8 +19,6 @@ const {
     mockCreateBrand: vi.fn(),
     mockCreateSubmission: vi.fn(),
     mockVerifyTurnstileToken: vi.fn(),
-    mockScanContent: vi.fn(),
-    mockSaveModerationFlags: vi.fn(),
     mockRateLimiterCheck,
   }
 })
@@ -69,6 +65,7 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('@/lib/services/brands', () => ({
   createBrand: mockCreateBrand,
+  generateSlug: vi.fn((name: string) => name.toLowerCase().replace(/\s+/g, '-')),
 }))
 
 vi.mock('@/lib/services/submissions', () => ({
@@ -77,12 +74,6 @@ vi.mock('@/lib/services/submissions', () => ({
 
 vi.mock('@/lib/security/turnstile', () => ({
   verifyTurnstileToken: mockVerifyTurnstileToken,
-}))
-
-vi.mock('@/lib/services/moderation', () => ({
-  EMOJI_REGEX: /\p{Emoji_Presentation}/gu,
-  scanContent: mockScanContent,
-  saveModerationFlags: mockSaveModerationFlags,
 }))
 
 vi.mock('@/lib/security/rate-limiter', () => ({
@@ -181,16 +172,16 @@ describe('server action schema routing', () => {
     mockVerifyTurnstileToken.mockResolvedValue({ success: true })
     mockCreateBrand.mockResolvedValue({ id: 'brand-123' })
     mockCreateSubmission.mockResolvedValue({ id: 'submission-123' })
-    mockScanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
-    mockSaveModerationFlags.mockResolvedValue(undefined)
   })
 
-  it('owner payload without required owner fields fails owner schema', () => {
+  it('owner payload without required region field fails schema', () => {
     const schema = createSubmissionSchema(true)
     const ownerPayload = {
       name: 'Test Brand',
       description: 'Long enough description for the test',
       category: 'fashion',
+      website: 'https://test.com',
+      // region intentionally omitted — it is required
       isOwner: true,
       purchaseLinks: [{ platform: 'shopify', url: 'https://shop.com' }],
       pdpaConsent: true,
@@ -208,6 +199,8 @@ describe('server action schema routing', () => {
       name: 'Test Brand',
       description: 'Long enough description for the community submission test',
       category: 'fashion',
+      website: 'https://test.com',
+      region: 'taipei',
       isOwner: false,
       purchaseLinks: [],
       pdpaConsent: true,
@@ -226,6 +219,8 @@ describe('server action schema routing', () => {
       name: 'Test Brand',
       description: 'Long enough description for the brand insert payload test',
       category: 'fashion',
+      website: 'https://test.com',
+      region: 'taipei',
       productType: 'fashion',
       isOwner: true,
       purchaseLinks: [{ platform: 'shopify', url: 'https://shop.com' }],
@@ -241,13 +236,13 @@ describe('server action schema routing', () => {
     expect('founder' in payload).toBe(false)
   })
 
-  it('stores structured suggestedTags with region and values', async () => {
+  it('stores structured suggestedTags with region', async () => {
     await submitBrand({
       name: 'Test Brand',
       description: 'A'.repeat(40),
       category: 'fashion',
+      website: 'https://test.com',
       region: 'taipei',
-      valueTags: ['sustainability'],
       productType: 'fashion',
       isOwner: false,
       purchaseLinks: [],
@@ -261,20 +256,21 @@ describe('server action schema routing', () => {
 
     expect(mockCreateSubmission).toHaveBeenCalledWith(
       expect.objectContaining({
-        suggestedTags: { region: 'taipei', values: ['sustainability'], productType: 'fashion' },
+        suggestedTags: { region: 'taipei' },
       })
     )
   })
 
-  it('passes productTypeNote to createSubmission', async () => {
+  it('passes unifiedBusinessNumber through the pipeline', async () => {
     mockCreateSubmission.mockResolvedValue({ id: 'sub-1' })
 
     await submitBrand({
       name: 'Test Brand',
       description: 'A'.repeat(40),
       category: 'fashion',
-      productType: '',
-      productTypeNote: '手工皮件',
+      website: 'https://test.com',
+      region: 'taipei',
+      unifiedBusinessNumber: '12345678',
       isOwner: false,
       purchaseLinks: [],
       pdpaConsent: true,
@@ -287,16 +283,18 @@ describe('server action schema routing', () => {
 
     expect(mockCreateSubmission).toHaveBeenCalledWith(
       expect.objectContaining({
-        productTypeNote: '手工皮件',
+        unifiedBusinessNumber: '12345678',
       })
     )
   })
 
-  it('scans brand fields after schema validation passes', async () => {
-    await submitBrand({
+  it('returns undefined on successful submission', async () => {
+    const result = await submitBrand({
       name: 'Test Brand',
-      description: 'Long enough description for moderation scanning',
+      description: 'Long enough description for success',
       category: 'fashion',
+      website: 'https://test.com',
+      region: 'taipei',
       isOwner: false,
       purchaseLinks: [{ platform: 'shopify', url: 'https://shop.com/product' }],
       pdpaConsent: true,
@@ -308,88 +306,20 @@ describe('server action schema routing', () => {
       turnstileToken: 'test-token',
     })
 
-    expect(mockScanContent).toHaveBeenCalledWith({
-      fields: {
-        name: 'Test Brand',
-        description: 'Long enough description for moderation scanning',
-        website: 'https://test.com',
-        purchaseUrl: 'https://shop.com/product',
-      },
-      brandName: 'Test Brand',
-    })
-  })
-
-  it('saves moderation flags after creating the brand when flags exist', async () => {
-    const flags = [
-      {
-        fieldName: 'description',
-        tier: 'flag',
-        reason: 'Email address detected',
-        flaggedContent: 'Email us at spam@example.com',
-      },
-    ]
-    mockScanContent.mockReturnValue({ riskLevel: 'medium', flags })
-
-    await submitBrand({
-      name: 'Test Brand',
-      description: 'Email us at spam@example.com for a long enough test',
-      category: 'fashion',
-      isOwner: false,
-      purchaseLinks: [],
-      pdpaConsent: true,
-      socialLinks: { instagram: '', threads: '', facebook: '', website: '' },
-      sourceAttribution: 'found_online',
-      productPhotos: [],
-      productType: 'fashion',
-
-      retailLocations: [],
-      turnstileToken: 'test-token',
-    })
-
+    expect(result).toBeUndefined()
     expect(mockCreateBrand).toHaveBeenCalledTimes(1)
-    expect(mockSaveModerationFlags).toHaveBeenCalledWith('brand-123', 'user-123', flags)
-    expect(mockSaveModerationFlags.mock.invocationCallOrder[0]).toBeGreaterThan(
-      mockCreateBrand.mock.invocationCallOrder[0]
-    )
+    expect(mockCreateSubmission).toHaveBeenCalledTimes(1)
   })
 
-  it('does not save moderation flags when scan returns clean', async () => {
-    mockScanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
-
-    await submitBrand({
-      name: 'Test Brand',
-      description: 'Long enough clean description for moderation',
-      category: 'fashion',
-      isOwner: false,
-      purchaseLinks: [],
-      pdpaConsent: true,
-      socialLinks: { instagram: '', threads: '', facebook: '', website: '' },
-      sourceAttribution: 'found_online',
-      productPhotos: [],
-      productType: 'fashion',
-
-      retailLocations: [],
-      turnstileToken: 'test-token',
-    })
-
-    expect(mockSaveModerationFlags).not.toHaveBeenCalled()
-  })
-
-  it('blocks submission immediately when scan returns high risk (tier-1 hard block)', async () => {
-    const flags = [
-      {
-        fieldName: 'name',
-        tier: 'block',
-        reason: 'English spam phrase detected: buy now',
-        flaggedContent: 'Buy Now Brand',
-      },
-    ]
-    mockScanContent.mockReturnValue({ riskLevel: 'high', flags })
+  it('returns error when rate limited', async () => {
+    mockRateLimiterCheck.mockReturnValue({ allowed: false })
 
     const result = await submitBrand({
-      name: 'Buy Now Brand',
-      description: 'Long enough description for moderation failure test',
+      name: 'Test Brand',
+      description: 'Long enough description for rate limit test',
       category: 'fashion',
+      website: 'https://test.com',
+      region: 'taipei',
       isOwner: false,
       purchaseLinks: [],
       pdpaConsent: true,
@@ -397,13 +327,11 @@ describe('server action schema routing', () => {
       sourceAttribution: 'found_online',
       productPhotos: [],
       productType: 'fashion',
-
       retailLocations: [],
       turnstileToken: 'test-token',
     })
 
     expect(result).toEqual({ error: expect.any(String) })
     expect(mockCreateBrand).not.toHaveBeenCalled()
-    expect(mockCreateSubmission).not.toHaveBeenCalled()
   })
 })
