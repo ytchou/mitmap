@@ -8,6 +8,7 @@ export type TriageResult = {
   isNonBrand: boolean
   nonBrandReason: string | null
   slug: string
+  slugGenerated: string | null
   productType: string | null
   valueTags: string[]
   confidence: 'high' | 'medium' | 'low'
@@ -78,6 +79,7 @@ function parseBatchClassification(content: string, validSlugs: Set<string>): Map
 function parseTriageEntry(entry: UnknownRecord, slug: string): TriageResult | null {
   const isNonBrand = entry.isNonBrand
   const nonBrandReason = entry.nonBrandReason
+  const slugGenerated = entry.slug_generated
   const productType = entry.productType
   const confidence = entry.confidence
   const valueTags = entry.valueTags
@@ -94,6 +96,7 @@ function parseTriageEntry(entry: UnknownRecord, slug: string): TriageResult | nu
     isNonBrand,
     nonBrandReason: typeof nonBrandReason === 'string' ? nonBrandReason : null,
     slug,
+    slugGenerated: typeof slugGenerated === 'string' ? slugGenerated : null,
     productType,
     valueTags: Array.isArray(valueTags) ? valueTags.filter((tag): tag is string => typeof tag === 'string') : [],
     confidence,

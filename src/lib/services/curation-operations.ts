@@ -52,11 +52,12 @@ type CurationBrand = {
   purchaseWebsite?: string | null
   is_non_brand?: boolean | null
   non_brand_reason?: string | null
+  value_tags?: string[] | null
 }
 
 type AutoTagPatch = Partial<Pick<CurationBrand, 'product_type'>>
 type SetVisibilityPatch = Partial<Pick<CurationBrand, 'status'>>
-type TriagePatch = Partial<Pick<CurationBrand, 'slug' | 'product_type' | 'is_non_brand' | 'non_brand_reason'>>
+type TriagePatch = Partial<Pick<CurationBrand, 'slug' | 'product_type' | 'is_non_brand' | 'non_brand_reason' | 'value_tags'>>
 type NamePatch = Partial<Pick<CurationBrand, 'name'>>
 type CurationPatch = NamePatch & AutoTagPatch & SetVisibilityPatch & TriagePatch
 
@@ -410,12 +411,16 @@ function buildTriagePatch(
     patch.non_brand_reason = triageResult.nonBrandReason
   }
 
-  if (phases.includes('slugs') && triageResult.slug !== brand.slug) {
-    patch.slug = triageResult.slug
+  if (phases.includes('slugs') && triageResult.slugGenerated && triageResult.slugGenerated !== brand.slug) {
+    patch.slug = triageResult.slugGenerated
   }
 
   if (phases.includes('tags') && triageResult.productType !== null) {
     patch.product_type = triageResult.productType
+  }
+
+  if (phases.includes('tags') && triageResult.valueTags.length > 0) {
+    patch.value_tags = triageResult.valueTags
   }
 
   return patch

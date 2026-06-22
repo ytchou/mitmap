@@ -55,17 +55,21 @@ ${CATEGORY_LIST}
 - 長度：最多 40 字元
 - 範例：「茶籽堂」→ chatzutang，「小日子」→ oneday（取自官方英文名 One Day）
 
+## 品牌標籤（valueTags）
+為實際品牌提供 2-5 個描述性標籤（繁體中文），例如：「手工製作」、「有機天然」、「台灣在地」、「永續環保」、「文化傳承」。
+非品牌不需要標籤（回傳空陣列 []）。
+
 ## 範例
 
 輸入：品牌名：好物嚴選 / 網站：goodstuff.tw
-輸出：{"isNonBrand":true,"nonBrandReason":"選物店，策展銷售多品牌商品，無自有產品","slug_generated":"hao-wu-yan-xuan","productType":null,"confidence":"high"}
+輸出：{"isNonBrand":true,"nonBrandReason":"選物店，策展銷售多品牌商品，無自有產品","slug_generated":"hao-wu-yan-xuan","productType":null,"confidence":"high","valueTags":[]}
 
 輸入：品牌名：印花樂 / 網站：inblooom.com
-輸出：{"isNonBrand":false,"nonBrandReason":null,"slug_generated":"inblooom","productType":"home","confidence":"high"}
+輸出：{"isNonBrand":false,"nonBrandReason":null,"slug_generated":"inblooom","productType":"home","confidence":"high","valueTags":["台灣設計","印花布料","文創生活"]}
 
 回應格式（嚴格 JSON，不加任何其他文字）：
-單一品牌：{"isNonBrand":true|false,"nonBrandReason":"...或 null","slug_generated":"...","productType":"...或 null","confidence":"high|medium|low"}
-多個品牌：[{"slug":"<原始 slug>","isNonBrand":...,"nonBrandReason":...,"slug_generated":"...","productType":...,"confidence":...}]`
+單一品牌：{"isNonBrand":true|false,"nonBrandReason":"...或 null","slug_generated":"...","productType":"...或 null","confidence":"high|medium|low","valueTags":["標籤1","標籤2"]}
+多個品牌：[{"slug":"<原始 slug>","isNonBrand":...,"nonBrandReason":...,"slug_generated":"...","productType":...,"confidence":...,"valueTags":[...]}]`
 
 export const DESCRIPTION_SYSTEM_PROMPT = `你是台灣品牌文案撰寫者。請根據提供的資料，撰寫一段品牌簡介（繁體中文）。
 

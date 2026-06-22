@@ -49,12 +49,14 @@ describe('triageBrandsBatch', () => {
     expect(myBrand!.isNonBrand).toBe(false)
     expect(myBrand!.productType).toBe('beauty')
     expect(myBrand!.slug).toBe('my-brand')
+    expect(myBrand!.slugGenerated).toBe('my-brand')
     expect(myBrand!.confidence).toBe('high')
 
     const reseller = results.get('some-reseller')
     expect(reseller).toBeDefined()
     expect(reseller!.isNonBrand).toBe(true)
     expect(reseller!.nonBrandReason).toBe('代購 (reseller)')
+    expect(reseller!.slugGenerated).toBe('some-reseller')
   })
 
   it('falls back to individual calls when batch fails', async () => {
