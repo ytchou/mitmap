@@ -434,7 +434,7 @@ export function OperationCard({
             type="button"
             onClick={() => setConfirmOpen(true)}
             disabled={isActionDisabled}
-            className="min-h-12 bg-[var(--cta)] px-5 text-white hover:bg-[var(--cta)]/90 focus-visible:ring-2 focus-visible:ring-primary"
+            className="min-h-12 bg-cta px-5 text-white hover:bg-cta/90 focus-visible:ring-2 focus-visible:ring-primary"
           >
             Execute
           </Button>
@@ -457,7 +457,7 @@ export function OperationCard({
               }}
               disabled={isPending}
               className={cn(
-                'min-h-12 bg-[var(--cta)] px-5 text-white hover:bg-[var(--cta)]/90',
+                'min-h-12 bg-cta px-5 text-white hover:bg-cta/90',
                 'focus-visible:ring-2 focus-visible:ring-primary'
               )}
             >

@@ -343,11 +343,7 @@ export type SubmissionFormData = Omit<
   | 'purchaseLinks'
   | 'socialLinks'
   | 'heroImageUrl'
-  | 'website'
-  | 'region'
 > & {
-  website?: string
-  region?: string
   productTypeNote?: string
   productType?: string
   valueTags?: string[]
