@@ -1327,6 +1327,29 @@
       "rateLimit": "提交次數過多，請稍後再試。",
       "validation": "驗證失敗，請再試一次。",
       "unexpected": "發生預期外的錯誤，請再試一次。"
+    },
+    "form": {
+      "heading": "提交台灣品牌",
+      "subheading": "將您的台灣製造品牌分享給社群",
+      "websiteLabel": "品牌官方網站",
+      "websitePlaceholder": "https://yourbrand.com",
+      "brandNameLabel": "品牌名稱",
+      "brandNamePlaceholder": "例：雨靴工作室",
+      "regionLabel": "品牌所在地區",
+      "regionPlaceholder": "選擇地區",
+      "isOwnerLabel": "我是品牌負責人",
+      "isOwnerHint": "我們會請你提供品牌證明文件，認領後可管理品牌頁面與更新資訊。",
+      "sourceLabel": "資料來源",
+      "sourcePlaceholder": "選擇你認識這品牌的方式",
+      "linksAccordionLabel": "其他連結",
+      "linksAccordionHint": "社群與購買連結（可選）",
+      "instagramLabel": "Instagram",
+      "threadsLabel": "Threads",
+      "facebookLabel": "Facebook",
+      "submitButton": "提交品牌",
+      "submittingButton": "提交中...",
+      "suggestedName": "建議名稱：",
+      "applySuggestion": "套用"
     }
   },
   "gettingStarted": {
