@@ -28,7 +28,6 @@ type BrandInfoStepProps = {
   sourceAttribution?: SourceAttribution
   onAttributionChange?: (attribution: SourceAttribution | undefined) => void
   uploadPath?: string
-  onNext?: (values: SubmissionFormData) => void
 }
 
 function Alert({
@@ -433,7 +432,7 @@ export function BrandInfoStep({
             disabled={isCheckingDuplicates || !!activeDedupResult?.ubnMatch}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-50"
           >
-            {isCheckingDuplicates ? t('checking') : t('checking')}
+            {isCheckingDuplicates ? t('checking') : t('next')}
           </button>
           {dedupError && (
             <p className="text-sm text-destructive mt-1">{dedupError}</p>
