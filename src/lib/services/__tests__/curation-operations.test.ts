@@ -116,6 +116,38 @@ describe('processEnrichBrand', () => {
   })
 })
 
+describe('processEnrichBrand with cleanup phases', () => {
+  const baseBrand = {
+    id: '1',
+    slug: 'test-brand',
+    display_brand_name: '  ✨ My Brand ✨  ',
+    name: '  ✨ My Brand ✨  ',
+    status: 'approved',
+    description: null,
+    product_type: null,
+    purchase_website: null,
+  }
+
+  it('runs clean phase and produces name cleanup patch', () => {
+    const result = processEnrichBrand(baseBrand, {}, ['clean'])
+    expect(result.phases).toHaveProperty('clean')
+    expect(result.phases.clean?.changed).toBe(true)
+    expect(result.patch.name).toBe('My Brand')
+  })
+
+  it('skips clean phase when not in phases list', () => {
+    const result = processEnrichBrand(baseBrand, {}, ['discover'])
+    expect(result.phases).not.toHaveProperty('clean')
+  })
+
+  it('clean phase preserves already-clean names', () => {
+    const cleanBrand = { ...baseBrand, name: 'Already Clean', display_brand_name: 'Already Clean' }
+    const result = processEnrichBrand(cleanBrand, {}, ['clean'])
+    expect(result.phases.clean?.changed).toBe(false)
+    expect(result.patch).toEqual({})
+  })
+})
+
 describe('mergeEnrichPatches', () => {
   it('merges link and description patches into single update', () => {
     const patches = {

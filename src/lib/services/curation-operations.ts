@@ -383,7 +383,7 @@ export async function runSetVisibility(
   return result
 }
 
-type EnrichPhase = 'links' | 'images' | 'descriptions' | 'tags'
+type EnrichPhase = 'clean' | 'links' | 'images' | 'descriptions' | 'tags'
 type RunEnrichPhase = EnrichPhase | 'discover'
 
 type EnrichBrand = CurationBrand &
@@ -403,7 +403,18 @@ type EnrichImagePatch = Partial<{
   product_photos: string[]
 }>
 
+type EnrichCleanPhase = {
+  changed: boolean
+  original?: string
+  cleaned?: string
+}
+
+type EnrichProcessPhases = {
+  clean?: EnrichCleanPhase
+}
+
 type EnrichPatches = {
+  clean?: Partial<Pick<CurationBrand, 'name'>>
   links?: Partial<BrandFlatLinkColumns>
   images?: EnrichImagePatch
   descriptions?: Partial<Pick<EnrichBrand, 'description' | 'brand_highlights'>>
@@ -412,10 +423,12 @@ type EnrichPatches = {
 
 type EnrichPatch = Partial<BrandFlatLinkColumns> &
   EnrichImagePatch &
-  Partial<Pick<EnrichBrand, 'description' | 'brand_highlights' | 'product_type'>>
+  Partial<Pick<EnrichBrand, 'description' | 'brand_highlights' | 'product_type' | 'name'>>
 
 type ProcessEnrichResult = {
+  phases: EnrichProcessPhases
   patches: EnrichPatches
+  patch: EnrichPatch
   hasChanges: boolean
 }
 
@@ -513,8 +526,24 @@ export function processEnrichBrand(
   scrapedData: EnrichScrapedData,
   phases: string[]
 ): ProcessEnrichResult {
+  const phaseResults: EnrichProcessPhases = {}
   const patches: EnrichPatches = {}
   const normalizedScrapedData = normalizeScrapedData(scrapedData)
+
+  if (isRequestedPhase(phases, 'clean')) {
+    const nameCleanup = cleanBrandName(brand.name ?? '')
+    phaseResults.clean = nameCleanup.changed
+      ? {
+          changed: true,
+          original: nameCleanup.originalName,
+          cleaned: nameCleanup.cleanedName,
+        }
+      : { changed: false }
+
+    if (nameCleanup.changed) {
+      patches.clean = { name: nameCleanup.cleanedName }
+    }
+  }
 
   if (isRequestedPhase(phases, 'links')) {
     const links = buildLinkEnrichPatch(brand, normalizedScrapedData)
@@ -530,14 +559,19 @@ export function processEnrichBrand(
     }
   }
 
+  const patch = mergeEnrichPatches(patches)
+
   return {
+    phases: phaseResults,
     patches,
-    hasChanges: Object.values(patches).some((patch) => patch && hasPatchValues(patch)),
+    patch,
+    hasChanges: hasPatchValues(patch),
   }
 }
 
 export function mergeEnrichPatches(patches: EnrichPatches): EnrichPatch {
   return {
+    ...patches.clean,
     ...patches.links,
     ...patches.images,
     ...patches.descriptions,
