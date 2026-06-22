@@ -25,6 +25,8 @@ import { scrapeBrandUrls } from './scraper'
 import { classifyByDomain } from './scraper/input-detector'
 import { SEARCH_DELAY_MS, batchSearchBrandImages, batchSearchBrandsWithSnippets } from './scraper/search'
 import { insertSearchResult, getLatestSearchResults } from './search-results'
+import { insertTriageResult, insertDescriptionResult } from './ai-results'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export interface CurationConfig {
   dryRun: boolean
@@ -51,14 +53,12 @@ type CurationBrand = {
   product_type?: string | null
   purchase_website?: string | null
   purchaseWebsite?: string | null
-  is_non_brand?: boolean | null
-  non_brand_reason?: string | null
-  value_tags?: string[] | null
+  tag_slugs?: string[] | null
 }
 
 type AutoTagPatch = Partial<Pick<CurationBrand, 'product_type'>>
 type SetVisibilityPatch = Partial<Pick<CurationBrand, 'status'>>
-type TriagePatch = Partial<Pick<CurationBrand, 'slug' | 'product_type' | 'is_non_brand' | 'non_brand_reason' | 'value_tags'>>
+type TriagePatch = Partial<Pick<CurationBrand, 'slug' | 'product_type' | 'tag_slugs'>>
 type NamePatch = Partial<Pick<CurationBrand, 'name'>>
 type CurationPatch = NamePatch & AutoTagPatch & SetVisibilityPatch & TriagePatch
 
@@ -407,11 +407,6 @@ function buildTriagePatch(
     return patch
   }
 
-  if (phases.includes('detect') && triageResult.isNonBrand) {
-    patch.is_non_brand = true
-    patch.non_brand_reason = triageResult.nonBrandReason
-  }
-
   const KEBAB_CASE_RE = /^[a-z0-9]+(-[a-z0-9]+)+$/
   if (
     phases.includes('slugs') &&
@@ -427,7 +422,7 @@ function buildTriagePatch(
   }
 
   if (phases.includes('tags') && triageResult.valueTags.length > 0) {
-    patch.value_tags = triageResult.valueTags
+    patch.tag_slugs = triageResult.valueTags
   }
 
   return patch
@@ -522,7 +517,7 @@ export async function runEnrich(
   }
 
   if (!config.overwrite) {
-    query = query.or('serp_enriched_at.is.null,images_enriched_at.is.null,tags_enriched_at.is.null')
+    query = query.or('serp_enriched_at.is.null,images_enriched_at.is.null,brand_enriched_at.is.null')
   }
 
   if (config.limit !== undefined) {
@@ -558,7 +553,7 @@ export async function runEnrich(
     ].filter(Boolean)
     config.onProgress?.(`\n[BATCH ${chunkIndex + 1}/${brandChunks.length}] ${chunk.length} brands — fetching ${activeSteps.join(' + ')}...`)
 
-    let searchResults = new Map<string, { urls: string[], snippets: string[] }>()
+    let searchResults = new Map<string, { urls: string[], snippets: string[], rawEntries?: unknown[] }>()
     let imageSearchResults = new Map<string, string[]>()
     let batchClassifications = new Map<string, ClassificationResult>()
     let searchError: string | null = null
@@ -573,12 +568,18 @@ export async function runEnrich(
         const serpMisses = searchResults.size - serpHits
         config.onProgress?.(`  [SERP] OK — ${serpHits}/${searchResults.size} brands with results${serpMisses > 0 ? ` (${serpMisses} empty)` : ''}`)
         if (!config.dryRun) {
+          const serpBrandIds: string[] = []
           for (const brand of chunk) {
             const brandName = displayBrandName(brand)
             const result = searchResults.get(brandName)
             if (result && (result.urls.length > 0 || result.snippets.length > 0)) {
-              await insertSearchResult(brand.id, 'serp', `${brandName} 台灣`, result.urls, result.snippets)
+              await insertSearchResult(brand.id, 'serp', `${brandName} 台灣`, result.urls, result.snippets, result.rawEntries)
+              serpBrandIds.push(brand.id)
             }
+          }
+          const serpNow = new Date().toISOString()
+          for (const id of serpBrandIds) {
+            await supabase.from('brands').update({ serp_enriched_at: serpNow } as never).eq('id', id)
           }
         }
       } catch (err) {
@@ -592,12 +593,18 @@ export async function runEnrich(
       const totalImages = [...imageSearchResults.values()].reduce((sum, urls) => sum + urls.length, 0)
       config.onProgress?.(`  [IMAGES] OK — ${totalImages} images across ${imageSearchResults.size} brands`)
       if (!config.dryRun) {
+        const imageBrandIds: string[] = []
         for (const brand of chunk) {
           const brandName = displayBrandName(brand)
           const images = imageSearchResults.get(brandName)
           if (images && images.length > 0) {
             await insertSearchResult(brand.id, 'image', `${brandName} 台灣`, images, [])
+            imageBrandIds.push(brand.id)
           }
+        }
+        const imgNow = new Date().toISOString()
+        for (const id of imageBrandIds) {
+          await supabase.from('brands').update({ images_enriched_at: imgNow } as never).eq('id', id)
         }
       }
     }
@@ -650,32 +657,44 @@ export async function runEnrich(
       try {
         const triageResult = triageResults.get(brand.slug)
         const triagePatch = buildTriagePatch(brand, triageResult, phases)
-        const triageSlug = triagePatch.slug
+        let triageSlug = triagePatch.slug
+
+        if (triageSlug && !config.dryRun) {
+          const svc = createServiceClient()
+          const { data: slugOwner } = await svc
+            .from('brands')
+            .select('id')
+            .eq('slug', triageSlug)
+            .neq('id', brand.id)
+            .maybeSingle()
+          if (slugOwner) {
+            config.onProgress?.(`  [SLUG-CONFLICT] "${triageSlug}" already taken — keeping original slug`)
+            delete triagePatch.slug
+            triageSlug = undefined
+          }
+        }
 
         if (shouldSkipForNonBrand(triageResult)) {
           config.onProgress?.(`  [NON-BRAND] ${brand.slug}: ${triageResult?.nonBrandReason ?? 'non-brand'} (${triageResult?.confidence})`)
 
-          if (hasPatchValues(triagePatch)) {
-            if (!config.dryRun) {
-              const { error: updateError } = await supabase
-                .from('brands')
-                .update(triagePatch)
-                .eq('id', brand.id)
-
-              if (updateError) {
-                result.errors.push(`${brand.slug}: ${updateError.message ?? 'Failed to update brand'}`)
-                result.skipped += 1
-                continue
-              }
-
-              if (triageSlug) {
-                await insertSlugRedirect(brand.slug, triageSlug)
-              }
-            }
-
-            result.updated += 1
+          if (!config.dryRun) {
+            await insertTriageResult({
+              brandId: brand.id,
+              isNonBrand: true,
+              nonBrandReason: triageResult?.nonBrandReason ?? null,
+              slugGenerated: triageResult?.slugGenerated ?? null,
+              productType: triageResult?.productType ?? null,
+              confidence: triageResult?.confidence ?? 'high',
+              valueTags: triageResult?.valueTags ?? [],
+              rawResponse: triageResult,
+            })
+            await supabase.from('brands').update({
+              status: 'hidden',
+              brand_enriched_at: new Date().toISOString(),
+            } as never).eq('id', brand.id)
           }
 
+          result.updated += 1
           result.skipped += 1
           continue
         }
@@ -790,17 +809,28 @@ export async function runEnrich(
         }
 
         if (!config.dryRun) {
+          if (triageResult) {
+            await insertTriageResult({
+              brandId: brand.id,
+              isNonBrand: false,
+              nonBrandReason: null,
+              slugGenerated: triageResult.slugGenerated,
+              productType: triageResult.productType,
+              confidence: triageResult.confidence,
+              valueTags: triageResult.valueTags,
+              rawResponse: triageResult,
+            })
+          }
+          if (descriptionRewrite) {
+            await insertDescriptionResult({
+              brandId: brand.id,
+              description: descriptionRewrite,
+              rawResponse: { description: descriptionRewrite },
+            })
+          }
           const now = new Date().toISOString()
           const timestamps: Record<string, string> = {}
-          if (phases.includes('discover') || phases.includes('links') || phases.includes('descriptions')) {
-            timestamps.serp_enriched_at = now
-          }
-          if (phases.includes('images')) {
-            timestamps.images_enriched_at = now
-          }
-          if (phases.includes('tags')) {
-            timestamps.tags_enriched_at = now
-          }
+          timestamps.brand_enriched_at = now
           const { error: updateError } = await supabase
             .from('brands')
             .update({ ...patch, ...timestamps } as unknown as CurationPatch)
