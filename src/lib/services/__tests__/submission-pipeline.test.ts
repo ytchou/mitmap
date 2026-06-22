@@ -145,7 +145,7 @@ function buildSubmitInput() {
     isOwner: true,
     pdpaConsent: true,
     turnstileToken: 'test-token',
-    _honeypot: '',
+    honeypot: '',
     sourceAttribution: 'found_online' as const,
   }
 }
