@@ -290,7 +290,6 @@ describe('brand submission callers', () => {
       isVerified: false,
       isDemo: false,
       contactEmail: 'user@example.com',
-      unifiedBusinessNumber: '12345678',
       purchaseWebsite: 'https://user.example.com',
     }))
     expect(createSubmission).toHaveBeenCalledWith(expect.objectContaining({
