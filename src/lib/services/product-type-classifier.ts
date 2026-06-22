@@ -147,7 +147,7 @@ async function classifyProductType(
   const token = process.env.DEEPSEEK_API_KEY
   if (!token) return null
 
-  const userContent = `品牌名稱：${brandName}\n描述：${description ?? '無'}\n回傳格式：{"productType":"...","confidence":"high|medium|low"}`
+  const userContent = `品牌名稱：${brandName}\n描述：${description ?? '無'}`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), CLASSIFY_TIMEOUT_MS)
@@ -167,6 +167,7 @@ async function classifyProductType(
         ],
         max_tokens: 100,
         temperature: 0.1,
+        response_format: { type: 'json_object' },
       }),
       signal: controller.signal,
     })
@@ -209,7 +210,7 @@ async function classifyProductTypeBatchChunk(
   const list = brands.map((brand, index) => {
     return `${index + 1}. [${brand.slug}] 品牌名：${brand.name} / 描述：${brand.description ?? '無'}`
   }).join('\n')
-  const userContent = `請將以下品牌分類，回傳 JSON 陣列：\n${list}\n回傳格式：[{"slug":"...","productType":"...","confidence":"high|medium|low"}]`
+  const userContent = `請將以下品牌分類：\n${list}`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), BATCH_CLASSIFY_TIMEOUT_MS)
@@ -229,6 +230,7 @@ async function classifyProductTypeBatchChunk(
         ],
         max_tokens: 1500,
         temperature: 0.1,
+        response_format: { type: 'json_object' },
       }),
       signal: controller.signal,
     })
@@ -292,7 +294,7 @@ async function triageBrand(brand: TriageBatchItem): Promise<TriageResult | null>
   const token = process.env.DEEPSEEK_API_KEY
   if (!token) return null
 
-  const userContent = `品牌 slug：${brand.slug}\n品牌名稱：${brand.name}\n描述：${brand.description ?? '無'}\n網站：${brand.website ?? '無'}\n回傳格式：{"isNonBrand":true|false,"nonBrandReason":"...或 null","slug_generated":"...","productType":"...或 null","confidence":"high|medium|low"}`
+  const userContent = `品牌 slug：${brand.slug}\n品牌名稱：${brand.name}\n描述：${brand.description ?? '無'}\n網站：${brand.website ?? '無'}`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), CLASSIFY_TIMEOUT_MS)
@@ -312,6 +314,7 @@ async function triageBrand(brand: TriageBatchItem): Promise<TriageResult | null>
         ],
         max_tokens: 200,
         temperature: 0.1,
+        response_format: { type: 'json_object' },
       }),
       signal: controller.signal,
     })
@@ -353,7 +356,7 @@ async function triageBrandsBatchChunk(
   const list = brands.map((brand, index) => {
     return `${index + 1}. [${brand.slug}] 品牌名：${brand.name} / 描述：${brand.description ?? '無'} / 網站：${brand.website ?? '無'}`
   }).join('\n')
-  const userContent = `請判斷以下項目是否為實際品牌，並為實際品牌分類，回傳 JSON 陣列：\n${list}\n回傳格式：[{"slug":"...","isNonBrand":true|false,"nonBrandReason":"...或 null","slug_generated":"...","productType":"...或 null","confidence":"high|medium|low"}]`
+  const userContent = `請判斷以下項目是否為實際品牌，並為實際品牌分類：\n${list}`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), BATCH_CLASSIFY_TIMEOUT_MS)
@@ -373,6 +376,7 @@ async function triageBrandsBatchChunk(
         ],
         max_tokens: 2500,
         temperature: 0.1,
+        response_format: { type: 'json_object' },
       }),
       signal: controller.signal,
     })

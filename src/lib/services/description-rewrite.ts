@@ -103,6 +103,7 @@ export async function rewriteAndClassifyBrand(
         ],
         max_tokens: 400,
         temperature: 0.3,
+        response_format: { type: 'json_object' },
       }),
       signal: controller.signal,
     })
