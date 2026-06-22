@@ -145,7 +145,7 @@ function buildSubmitInput() {
     isOwner: true,
     pdpaConsent: true,
     turnstileToken: 'test-token',
-    _honeypot: '',
+    honeypot: '',
     sourceAttribution: 'found_online' as const,
   }
 }
@@ -290,7 +290,6 @@ describe('brand submission callers', () => {
       isVerified: false,
       isDemo: false,
       contactEmail: 'user@example.com',
-      unifiedBusinessNumber: '12345678',
       purchaseWebsite: 'https://user.example.com',
     }))
     expect(createSubmission).toHaveBeenCalledWith(expect.objectContaining({

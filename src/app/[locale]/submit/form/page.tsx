@@ -5,7 +5,7 @@ import { buildAlternates } from '@/lib/seo/alternates'
 import type { Locale } from '@/lib/seo/alternates'
 import { createClient } from '@/lib/supabase/server'
 import { getTags } from '@/lib/services/taxonomy'
-import { SubmitWizard } from '@/components/submit/SubmitWizard'
+import SubmitForm from '@/components/submit/SubmitForm'
 
 type FormPageProps = {
   params: Promise<{ locale: string }>
@@ -38,15 +38,7 @@ export default async function SubmitFormPage({ params }: FormPageProps) {
     redirect(`/auth/sign-in?next=${formPath}`)
   }
 
-  const [regionTags, valueTags] = await Promise.all([
-    getTags('region'),
-    getTags('value'),
-  ])
+  const regionTags = await getTags('region')
 
-  return (
-    <SubmitWizard
-      regionTags={regionTags}
-      valueTags={valueTags}
-    />
-  )
+  return <SubmitForm regionTags={regionTags} />
 }

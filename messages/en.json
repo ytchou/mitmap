@@ -1327,6 +1327,29 @@
       "rateLimit": "Too many submissions, please try again later.",
       "validation": "Validation failed, please try again.",
       "unexpected": "An unexpected error occurred, please try again."
+    },
+    "form": {
+      "heading": "Submit a Taiwan Brand",
+      "subheading": "Share your Taiwan-made brand with the community",
+      "websiteLabel": "Official Brand Website",
+      "websitePlaceholder": "https://yourbrand.com",
+      "brandNameLabel": "Brand Name",
+      "brandNamePlaceholder": "e.g. Rain Boot Studio",
+      "regionLabel": "Brand Region",
+      "regionPlaceholder": "Select a region",
+      "isOwnerLabel": "I am the brand owner",
+      "isOwnerHint": "We'll ask you to verify ownership. Once claimed, you can manage your brand page and update information.",
+      "sourceLabel": "How do you know this brand?",
+      "sourcePlaceholder": "Select how you know this brand",
+      "linksAccordionLabel": "Additional Links",
+      "linksAccordionHint": "Social and purchase links (optional)",
+      "instagramLabel": "Instagram",
+      "threadsLabel": "Threads",
+      "facebookLabel": "Facebook",
+      "submitButton": "Submit Brand",
+      "submittingButton": "Submitting...",
+      "suggestedName": "Suggested name:",
+      "applySuggestion": "Apply"
     }
   },
   "gettingStarted": {

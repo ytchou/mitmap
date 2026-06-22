@@ -38,14 +38,15 @@ Individual brand pages with rich content.
 
 ### Onboarding
 Self-serve brand submission flow.
-- Multi-step form: brand info → products → social links → review & submit
-- Photo upload for brand logo and product images
-- Structured taxonomy input: region selector (1 of 23 options) plus value checkboxes (max 3); replaces free-form tag suggestions
-- Submission enters admin approval queue
+- Single-screen flat form collecting: brand URL, brand name, region (1 of 23 options), ownership declaration, PDPA consent, and optional social/purchase links
+- No description, product type, images, tags, or UBN required at submission — these are auto-enriched by the batch enrichment pipeline post-submission
+- Submission enters admin approval queue pending enrichment
 
 ### Admin
 Content management and moderation.
-- Submission review queue (approve/reject with notes)
+- Submission review queue (approve/reject with notes) — admins review submissions after enrichment, not before
+- Enrichment status badge on each submission: `Not Enriched` | `Partially Enriched` | `Enriched` — indicates how much AI-derived data has been populated before the admin makes a decision
+- Batch enrichment pipeline: a Railway cron service runs `pnpm curate enrich --status=pending` every 3 hours, automatically enriching pending submissions with AI-derived product type, description, tags, images, and links
 - Brand listing management (edit, hide, delete)
 - Taxonomy tag management (add, merge, rename)
 - New tag suggestion review
@@ -97,7 +98,7 @@ Middleware provisions `fm_mode=god` for real admins and deletes the cookie for n
 ### Taxonomy Closed Vocabularies (DEV-802)
 - `region`: closed vocabulary of Taiwan's 22 cities/counties plus `全台灣`; max 1 per brand.
 - `value`: closed vocabulary of admin-curated tags; max 3 per brand.
-- `product_type`: Each brand has exactly one product type, submitter-selected from 10 flat categories (see `PRODUCT_TYPE_CATEGORIES` in `ontology.ts`). Stored as a column on the `brands` table (NOT via `brand_taxonomy` junction table) and validated via a CHECK constraint on the `brands` table. Free-text fallback via `product_type_note` when no category fits. Admin reviews taxonomy gaps in the submission queue.
+- `product_type`: Each brand has exactly one product type, **AI-classified by the enrichment pipeline** (see `PRODUCT_TYPE_CATEGORIES` in `ontology.ts`). Stored as a column on the `brands` table (NOT via `brand_taxonomy` junction table) and validated via a CHECK constraint on the `brands` table. Not submitter-selected — populated automatically during the batch enrichment run before admin review. Admin may override the AI-assigned classification during submission review.
 - `brand_submissions.suggested_tags` accepts the legacy `string[]` `suggestedTags` format for backwards compatibility.
 - New structured submission format is `{ region?: string, values?: string[] }`, stored in the `brand_submissions.suggested_tags` JSONB column.
 - On admin approval, accepted structured region/value taxonomy is auto-applied to `brand_taxonomy`.

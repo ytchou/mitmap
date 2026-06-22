@@ -1,5 +1,15 @@
 # SPEC Changelog
 
+## 2026-06-23
+
+### DEV-877 — Submission workflow redesign
+
+Replaced multi-step wizard with a single-screen flat form. The form collects only: brand URL, name, region, ownership declaration, PDPA consent, and optional social/purchase links. Fields removed from submission: description, product type, images, tags, UBN. Duplicate checking removed. Retail locations deferred to DEV-878.
+
+Added batch enrichment pipeline: Railway cron service runs `pnpm curate enrich --status=pending` every 3 hours. Enrichment populates AI-derived product type, description, tags, images, and links before admin review. Admin submission queue now shows an enrichment status badge (`Not Enriched` / `Partially Enriched` / `Enriched`) on each pending submission.
+
+`product_type` is now AI-classified by the enrichment pipeline, not submitter-selected. Admin may override post-enrichment.
+
 ## 2026-06-21
 
 Added admin data curation module (9 operations), quality dashboard, auto-tag rule clarification.
