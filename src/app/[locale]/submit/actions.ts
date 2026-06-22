@@ -99,11 +99,6 @@ export async function submitBrand(
     return undefined // Success — no error
   } catch (err) {
     console.error('Submit brand error:', err)
-    return {
-      error:
-        err instanceof Error
-          ? err.message
-          : t('unexpected'),
-    }
+    return { error: t('unexpected') }
   }
 }

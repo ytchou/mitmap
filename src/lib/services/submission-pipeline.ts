@@ -34,10 +34,6 @@ export async function submitBrandForReview(
     throw authError ?? new Error('Authenticated submitter email is required')
   }
 
-  if (!params.website) {
-    throw new Error('Brand website is required')
-  }
-
   const retailLocations = (params.retailLocations ?? []).map((location) => ({
     ...location,
     latitude: 0,
@@ -58,7 +54,7 @@ export async function submitBrandForReview(
     socialInstagram: null,
     socialThreads: null,
     socialFacebook: null,
-    purchaseWebsite: params.website,
+    purchaseWebsite: params.website ?? null,
     purchasePinkoi: null,
     purchaseShopee: null,
     otherUrls: [],

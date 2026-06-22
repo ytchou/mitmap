@@ -33,7 +33,7 @@ async function requireAdmin(): Promise<{ error: string } | undefined> {
 
   if (error || !user) return { error: 'Unauthorized' }
 
-  const actingAsAdmin = await isActingAsAdmin(user.id)
+  const actingAsAdmin = await isActingAsAdmin(user.email)
   if (!actingAsAdmin) return { error: 'Forbidden' }
 
   return undefined
