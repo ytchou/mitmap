@@ -51,18 +51,24 @@ ${CATEGORY_LIST}
 
 ## Slug 生成規則
 - 格式：kebab-case，純小寫 ASCII 英文字母和數字
-- 中文品牌名：使用品牌的英文名稱或官方羅馬拼音；若無，則使用漢語拼音
+- 中文品牌名：只在品牌有公開使用的英文名稱或官方羅馬拼音時才生成 slug
+- 若品牌無英文名稱或官方羅馬拼音，slug_generated 回傳 null（保留現有 slug，不要自行音譯）
 - 長度：最多 40 字元
-- 範例：「茶籽堂」→ chatzutang，「小日子」→ oneday（取自官方英文名 One Day）
+- 範例：「印花樂」→ "inblooom"（品牌官方英文名）
+- 範例：「小日子」→ "oneday"（取自官方英文名 One Day）
+- 範例：「Z研」→ null（無明確英文名，保留現有 slug）
 
 ## 品牌標籤（valueTags）
 為實際品牌提供 2-5 個描述性標籤（繁體中文），例如：「手工製作」、「有機天然」、「台灣在地」、「永續環保」、「文化傳承」。
 非品牌不需要標籤（回傳空陣列 []）。
 
+## 搜尋摘要
+輸入可能包含 Google 搜尋結果摘要，供你判斷品牌性質與分類。
+
 ## 範例
 
 輸入：品牌名：好物嚴選 / 網站：goodstuff.tw
-輸出：{"isNonBrand":true,"nonBrandReason":"選物店，策展銷售多品牌商品，無自有產品","slug_generated":"hao-wu-yan-xuan","productType":null,"confidence":"high","valueTags":[]}
+輸出：{"isNonBrand":true,"nonBrandReason":"選物店，策展銷售多品牌商品，無自有產品","slug_generated":null,"productType":null,"confidence":"high","valueTags":[]}
 
 輸入：品牌名：印花樂 / 網站：inblooom.com
 輸出：{"isNonBrand":false,"nonBrandReason":null,"slug_generated":"inblooom","productType":"home","confidence":"high","valueTags":["台灣設計","印花布料","文創生活"]}
