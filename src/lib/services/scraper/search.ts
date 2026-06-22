@@ -139,11 +139,13 @@ export async function searchBrandWithSnippets(brandName: string): Promise<{ urls
   }
 }
 
+export type BrandSearchResult = { urls: string[], snippets: string[], rawEntries?: unknown[] }
+
 export async function batchSearchBrandsWithSnippets(
   brandNames: string[]
-): Promise<Map<string, { urls: string[], snippets: string[] }>> {
+): Promise<Map<string, BrandSearchResult>> {
   const names = brandNames.slice(0, 20)
-  const results = new Map<string, { urls: string[], snippets: string[] }>()
+  const results = new Map<string, BrandSearchResult>()
 
   for (const brandName of names) {
     results.set(brandName, { urls: [], snippets: [] })
@@ -221,6 +223,7 @@ export async function batchSearchBrandsWithSnippets(
       results.set(brandName, {
         urls: parseApifySerpResults(group),
         snippets: parseApifySerpSnippets(group),
+        rawEntries: group,
       })
     }
 
