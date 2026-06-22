@@ -752,7 +752,7 @@ export async function getBrandBySlug(slug: string): Promise<Brand> {
     .eq('slug', slug)
     .maybeSingle()
 
-  if (error || !data) throw new NotFoundError('Brand', slug)
+  if (error || !data) throw new NotFoundError('Brand', slug, { cause: error })
   return brandToDomain(data)
 }
 
@@ -827,7 +827,7 @@ export async function updateBrand(id: string, data: BrandWriteInput): Promise<Br
     .select(BRAND_SELECT)
     .single()
 
-  if (error || !updated) throw new NotFoundError('Brand', id)
+  if (error || !updated) throw new NotFoundError('Brand', id, { cause: error })
   return brandToDomain(updated)
 }
 
@@ -868,7 +868,7 @@ export async function publishDraft(brandId: string): Promise<Brand> {
     .eq('id', brandId)
     .single()
 
-  if (error || !data) throw new NotFoundError('Brand', brandId)
+  if (error || !data) throw new NotFoundError('Brand', brandId, { cause: error })
 
   const snapshot = draftDataToSnapshot(data.draft_data)
   if (!snapshot) throw new ValidationError('No draft to publish')
@@ -990,7 +990,7 @@ export async function getBrandById(id: string): Promise<Brand> {
     .eq('id', id)
     .single()
 
-  if (error || !data) throw new NotFoundError('Brand', id)
+  if (error || !data) throw new NotFoundError('Brand', id, { cause: error })
   return brandToDomain(data)
 }
 
@@ -1112,7 +1112,7 @@ export async function completeBrandClaim({
 
   if (insertError) {
     if (insertError.code === '23505') {
-      throw new ValidationError('This brand has already been claimed')
+      throw new ValidationError('This brand has already been claimed', { cause: insertError })
     }
     throw insertError
   }

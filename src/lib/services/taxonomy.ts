@@ -159,7 +159,7 @@ export async function updateTag(
     .select('*')
     .single()
 
-  if (error || !updated) throw new NotFoundError('TaxonomyTag', id)
+  if (error || !updated) throw new NotFoundError('TaxonomyTag', id, { cause: error })
   return tagToDomain(updated)
 }
 

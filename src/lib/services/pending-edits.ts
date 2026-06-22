@@ -254,13 +254,10 @@ export async function approvePendingEdit(id: string, reviewerId: string): Promis
   if (error) throw error
 
   const approvedEdit = data as ApprovedPendingEditWithBrandRow
-  let updatedBrand: Brand | null = null
-  try {
-    updatedBrand = await updateBrand(approvedEdit.brand_id, approvedEdit.proposed_data as Partial<Brand>)
-  } catch (updateError) {
-    console.error('[pending-edits:approvePendingEdit] updateBrand failed after approval:', updateError)
-    return
-  }
+  const updatedBrand = await updateBrand(
+    approvedEdit.brand_id,
+    approvedEdit.proposed_data as Partial<Brand>
+  )
 
   const previousBrand = pendingEditWithBrandToDomain(approvedEdit).brand
   const removedImageUrls = diffRemovedImageUrls(

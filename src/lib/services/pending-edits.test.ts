@@ -177,9 +177,9 @@ describe('approvePendingEdit', () => {
     expect(updateBrand).not.toHaveBeenCalled()
   })
 
-  it('logs but does not throw when the brand update fails after approval', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    vi.mocked(updateBrand).mockRejectedValueOnce(new Error('update failed'))
+  it('throws when the brand update fails after approval', async () => {
+    const updateError = new Error('update failed')
+    vi.mocked(updateBrand).mockRejectedValueOnce(updateError)
     const mockUpdate = {
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -192,9 +192,8 @@ describe('approvePendingEdit', () => {
     }
     mockFrom.mockReturnValue(mockUpdate)
 
-    await expect(approvePendingEdit(EDIT_ID, USER_ID)).resolves.toBeUndefined()
-    expect(consoleSpy).toHaveBeenCalled()
-    consoleSpy.mockRestore()
+    await expect(approvePendingEdit(EDIT_ID, USER_ID)).rejects.toThrow(updateError)
+    expect(deleteBrandImages).not.toHaveBeenCalled()
   })
 })
 
