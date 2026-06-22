@@ -4,18 +4,19 @@
  * Queries GA4 property 538232091 daily and writes results to 3 tabs:
  *   Scorecard, Top Pages, Referral Sources
  *
- * Setup:
- *   1. Open this Sheet → Extensions → Apps Script
+ * Setup (standalone script):
+ *   1. Go to https://script.google.com → New project
  *   2. Paste this code into Code.gs
- *   3. In the Apps Script editor: Services (+) → Google Analytics Data API → Add
- *   4. Run setupDailyTrigger() once to schedule daily 7 AM refresh
- *   5. Run refreshGrowthPulseData() manually to test
+ *   3. In the left sidebar: Services (+) → Google Analytics Data API → Add
+ *   4. Run refreshGrowthPulseData() manually to test (authorize when prompted)
+ *   5. Run setupDailyTrigger() once to schedule daily 7 AM refresh
  */
 
 const GA4_PROPERTY_ID = '538232091';
+const SHEET_ID = '1xL25wdLTw82hSIXf7UC51GAvQkSOXDAIohZeuhJSf0k';
 
 function refreshGrowthPulseData() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
   const tz = Session.getScriptTimeZone();
   const now = new Date();
 
