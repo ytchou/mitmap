@@ -1,0 +1,41 @@
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Directory Health — Week of 2026-06-22"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*389 brands total* (+288 this week)\n96% have complete profiles (description + image) · 15 brands missing hero image only"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Broken Links (7):*\n• MÜROU 璽沐 (`murou-璽沐`) — DNS failure (0)\n• RNL Threads (`rnl-threads`) — DNS failure (0)\n• NewStar (`newstar`) — DNS failure (0)\n• 好貼制所 Good Sticker (`好貼制所-good-sticker`) — DNS failure (0)\n• 暖木家居 Warmwood Living (`warmwood-living`) — DNS failure (0)\n• 跟著農夫田裡鬧 (`跟著農夫田裡鬧`) — DNS failure (0)\n• 陽明生醫 (`陽明生醫`) — DNS failure (0)\n\n_230 of 237 remaining URLs returned HTTP 403 — consistent with WAF/bot-blocking rather than genuine breakage; no tickets raised for those._"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Zero Content (0):*\nAll 389 approved brands have at least a description — no zero-content entries found."
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "7 Linear tickets created (DEV-868–DEV-874, High priority, Data Quality label) | Directory Health v1"
+        }
+      ]
+    }
+  ]
+}
