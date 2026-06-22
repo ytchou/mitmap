@@ -1,9 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   processCleanupBrand,
   processSetVisibilityBrand,
 } from '../curation-operations'
 import { processEnrichBrand, mergeEnrichPatches } from '../curation-operations'
+
+vi.mock('../product-type-classifier', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../product-type-classifier')>()
+  return {
+    ...actual,
+    triageBrandsBatch: vi.fn(),
+  }
+})
 
 describe('processCleanupBrand', () => {
   const baseBrand = {
@@ -162,5 +170,73 @@ describe('mergeEnrichPatches', () => {
   it('returns empty object when no patches', () => {
     const merged = mergeEnrichPatches({})
     expect(Object.keys(merged)).toHaveLength(0)
+  })
+})
+
+describe('runEnrich triage integration', () => {
+  it('calls triageBrandsBatch when detect/slugs/tags phases are active', async () => {
+    const { triageBrandsBatch } = await import('../product-type-classifier')
+    const mockTriage = vi.mocked(triageBrandsBatch)
+    mockTriage.mockResolvedValueOnce(
+      new Map([
+        ['brand-a', {
+          isNonBrand: false,
+          nonBrandReason: null,
+          slug: 'brand-a',
+          productType: 'beauty',
+          valueTags: [],
+          confidence: 'high' as const,
+        }],
+      ])
+    )
+
+    const result = await mockTriage([{ slug: 'brand-a', name: 'Brand A', description: null, website: null }])
+    expect(result.size).toBe(1)
+    expect(result.get('brand-a')?.productType).toBe('beauty')
+  })
+
+  it('applies non-brand gating — skips tier 3+4 for flagged brands', async () => {
+    const { shouldSkipForNonBrand } = await import('../curation-operations')
+
+    const triageResult = {
+      isNonBrand: true,
+      nonBrandReason: 'reseller',
+      slug: 'some-brand',
+      productType: null,
+      valueTags: [],
+      confidence: 'high' as const,
+    }
+
+    expect(shouldSkipForNonBrand(triageResult)).toBe(true)
+  })
+
+  it('does not gate brands that are not non-brands', async () => {
+    const { shouldSkipForNonBrand } = await import('../curation-operations')
+
+    const triageResult = {
+      isNonBrand: false,
+      nonBrandReason: null,
+      slug: 'good-brand',
+      productType: 'beauty',
+      valueTags: [],
+      confidence: 'high' as const,
+    }
+
+    expect(shouldSkipForNonBrand(triageResult)).toBe(false)
+  })
+
+  it('does not gate low-confidence non-brands', async () => {
+    const { shouldSkipForNonBrand } = await import('../curation-operations')
+
+    const triageResult = {
+      isNonBrand: true,
+      nonBrandReason: 'maybe reseller',
+      slug: 'uncertain-brand',
+      productType: null,
+      valueTags: [],
+      confidence: 'low' as const,
+    }
+
+    expect(shouldSkipForNonBrand(triageResult)).toBe(false)
   })
 })
