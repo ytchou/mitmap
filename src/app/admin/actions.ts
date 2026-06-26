@@ -94,10 +94,9 @@ export async function approveSubmissionAction(
     const auth = await requireAdmin()
     if ('error' in auth) return auth
 
-    const submission = await getSubmission(submissionId)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formoria.com'
 
-    const { brandId } = await approveSubmission(submissionId, auth.userId, overrides)
+    const { brandId, submitterEmail, brandName, isBrandOwner } = await approveSubmission(submissionId, auth.userId, overrides)
     const brand = await getBrandById(brandId)
     let imageSyncWarning: { synced: number; failed: number } | undefined
 
@@ -117,19 +116,19 @@ export async function approveSubmissionAction(
       }
     }
 
-    if (submission.isBrandOwner) {
-      const token = await generateClaimToken(brandId, submission.submitterEmail, submission.brandName)
+    if (isBrandOwner) {
+      const token = await generateClaimToken(brandId, submitterEmail, brandName)
       const claimUrl = `${siteUrl}/auth/sign-up?claim=${token}`
       sendEmail(await buildClaimEmail({
-        submitterEmail: submission.submitterEmail,
-        brandName: submission.brandName,
+        submitterEmail,
+        brandName,
         claimUrl,
         siteUrl,
       }))
     } else {
       sendEmail(await buildApprovalEmail({
-        submitterEmail: submission.submitterEmail,
-        brandName: submission.brandName,
+        submitterEmail,
+        brandName,
         brandSlug: brand.slug,
         siteUrl,
       }))

@@ -81,6 +81,10 @@ export type SubmissionApprovalOverrides = Partial<
 
 export type ApproveSubmissionResult = {
   brandId: string
+  submitterEmail: string
+  brandName: string
+  submitterName: string | null
+  isBrandOwner: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -258,7 +262,7 @@ export function submissionToBrandBase(row: SubmissionRow): BrandInsert {
     hero_image_url: null,
     status: 'approved',
     is_demo: false,
-    product_type: 'crafts',
+    product_type: null as unknown as string,
     founding_year: null,
     social_instagram: row.social_instagram,
     social_threads: row.social_threads,
@@ -424,7 +428,8 @@ const ADMIN_SUBMISSIONS_SELECT = `
   notified_at,
   is_brand_owner,
   source_attribution,
-  product_type_note
+  product_type_note,
+  enriched_data
 `
 
 const ADMIN_REVIEW_SUBMISSIONS_SELECT = `
@@ -597,7 +602,13 @@ export async function approveSubmission(
     enrichedTagSlugs: enrichedData?.tag_slugs,
     applyProductType: !Object.prototype.hasOwnProperty.call(overrides ?? {}, 'productType'),
   })
-  return { brandId: brand.id }
+  return {
+    brandId: brand.id,
+    submitterEmail: submission.submitter_email,
+    brandName: submission.brand_name,
+    submitterName: submission.submitter_name ?? null,
+    isBrandOwner: submission.is_brand_owner ?? false,
+  }
 }
 
 export async function rejectSubmission(

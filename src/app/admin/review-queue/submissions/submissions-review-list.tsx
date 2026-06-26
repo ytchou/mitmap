@@ -216,7 +216,6 @@ export function SubmissionsReviewList({
   const [rejectNotes, setRejectNotes] = useState('')
   const [overridesById, setOverridesById] = useState<Record<string, OverrideForm>>({})
   const [error, setError] = useState<string | null>(null)
-  const [warning, setWarning] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [enrichJobId, setEnrichJobId] = useState<string | null>(null)
@@ -288,16 +287,11 @@ export function SubmissionsReviewList({
   function handleApprove(submission: BrandSubmissionWithRisk) {
     startTransition(async () => {
       setError(null)
-      setWarning(null)
       const result = await approveSubmissionWithOverridesAction(
         submission.id,
         overridesById[submission.id] ?? createOverrideForm(submission)
       )
       if (result?.error) setError(result.error)
-      else if (result?.imageSyncWarning) {
-        const { synced, failed } = result.imageSyncWarning
-        setWarning(`Approved, but ${failed} of ${synced + failed} image(s) couldn't be downloaded and kept their source URL. Use "Re-sync images" in Brands after fixing the source.`)
-      }
     })
   }
 
@@ -865,10 +859,6 @@ export function SubmissionsReviewList({
                           {error && (
                             <p className="text-sm text-destructive">{error}</p>
                           )}
-                          {warning && (
-                            <p className="text-sm text-amber-700">{warning}</p>
-                          )}
-
                           {submission.status === 'pending' && (
                             <div className="flex items-start gap-3">
                               <Button

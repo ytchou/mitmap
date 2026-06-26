@@ -344,7 +344,7 @@ describe('approveSubmissionAction - taxonomy tag application', () => {
     } as unknown as Awaited<ReturnType<typeof getSubmission>>
     vi.mocked(getSubmission).mockResolvedValue(submission)
     vi.mocked(updateBrand).mockResolvedValue({ id: 'brand-1', slug: 'test-brand' } as Awaited<ReturnType<typeof updateBrand>>)
-    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1' })
+    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1', submitterEmail: 'submitter@example.com', brandName: 'Test Brand', submitterName: null, isBrandOwner: false })
 
     const { approveSubmissionAction } = await import('./actions')
     const result = await approveSubmissionAction('sub-1')
@@ -386,7 +386,7 @@ describe('approveSubmissionAction - taxonomy tag application', () => {
     } as Awaited<ReturnType<typeof getSubmission>>
     vi.mocked(getSubmission).mockResolvedValue(submission)
     vi.mocked(updateBrand).mockResolvedValue({ id: 'brand-1', slug: 'test-brand' } as Awaited<ReturnType<typeof updateBrand>>)
-    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1' })
+    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1', submitterEmail: 'submitter@example.com', brandName: 'Test Brand', submitterName: null, isBrandOwner: false })
     vi.mocked(addTagToBrand).mockResolvedValue(undefined)
 
     const { approveSubmissionAction } = await import('./actions')
@@ -423,7 +423,7 @@ describe('approveSubmissionAction - taxonomy tag application', () => {
     } as unknown as Awaited<ReturnType<typeof getSubmission>>
     vi.mocked(getSubmission).mockResolvedValue(submission)
     vi.mocked(updateBrand).mockResolvedValue({ id: 'brand-1', slug: 'test-brand' } as Awaited<ReturnType<typeof updateBrand>>)
-    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1' })
+    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1', submitterEmail: 'submitter@example.com', brandName: 'Test Brand', submitterName: null, isBrandOwner: false })
 
     const { approveSubmissionAction } = await import('./actions')
     const result = await approveSubmissionAction('sub-1')

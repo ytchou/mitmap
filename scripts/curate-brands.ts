@@ -139,7 +139,7 @@ function printUsage(): void {
   console.log('Options:')
   console.log('  --dry-run')
   console.log('  --slugs=a,b')
-  console.log('  --status=pending')
+  console.log('  --status=approved')
   console.log('  --limit=10')
   console.log('  --phases=clean,detect,slugs,tags,discover,links,images,descriptions  enrich only')
   console.log('  --overwrite                                  re-enrich already enriched brands')
