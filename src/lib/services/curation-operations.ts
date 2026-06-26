@@ -88,6 +88,13 @@ type JsonObject = Record<string, unknown>
 
 const LEGACY_DISPLAY_NAME_KEY = ['display', 'brand', 'name'].join('_')
 
+type SubmissionEnrichmentMergeClient = SupabaseClient & {
+  rpc: (
+    fn: 'merge_brand_submission_enriched_data',
+    args: { p_submission_id: string; p_patch: JsonObject }
+  ) => SupabaseResult<unknown>
+}
+
 function errorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message
@@ -209,11 +216,39 @@ function isPlainObject(value: unknown): value is JsonObject {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
+function mergeProductPhotos(existing: unknown[], incoming: unknown[]): unknown[] {
+  const merged: unknown[] = []
+  const seenUrls = new Set<string>()
+
+  for (const photo of [...existing, ...incoming]) {
+    if (!isPlainObject(photo) || typeof photo.url !== 'string') {
+      merged.push(photo)
+      continue
+    }
+
+    if (seenUrls.has(photo.url)) {
+      continue
+    }
+
+    seenUrls.add(photo.url)
+    merged.push(photo)
+  }
+
+  return merged
+}
+
 function deepMergeJsonObjects(base: JsonObject, patch: JsonObject): JsonObject {
   const merged: JsonObject = { ...base }
 
   for (const [key, value] of Object.entries(patch)) {
     const existing = merged[key]
+    if (Array.isArray(existing) && Array.isArray(value)) {
+      merged[key] = key === 'product_photos'
+        ? mergeProductPhotos(existing, value)
+        : [...new Set([...existing, ...value])]
+      continue
+    }
+
     merged[key] = isPlainObject(existing) && isPlainObject(value)
       ? deepMergeJsonObjects(existing, value)
       : value
@@ -483,22 +518,14 @@ async function persistSubmissionEnrichmentResults(
   submissionId: string,
   patch: Partial<EnrichedData>
 ): Promise<void> {
-  const { data: submission, error: submissionError } = await supabase
-    .from('brand_submissions')
-    .select('enriched_data')
-    .eq('id', submissionId)
-    .single()
-
-  if (submissionError) {
-    throw new Error(submissionError.message ?? 'Failed to fetch brand submission enrichment')
-  }
-
-  const existing = isPlainObject(submission?.enriched_data) ? submission.enriched_data : {}
-  const merged = deepMergeJsonObjects(existing, patch)
-  const { error: updateError } = await supabase
-    .from('brand_submissions')
-    .update({ enriched_data: merged })
-    .eq('id', submissionId)
+  const normalizedPatch = deepMergeJsonObjects({}, patch as JsonObject)
+  const { error: updateError } = await (supabase as SubmissionEnrichmentMergeClient).rpc(
+    'merge_brand_submission_enriched_data',
+    {
+      p_submission_id: submissionId,
+      p_patch: normalizedPatch,
+    }
+  )
 
   if (updateError) {
     throw new Error(updateError.message ?? 'Failed to update brand submission enrichment')
@@ -548,6 +575,10 @@ export async function enrichSubmission(
   }
 
   const submission = data as SubmissionEnrichmentRow
+  if (submission.status !== 'pending') {
+    throw new Error('Cannot enrich non-pending submission')
+  }
+
   const phases = [...ENRICH_PHASES] as RunEnrichPhase[]
   const brand = submissionToEnrichBrand(submission)
   const brandDisplayName = displayBrandName(brand)
