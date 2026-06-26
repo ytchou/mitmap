@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { processEnrichBrand, mergeEnrichPatches } from '../curation-operations'
 import type { CurationConfig } from '../curation-operations'
+import { describeWithDb } from '@/test/setup'
 
 vi.mock('../product-type-classifier', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../product-type-classifier')>()
@@ -218,23 +219,26 @@ describe('runEnrich triage integration', () => {
   })
 })
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabase =
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      )
+    : null
 
-describe('enrichment write routing', () => {
+describeWithDb('enrichment write routing', () => {
   const testBrandName = '[TEST-ENRICH-ROUTE] Brand'
   let testBrandId: string | null = null
 
   afterEach(async () => {
     if (testBrandId) {
-      await supabase.from('brands').delete().eq('id', testBrandId)
+      await supabase!.from('brands').delete().eq('id', testBrandId)
     }
   })
 
   it('writes enrichment directly to brands table for hidden brands', async () => {
-    const { data: brand } = await supabase
+    const { data: brand } = await supabase!
       .from('brands')
       .insert({ name: testBrandName, slug: 'test-enrich-route', status: 'hidden' })
       .select('id')
@@ -243,13 +247,13 @@ describe('enrichment write routing', () => {
     testBrandId = brandId
 
     const { persistEnrichmentResults } = await import('../curation-operations')
-    await persistEnrichmentResults(supabase, brandId, {
+    await persistEnrichmentResults(supabase!, brandId, {
       description: 'Enriched description',
       hero_image_url: 'https://example.com/hero.jpg',
       product_type: 'crafts',
     })
 
-    const { data: updatedBrand } = await supabase
+    const { data: updatedBrand } = await supabase!
       .from('brands')
       .select('description, hero_image_url, product_type')
       .eq('id', brandId)
@@ -260,7 +264,7 @@ describe('enrichment write routing', () => {
   })
 
   it('writes enrichment directly to brands table for approved brands', async () => {
-    const { data: brand } = await supabase
+    const { data: brand } = await supabase!
       .from('brands')
       .insert({ name: testBrandName, slug: 'test-enrich-route-approved', status: 'approved' })
       .select('id')
@@ -269,11 +273,11 @@ describe('enrichment write routing', () => {
     testBrandId = brandId
 
     const { persistEnrichmentResults } = await import('../curation-operations')
-    await persistEnrichmentResults(supabase, brandId, {
+    await persistEnrichmentResults(supabase!, brandId, {
       description: 'Updated description',
     })
 
-    const { data: updatedBrand } = await supabase
+    const { data: updatedBrand } = await supabase!
       .from('brands')
       .select('description')
       .eq('id', brandId)
@@ -282,9 +286,9 @@ describe('enrichment write routing', () => {
   })
 })
 
-describe("enrichment for submissions without brand_id", () => {
+describeWithDb("enrichment for submissions without brand_id", () => {
   it("enriches a submission directly using submission data as input", async () => {
-    const { data: submission } = await supabase
+    const { data: submission } = await supabase!
       .from("brand_submissions")
       .insert({
         brand_name: "[TEST-ENRICH-SUB] Brand",
@@ -299,9 +303,9 @@ describe("enrichment for submissions without brand_id", () => {
     const testSubmissionId = submission!.id
 
     const { enrichSubmission } = await import("../curation-operations")
-    await enrichSubmission(supabase, testSubmissionId)
+    await enrichSubmission(supabase!, testSubmissionId)
 
-    const { data: updated } = await supabase
+    const { data: updated } = await supabase!
       .from("brand_submissions")
       .select("enriched_data")
       .eq("id", testSubmissionId)
@@ -310,6 +314,6 @@ describe("enrichment for submissions without brand_id", () => {
     expect(updated!.enriched_data).toBeDefined()
     expect(updated!.enriched_data).toHaveProperty("description")
 
-    await supabase.from("brand_submissions").delete().eq("id", testSubmissionId)
+    await supabase!.from("brand_submissions").delete().eq("id", testSubmissionId)
   })
 })

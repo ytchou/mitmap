@@ -1,30 +1,30 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { it, expect, afterEach } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import { approveSubmission, rejectSubmission } from '@/lib/services/submissions'
+import { describeWithDb } from '@/test/setup'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabase =
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      )
+    : null
 
-if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
-}
-
-const supabase = createClient<Database>(supabaseUrl, serviceRoleKey)
-
-describe('admin submission rejection', () => {
+describeWithDb('admin submission rejection', () => {
   const testBrandName = '[TEST-REJECT] Submission First Brand'
   const reviewerId = '00000000-0000-4000-8000-000000000001'
 
   afterEach(async () => {
-    await supabase.from('brand_submissions').delete().eq('brand_name', testBrandName)
-    await supabase.from('brands').delete().eq('name', testBrandName)
+    await supabase!.from('brand_submissions').delete().eq('brand_name', testBrandName)
+    await supabase!.from('brands').delete().eq('name', testBrandName)
   })
 
   it('rejects a submission without touching the brands table', async () => {
     const reviewerNotes = 'Not enough product details yet'
 
-    const { data: inserted, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabase!
       .from('brand_submissions')
       .insert({
         brand_id: null,
@@ -40,7 +40,7 @@ describe('admin submission rejection', () => {
 
     await rejectSubmission(inserted!.id, reviewerId, reviewerNotes)
 
-    const { data: submission, error: submissionError } = await supabase
+    const { data: submission, error: submissionError } = await supabase!
       .from('brand_submissions')
       .select('status, reviewer_notes, reviewed_at, reviewed_by, brand_id')
       .eq('id', inserted!.id)
@@ -54,7 +54,7 @@ describe('admin submission rejection', () => {
     expect(submission!.reviewed_by).toBe(reviewerId)
     expect(submission!.brand_id).toBeNull()
 
-    const { data: brands, error: brandsError } = await supabase
+    const { data: brands, error: brandsError } = await supabase!
       .from('brands')
       .select('id')
       .eq('name', testBrandName)
@@ -64,7 +64,7 @@ describe('admin submission rejection', () => {
   })
 })
 
-describe('approveSubmissionAction (submission-first)', () => {
+describeWithDb('approveSubmissionAction (submission-first)', () => {
   const testBrandNamePrefix = '[TEST-APPROVE]'
   const reviewerId = 'admin@example.com'
   const submissionIds: string[] = []
@@ -72,28 +72,28 @@ describe('approveSubmissionAction (submission-first)', () => {
 
   afterEach(async () => {
     if (submissionIds.length > 0) {
-      await supabase.from('brand_submissions').delete().in('id', submissionIds)
+      await supabase!.from('brand_submissions').delete().in('id', submissionIds)
       submissionIds.length = 0
     }
 
     if (brandIds.length > 0) {
-      await supabase.from('brand_taxonomy').delete().in('brand_id', brandIds)
-      await supabase.from('brands').delete().in('id', brandIds)
+      await supabase!.from('brand_taxonomy').delete().in('brand_id', brandIds)
+      await supabase!.from('brands').delete().in('id', brandIds)
       brandIds.length = 0
     }
 
-    const { data: leftoverBrands } = await supabase
+    const { data: leftoverBrands } = await supabase!
       .from('brands')
       .select('id')
       .like('name', `${testBrandNamePrefix}%`)
 
     const leftoverBrandIds = (leftoverBrands ?? []).map((brand) => brand.id)
     if (leftoverBrandIds.length > 0) {
-      await supabase.from('brand_taxonomy').delete().in('brand_id', leftoverBrandIds)
-      await supabase.from('brands').delete().in('id', leftoverBrandIds)
+      await supabase!.from('brand_taxonomy').delete().in('brand_id', leftoverBrandIds)
+      await supabase!.from('brands').delete().in('id', leftoverBrandIds)
     }
 
-    await supabase
+    await supabase!
       .from('brand_submissions')
       .delete()
       .like('brand_name', `${testBrandNamePrefix}%`)
@@ -101,7 +101,7 @@ describe('approveSubmissionAction (submission-first)', () => {
 
   it('creates a brand from submission fields + enriched_data on approval', async () => {
     const testBrandName = `${testBrandNamePrefix} Enriched Brand`
-    const { data: inserted, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabase!
       .from('brand_submissions')
       .insert({
         brand_id: null,
@@ -125,10 +125,10 @@ describe('approveSubmissionAction (submission-first)', () => {
     expect(inserted).not.toBeNull()
     submissionIds.push(inserted!.id)
 
-    const result = await approveSubmission(supabase, inserted!.id, reviewerId)
+    const result = await approveSubmission(supabase!, inserted!.id, reviewerId)
     brandIds.push(result.brandId)
 
-    const { data: brand, error: brandError } = await supabase
+    const { data: brand, error: brandError } = await supabase!
       .from('brands')
       .select('id, name, status, description, hero_image_url, product_photos, product_type, purchase_website, social_instagram')
       .eq('id', result.brandId)
@@ -145,7 +145,7 @@ describe('approveSubmissionAction (submission-first)', () => {
     expect(brand!.purchase_website).toBe('https://submission.example.com')
     expect(brand!.social_instagram).toBe('submission_ig')
 
-    const { data: submission, error: submissionError } = await supabase
+    const { data: submission, error: submissionError } = await supabase!
       .from('brand_submissions')
       .select('brand_id, status')
       .eq('id', inserted!.id)
@@ -159,7 +159,7 @@ describe('approveSubmissionAction (submission-first)', () => {
 
   it('applies admin overrides with highest priority', async () => {
     const testBrandName = `${testBrandNamePrefix} Override Brand`
-    const { data: inserted, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabase!
       .from('brand_submissions')
       .insert({
         brand_id: null,
@@ -179,12 +179,12 @@ describe('approveSubmissionAction (submission-first)', () => {
     expect(inserted).not.toBeNull()
     submissionIds.push(inserted!.id)
 
-    const result = await approveSubmission(supabase, inserted!.id, reviewerId, {
+    const result = await approveSubmission(supabase!, inserted!.id, reviewerId, {
       description: 'Admin override description',
     })
     brandIds.push(result.brandId)
 
-    const { data: brand, error: brandError } = await supabase
+    const { data: brand, error: brandError } = await supabase!
       .from('brands')
       .select('description, product_type')
       .eq('id', result.brandId)
