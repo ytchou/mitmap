@@ -1,7 +1,9 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { cleanBrandName } from './brand-cleanup'
 import { insertSlugRedirect } from './brands'
 import type { BrandFlatLinkColumns } from '@/lib/types'
 import type { ScrapedBrandData } from '@/lib/types/scraper'
+import type { EnrichedData } from '@/lib/types/enriched-data'
 import {
   buildImageEnrichPatch,
   buildLinkEnrichPatch,
@@ -80,6 +82,8 @@ type BrandsTable = {
 type SupabaseLike = {
   from: (table: 'brands') => BrandsTable
 }
+
+type JsonObject = Record<string, unknown>
 
 const LEGACY_DISPLAY_NAME_KEY = ['display', 'brand', 'name'].join('_')
 
@@ -168,6 +172,23 @@ function isRequestedPhase(phases: string[], phase: EnrichPhase): boolean {
 
 function hasPatchValues(patch: object): boolean {
   return Object.keys(patch).length > 0
+}
+
+function isPlainObject(value: unknown): value is JsonObject {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function deepMergeJsonObjects(base: JsonObject, patch: JsonObject): JsonObject {
+  const merged: JsonObject = { ...base }
+
+  for (const [key, value] of Object.entries(patch)) {
+    const existing = merged[key]
+    merged[key] = isPlainObject(existing) && isPlainObject(value)
+      ? deepMergeJsonObjects(existing, value)
+      : value
+  }
+
+  return merged
 }
 
 function uniqueUrls(urls: string[]): string[] {
@@ -346,6 +367,59 @@ export function mergeEnrichPatches(patches: EnrichPatches): EnrichPatch {
     ...patches.images,
     ...patches.descriptions,
     ...patches.tags,
+  }
+}
+
+export async function persistEnrichmentResults(
+  supabase: SupabaseClient,
+  brandId: string,
+  patch: Partial<EnrichedData>
+): Promise<void> {
+  const { data: brand, error: brandError } = await supabase
+    .from('brands')
+    .select('status')
+    .eq('id', brandId)
+    .single()
+
+  if (brandError) {
+    throw new Error(brandError.message ?? 'Failed to fetch brand status')
+  }
+
+  if (brand?.status === 'pending') {
+    const { data: submission, error: submissionError } = await supabase
+      .from('brand_submissions')
+      .select('id, enriched_data')
+      .eq('brand_id', brandId)
+      .single()
+
+    if (submissionError) {
+      throw new Error(submissionError.message ?? 'Failed to fetch linked brand submission')
+    }
+
+    const existing = isPlainObject(submission?.enriched_data) ? submission.enriched_data : {}
+    const merged = deepMergeJsonObjects(existing, patch)
+    const { error: updateError } = await supabase
+      .from('brand_submissions')
+      .update({ enriched_data: merged })
+      .eq('id', submission.id)
+
+    if (updateError) {
+      throw new Error(updateError.message ?? 'Failed to update brand submission enrichment')
+    }
+
+    return
+  }
+
+  const { error: updateError } = await supabase
+    .from('brands')
+    .update({
+      ...patch,
+      brand_enriched_at: new Date().toISOString(),
+    } as never)
+    .eq('id', brandId)
+
+  if (updateError) {
+    throw new Error(updateError.message ?? 'Failed to update brand')
   }
 }
 
@@ -693,16 +767,14 @@ export async function runEnrich(
               rawResponse: { description: descriptionRewrite },
             })
           }
-          const now = new Date().toISOString()
-          const timestamps: Record<string, string> = {}
-          timestamps.brand_enriched_at = now
-          const { error: updateError } = await supabase
-            .from('brands')
-            .update({ ...patch, ...timestamps } as unknown as CurationPatch)
-            .eq('id', brand.id)
-
-          if (updateError) {
-            const errMsg = updateError.message ?? 'Failed to update brand'
+          try {
+            await persistEnrichmentResults(
+              supabase as unknown as SupabaseClient,
+              brand.id,
+              patch as Partial<EnrichedData>
+            )
+          } catch (err) {
+            const errMsg = errorMessage(err)
             result.errors.push(`${brand.slug}: ${errMsg}`)
             result.brandOutcomes.push({ slug: brand.slug, name: brandName(brand), status: 'failed', error: errMsg })
             result.skipped += 1

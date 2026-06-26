@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { createClient } from '@supabase/supabase-js'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { processEnrichBrand, mergeEnrichPatches } from '../curation-operations'
 import type { CurationConfig } from '../curation-operations'
 
@@ -214,5 +215,95 @@ describe('runEnrich triage integration', () => {
     }
 
     expect(shouldSkipForNonBrand(triageResult)).toBe(false)
+  })
+})
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+describe('enrichment write routing', () => {
+  const testBrandName = '[TEST-ENRICH-ROUTE] Brand'
+  let testBrandId: string | null = null
+  let testSubmissionId: string | null = null
+
+  afterEach(async () => {
+    if (testSubmissionId) {
+      await supabase.from('brand_submissions').delete().eq('id', testSubmissionId)
+    }
+    if (testBrandId) {
+      await supabase.from('brands').delete().eq('id', testBrandId)
+    }
+  })
+
+  it('writes enrichment to brand_submissions.enriched_data for pending brands', async () => {
+    const { data: brand } = await supabase
+      .from('brands')
+      .insert({ name: testBrandName, slug: 'test-enrich-route', status: 'pending' })
+      .select('id')
+      .single()
+    const brandId = brand!.id
+    testBrandId = brandId
+
+    const { data: submission } = await supabase
+      .from('brand_submissions')
+      .insert({
+        brand_id: brandId,
+        brand_name: testBrandName,
+        submitter_email: 'test@example.com',
+        status: 'pending',
+      })
+      .select('id')
+      .single()
+    testSubmissionId = submission!.id
+
+    const { persistEnrichmentResults } = await import('../curation-operations')
+    await persistEnrichmentResults(supabase, brandId, {
+      description: 'Enriched description',
+      hero_image_url: 'https://example.com/hero.jpg',
+      product_type: 'crafts',
+    })
+
+    const { data: updatedSubmission } = await supabase
+      .from('brand_submissions')
+      .select('enriched_data')
+      .eq('id', testSubmissionId)
+      .single()
+    expect(updatedSubmission!.enriched_data).toMatchObject({
+      description: 'Enriched description',
+      hero_image_url: 'https://example.com/hero.jpg',
+      product_type: 'crafts',
+    })
+
+    const { data: unchangedBrand } = await supabase
+      .from('brands')
+      .select('description, hero_image_url')
+      .eq('id', brandId)
+      .single()
+    expect(unchangedBrand!.description).toBeNull()
+    expect(unchangedBrand!.hero_image_url).toBeNull()
+  })
+
+  it('writes enrichment directly to brands table for approved brands', async () => {
+    const { data: brand } = await supabase
+      .from('brands')
+      .insert({ name: testBrandName, slug: 'test-enrich-route-approved', status: 'approved' })
+      .select('id')
+      .single()
+    const brandId = brand!.id
+    testBrandId = brandId
+
+    const { persistEnrichmentResults } = await import('../curation-operations')
+    await persistEnrichmentResults(supabase, brandId, {
+      description: 'Updated description',
+    })
+
+    const { data: updatedBrand } = await supabase
+      .from('brands')
+      .select('description')
+      .eq('id', brandId)
+      .single()
+    expect(updatedBrand!.description).toBe('Updated description')
   })
 })
