@@ -99,11 +99,22 @@ export async function approveSubmissionAction(
 
     const { brandId } = await approveSubmission(submissionId, auth.userId, overrides)
     const brand = await getBrandById(brandId)
+    let imageSyncWarning: { synced: number; failed: number } | undefined
 
     try {
       await markFlagsReviewed(brandId)
     } catch (err) {
       console.error('[admin] markFlagsReviewed failed:', err)
+    }
+
+    if (brand.heroImageUrl) {
+      try {
+        const syncResult = await syncBrandImages(brandId)
+        if (syncResult.failed > 0) imageSyncWarning = syncResult
+      } catch (err) {
+        console.error('[admin] syncBrandImages failed:', err)
+        imageSyncWarning = { synced: 0, failed: 1 }
+      }
     }
 
     if (submission.isBrandOwner) {
@@ -128,6 +139,7 @@ export async function approveSubmissionAction(
     revalidatePath('/admin')
     revalidatePath('/')
     revalidatePath('/brands')
+    if (imageSyncWarning) return { imageSyncWarning }
     return undefined
   } catch (err) {
     console.error('[admin:approveSubmission]', err)

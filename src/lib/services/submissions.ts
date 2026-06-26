@@ -4,7 +4,7 @@ import type { Database } from '@/lib/supabase/database.types'
 import type { EnrichedData } from '@/lib/types/enriched-data'
 import { NotFoundError } from '@/lib/errors'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { generateSlug } from '@/lib/services/brands'
+import { generateSlug, isReservedSlug } from '@/lib/services/brands'
 import { addTagToBrand, getTagBySlug } from '@/lib/services/taxonomy'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -26,6 +26,9 @@ type SubmissionRowWithProductTypeNote = SubmissionRow & {
 export type BrandSubmissionWithProductTypeNote = BrandSubmission & {
   websiteUrl: string | null
   productTypeNote: string | null
+}
+export type BrandSubmissionForReview = BrandSubmissionWithProductTypeNote & {
+  enriched_data: EnrichedData | null
 }
 
 /**
@@ -210,6 +213,10 @@ function isStructuredTags(v: unknown): v is { region?: string; values?: string[]
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
+function isEnrichedData(value: unknown): value is EnrichedData {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 function normalizeString(value: string | null | undefined): string | null {
   const trimmed = value?.trim() ?? ''
   return trimmed ? trimmed : null
@@ -321,28 +328,47 @@ function approvalOverridesToBrandInsert(
 async function applySuggestedTags(
   supabase: ServiceClient,
   brandId: string,
-  suggestedTags: SubmissionRow['suggested_tags']
+  suggestedTags: SubmissionRow['suggested_tags'],
+  options?: { enrichedTagSlugs?: string[]; applyProductType?: boolean }
 ): Promise<void> {
-  if (!isStructuredTags(suggestedTags)) return
-
   const tagSlugs = [
-    suggestedTags.region,
-    ...(Array.isArray(suggestedTags.values) ? suggestedTags.values : []),
+    ...(isStructuredTags(suggestedTags) ? [suggestedTags.region] : []),
+    ...(isStructuredTags(suggestedTags) && Array.isArray(suggestedTags.values) ? suggestedTags.values : []),
+    ...(options?.enrichedTagSlugs ?? []),
   ].filter((slug): slug is string => Boolean(slug))
 
   await Promise.all(
-    tagSlugs.map(async (slug) => {
+    [...new Set(tagSlugs)].map(async (slug) => {
       const tag = await getTagBySlug(slug)
       if (tag) await addTagToBrand(brandId, tag.id)
     })
   )
 
-  if (suggestedTags.productType) {
+  if (isStructuredTags(suggestedTags) && suggestedTags.productType && options?.applyProductType !== false) {
     const { error } = await supabase
       .from('brands')
       .update({ product_type: suggestedTags.productType })
       .eq('id', brandId)
     if (error) throw error
+  }
+}
+
+async function resolveUniqueSlug(supabase: ServiceClient, slug: string): Promise<string> {
+  let candidate = slug
+  let suffix = 2
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('slug', candidate)
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data && !isReservedSlug(candidate)) return candidate
+
+    candidate = `${slug}-${suffix}`
+    suffix += 1
   }
 }
 
@@ -401,6 +427,37 @@ const ADMIN_SUBMISSIONS_SELECT = `
   product_type_note
 `
 
+const ADMIN_REVIEW_SUBMISSIONS_SELECT = `
+  id,
+  brand_id,
+  brand_name,
+  submitter_email,
+  submitter_name,
+  description,
+  website_url,
+  social_instagram,
+  social_threads,
+  social_facebook,
+  purchase_website,
+  purchase_pinkoi,
+  purchase_shopee,
+  other_urls,
+  suggested_tags,
+  status,
+  reviewer_notes,
+  submitted_at,
+  reviewed_at,
+  reviewed_by,
+  pdpa_consent_at,
+  validation_status,
+  validation_errors,
+  notified_at,
+  is_brand_owner,
+  source_attribution,
+  product_type_note,
+  enriched_data
+`
+
 export async function getAdminSubmissions(): Promise<BrandSubmissionWithProductTypeNote[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
@@ -410,6 +467,21 @@ export async function getAdminSubmissions(): Promise<BrandSubmissionWithProductT
 
   if (error) throw error
   return ((data ?? []) as SubmissionRowWithProductTypeNote[]).map(submissionToDomain)
+}
+
+export async function getSubmissionsForReview(): Promise<BrandSubmissionForReview[]> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('brand_submissions')
+    .select(ADMIN_REVIEW_SUBMISSIONS_SELECT)
+    .order('submitted_at', { ascending: false })
+
+  if (error) throw error
+
+  return ((data ?? []) as SubmissionRow[]).map((row) => ({
+    ...submissionToDomain(row as SubmissionRowWithProductTypeNote),
+    enriched_data: isEnrichedData(row.enriched_data) ? row.enriched_data : null,
+  }))
 }
 
 export async function getSubmission(id: string): Promise<BrandSubmission> {
@@ -478,18 +550,25 @@ export async function approveSubmission(
     throw new NotFoundError('BrandSubmission', id, { cause: fetchError })
   }
 
+  if (submission.status !== 'pending' || submission.brand_id !== null) {
+    throw new Error('Submission already processed')
+  }
+
   const enrichedData = (submission.enriched_data ?? null) as EnrichedData | null
+  const overrideInsert = approvalOverridesToBrandInsert(overrides)
+  const enrichedInsert = enrichedDataToBrandInsert(enrichedData)
   const brandName =
-    approvalOverridesToBrandInsert(overrides).name ??
-    enrichedDataToBrandInsert(enrichedData).name ??
+    overrideInsert.name ??
+    enrichedInsert.name ??
     submission.brand_name
+  const slug = await resolveUniqueSlug(supabase, generateSlug(brandName))
 
   const brandInsert: BrandInsert = {
     ...submissionToBrandBase(submission),
-    ...enrichedDataToBrandInsert(enrichedData),
-    ...approvalOverridesToBrandInsert(overrides),
+    ...enrichedInsert,
+    ...overrideInsert,
     name: brandName,
-    slug: generateSlug(brandName),
+    slug,
     status: 'approved',
   }
 
@@ -514,7 +593,10 @@ export async function approveSubmission(
     .single()
 
   if (error || !data) throw new NotFoundError('BrandSubmission', id, { cause: error })
-  await applySuggestedTags(supabase, brand.id, submission.suggested_tags)
+  await applySuggestedTags(supabase, brand.id, submission.suggested_tags, {
+    enrichedTagSlugs: enrichedData?.tag_slugs,
+    applyProductType: !Object.prototype.hasOwnProperty.call(overrides ?? {}, 'productType'),
+  })
   return { brandId: brand.id }
 }
 
