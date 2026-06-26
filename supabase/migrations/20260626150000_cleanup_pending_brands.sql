@@ -28,7 +28,11 @@ WHERE brand_id IN (SELECT id FROM brands WHERE status = 'pending');
 -- 3. Delete all pending brands (also deletes brand_taxonomy via CASCADE)
 DELETE FROM brands WHERE status = 'pending';
 
--- 4. Delete all rejected brands (if any exist)
+-- 4. NULL out brand_submissions.brand_id for rejected brand references, then delete
+UPDATE brand_submissions
+SET brand_id = NULL
+WHERE brand_id IN (SELECT id FROM brands WHERE status = 'rejected');
+
 DELETE FROM brands WHERE status = 'rejected';
 
 -- 5. Alter FK to ON DELETE SET NULL
