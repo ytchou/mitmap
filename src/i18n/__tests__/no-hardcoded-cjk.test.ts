@@ -52,6 +52,8 @@ const ALLOWLIST = [
   'lib/services/scraper/search.ts',
   // Enrich-phase labels are admin-only display constants (not user-facing i18n copy).
   'lib/constants/enrich-phases.ts',
+  // Field labels are admin-only display constants (not user-facing i18n copy).
+  'lib/constants/field-labels.ts',
   // Enrich-phase search queries use Chinese keywords to find Taiwan brand data (not UI copy).
   'lib/services/enrich-phases/discover.ts',
   'lib/services/enrich-phases/image-search.ts',
