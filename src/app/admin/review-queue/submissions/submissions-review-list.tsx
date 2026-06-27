@@ -4,7 +4,14 @@ import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from 'r
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import type { BrandSubmission, OtherUrl, SourceAttribution, SubmissionStatus } from '@/lib/types'
+import {
+  DENIAL_REASONS,
+  type BrandSubmission,
+  type DenialReason,
+  type OtherUrl,
+  type SourceAttribution,
+  type SubmissionStatus,
+} from '@/lib/types'
 import type { EnrichedData } from '@/lib/types/enriched-data'
 import { SubmissionStatusBadge } from '@/components/admin/status-badge'
 import { rejectSubmissionAction } from '@/app/admin/actions'
@@ -210,9 +217,11 @@ export function SubmissionsReviewList({
   taxonomyTags: ReviewTaxonomyTag[]
 }) {
   const moderationT = useTranslations('admin.moderation')
+  const denialReasonsT = useTranslations('admin.submissions.denialReasons')
   const [activeTab, setActiveTab] = useState<TabValue>('pending')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
+  const [rejectReason, setRejectReason] = useState<DenialReason | ''>('')
   const [rejectNotes, setRejectNotes] = useState('')
   const [overridesById, setOverridesById] = useState<Record<string, OverrideForm>>({})
   const [error, setError] = useState<string | null>(null)
@@ -243,6 +252,7 @@ export function SubmissionsReviewList({
         : { ...prev, [submission.id]: createOverrideForm(submission) }
     ))
     setRejectingId(null)
+    setRejectReason('')
     setRejectNotes('')
     setError(null)
   }
@@ -298,14 +308,26 @@ export function SubmissionsReviewList({
   function handleReject(id: string) {
     if (rejectingId !== id) {
       setRejectingId(id)
+      setRejectReason('')
+      setRejectNotes('')
+      setError(null)
+      return
+    }
+    if (!rejectReason) {
+      setError('請選擇拒絕原因')
+      return
+    }
+    if (rejectReason === 'other' && !rejectNotes.trim()) {
+      setError('請填寫補充說明')
       return
     }
     startTransition(async () => {
       setError(null)
-      const result = await rejectSubmissionAction(id, rejectNotes)
+      const result = await rejectSubmissionAction(id, rejectReason, rejectNotes)
       if (result?.error) setError(result.error)
       else {
         setRejectingId(null)
+        setRejectReason('')
         setRejectNotes('')
       }
     })
@@ -873,15 +895,46 @@ export function SubmissionsReviewList({
                               </Button>
                               <div className="flex-1">
                                 {rejectingId === submission.id && (
-                                  <Textarea
-                                    placeholder="退件原因（選填）"
-                                    value={rejectNotes}
-                                    onChange={(e) =>
-                                      setRejectNotes(e.target.value)
-                                    }
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="mb-2"
-                                  />
+                                  <div className="mb-2 space-y-3">
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-semibold text-foreground">
+                                        拒絕原因 <span className="text-destructive">*</span>
+                                      </label>
+                                      <Select
+                                        value={rejectReason}
+                                        onValueChange={(value) =>
+                                          setRejectReason(value as DenialReason)
+                                        }
+                                      >
+                                        <SelectTrigger
+                                          aria-label="拒絕原因"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="h-12 w-full focus-visible:ring-2 focus-visible:ring-[#2F5D50]/60"
+                                        >
+                                          <SelectValue placeholder="選擇拒絕原因" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start">
+                                          {DENIAL_REASONS.map((reason) => (
+                                            <SelectItem key={reason} value={reason}>
+                                              {denialReasonsT(reason)}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <Textarea
+                                      placeholder={
+                                        rejectReason === 'other'
+                                          ? '補充說明（必填）'
+                                          : '補充說明（選填）'
+                                      }
+                                      value={rejectNotes}
+                                      onChange={(e) =>
+                                        setRejectNotes(e.target.value)
+                                      }
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
                                 )}
                                 <Button
                                   variant="destructive"
@@ -889,7 +942,7 @@ export function SubmissionsReviewList({
                                     e.stopPropagation()
                                     handleReject(submission.id)
                                   }}
-                                  disabled={isPending}
+                                  disabled={isPending || (rejectingId === submission.id && !rejectReason)}
                                 >
                                   {rejectingId === submission.id
                                     ? '確認拒絕'
