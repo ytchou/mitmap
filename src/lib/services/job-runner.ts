@@ -12,24 +12,12 @@ import {
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/supabase/database.types'
 
-export const VALID_OPERATIONS = ['enrich'] as const
-export const DEPRECATED_OPERATIONS = [
-  'clean-names',
-  'normalize-slugs',
-  'detect-non-brands',
-  'enrich-descriptions',
-  'enrich-links',
-  'enrich-images',
-  'score-and-scrape',
-  'set-visibility',
-] as const
-
 const STALE_JOB_MINUTES = 30
 const STALE_PENDING_JOB_MINUTES = 10
 
 type Supabase = ReturnType<typeof createServiceClient>
 type OperationSupabase = Parameters<typeof runEnrich>[1]
-type ValidOperation = (typeof VALID_OPERATIONS)[number]
+type ValidOperation = 'enrich'
 type CurationJobStatus = 'pending' | 'running' | 'completed' | 'failed'
 type EnrichPhase = (typeof ENRICH_PHASES)[number]
 type EnrichTarget = 'brands' | 'submissions'
@@ -81,23 +69,10 @@ type CurationJobsMutation = PromiseLike<{ error: { message: string } | null }> &
   or: (filter: string) => CurationJobsMutation
 }
 type CurationJobsTable = {
-  select: (columns: string) => {
-    eq: (column: string, value: string) => {
-      single: () => Promise<{ data: CurationJob | null; error: { message: string } | null }>
-    }
-  }
   update: (patch: CurationJobUpdate) => CurationJobsMutation
 }
 type CurationJobsFrom = (table: 'curation_jobs') => CurationJobsTable
 type RevalidateTagOneArg = (tag: string) => void
-
-export async function fetchJob(jobId: string): Promise<{ data: CurationJob | null; error: { message: string } | null }> {
-  const supabase = createServiceClient()
-  return curationJobs(supabase)
-    .select('*')
-    .eq('id', jobId)
-    .single()
-}
 
 export async function runJob(job: CurationJob): Promise<EnrichmentSummary> {
   const supabase = createServiceClient()
@@ -171,11 +146,22 @@ async function runOperation(supabase: Supabase, job: CurationJob): Promise<Opera
 }
 
 function parseOperation(operation: string): ValidOperation {
-  if ((VALID_OPERATIONS as readonly string[]).includes(operation)) {
-    return operation as ValidOperation
+  if (operation === 'enrich') {
+    return operation
   }
 
-  if ((DEPRECATED_OPERATIONS as readonly string[]).includes(operation)) {
+  if (
+    [
+      'clean-names',
+      'normalize-slugs',
+      'detect-non-brands',
+      'enrich-descriptions',
+      'enrich-links',
+      'enrich-images',
+      'score-and-scrape',
+      'set-visibility',
+    ].includes(operation)
+  ) {
     console.warn(`[admin:run-job] Deprecated operation requested: ${operation}`)
     throw new Error('Operation removed — use enrich instead')
   }

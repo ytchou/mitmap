@@ -101,33 +101,6 @@ export async function startCurationJobAction(
   }
 }
 
-export async function getCurationJobAction(
-  jobId: string
-): Promise<{ job: CurationJob | null } | { error: string }> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    const supabase = createServiceClient()
-    const { data: job, error } = await supabase
-      .from('curation_jobs')
-      .select('*')
-      .eq('id', jobId)
-      .single()
-
-    if (error) {
-      return { error: error.message }
-    }
-
-    return { job: job as CurationJob }
-  } catch (err) {
-    console.error('[admin:getCurationJobAction]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
 export async function listCurationJobsAction(
   options?: { limit?: number }
 ): Promise<{ jobs: CurationJob[] } | { error: string }> {
