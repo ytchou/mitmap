@@ -1,9 +1,9 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import Link from 'next/link'
+import { Fragment, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 import {
   DENIAL_REASONS,
   type BrandSubmission,
@@ -19,11 +19,7 @@ import {
   approveSubmissionWithOverridesAction,
   type SubmissionApprovalOverrides,
 } from './actions'
-import {
-  startCurationJobAction,
-  getCurationJobAction,
-  type CurationJob,
-} from '@/app/admin/operations/actions'
+import { startCurationJobAction } from '@/app/admin/operations/actions'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -219,6 +215,7 @@ export function SubmissionsReviewList({
 }) {
   const moderationT = useTranslations('admin.moderation')
   const denialReasonsT = useTranslations('admin.submissions.denialReasons')
+  const enrichT = useTranslations('admin.enrichment')
   const [activeTab, setActiveTab] = useState<TabValue>('pending')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
@@ -230,12 +227,8 @@ export function SubmissionsReviewList({
   const [overridesById, setOverridesById] = useState<Record<string, OverrideForm>>({})
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [isEnriching, startEnrichTransition] = useTransition()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [enrichJobId, setEnrichJobId] = useState<string | null>(null)
-  const [enrichJob, setEnrichJob] = useState<CurationJob | null>(null)
-  const enrichJobRef = useRef<CurationJob | null>(null)
-  const [enrichError, setEnrichError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const router = useRouter()
 
   const productTypeTags = useMemo(
@@ -344,6 +337,28 @@ export function SubmissionsReviewList({
     rejected: submissions.filter((s) => s.status === 'rejected').length,
   }), [submissions])
 
+  function handleBulkApprove() {
+    const pendingSelected = filtered.filter(
+      (s) => s.status === 'pending' && selectedIds.has(s.id)
+    )
+    if (pendingSelected.length === 0) return
+    if (!confirm(`確定要核准 ${pendingSelected.length} 筆提交？`)) return
+    startTransition(async () => {
+      setError(null)
+      for (const submission of pendingSelected) {
+        const result = await approveSubmissionWithOverridesAction(
+          submission.id,
+          overridesById[submission.id] ?? createOverrideForm(submission)
+        )
+        if (result?.error) {
+          setError(`${submission.brandName}: ${result.error}`)
+          return
+        }
+      }
+      setSelectedIds(new Set())
+    })
+  }
+
   function toggleSelection(id: string) {
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -371,8 +386,8 @@ export function SubmissionsReviewList({
     }
   }
 
-  async function handleBulkReject() {
-    if (isSubmitting) return
+  function handleBulkReject() {
+    if (isPending) return
     const submissionIds = [...selectedIds]
     if (submissionIds.length === 0) return
 
@@ -388,8 +403,7 @@ export function SubmissionsReviewList({
       return
     }
 
-    setIsSubmitting(true)
-    try {
+    startTransition(async () => {
       setBulkRejectError(null)
       const results = await Promise.all(
         submissionIds.map((submissionId) =>
@@ -405,63 +419,34 @@ export function SubmissionsReviewList({
       setIsBulkRejecting(false)
       setBulkRejectReason('')
       router.refresh()
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
-  async function handleEnrichSelected() {
-    if (isSubmitting) return
+  function handleEnrichSelected() {
+    if (isEnriching) return
     const submissionIds = [...selectedIds]
     if (submissionIds.length === 0) return
-    setIsSubmitting(true)
-    try {
-      setEnrichError(null)
+
+    startEnrichTransition(async () => {
       const result = await startCurationJobAction('enrich', { submissionIds }, false)
       if ('error' in result) {
-        setEnrichError(result.error)
+        toast.error(result.error)
         return
       }
-      setEnrichJobId(result.jobId)
-      const jobResult = await getCurationJobAction(result.jobId)
-      if ('job' in jobResult && jobResult.job) {
-        enrichJobRef.current = jobResult.job
-        setEnrichJob(jobResult.job)
-      }
-    } finally {
-      setIsSubmitting(false)
-    }
+
+      const { summary } = result
+      toast.success(
+        enrichT('complete', { success: summary.success, skipped: summary.skipped, failed: summary.failed })
+      )
+      setSelectedIds(new Set())
+      router.refresh()
+    })
   }
 
   const enrichableFiltered = filtered
   const selectedCount = selectedIds.size
   const allSelected = enrichableFiltered.length > 0 && enrichableFiltered.every(s => selectedIds.has(s.id))
   const someSelected = selectedCount > 0 && !allSelected
-  const isEnrichRunning = enrichJob?.status === 'pending' || enrichJob?.status === 'running'
-
-  useEffect(() => {
-    if (!enrichJobId) return
-    const intervalId = window.setInterval(async () => {
-      const status = enrichJobRef.current?.status
-      if (status === 'completed' || status === 'failed') return
-
-      const response = await getCurationJobAction(enrichJobId)
-      if ('error' in response) {
-        setEnrichError(response.error)
-        return
-      }
-      if (response.job) {
-        enrichJobRef.current = response.job
-        setEnrichJob(response.job)
-        if (response.job.status === 'completed' || response.job.status === 'failed') {
-          setSelectedIds(new Set())
-          setEnrichJobId(null)
-          router.refresh()
-        }
-      }
-    }, 3000)
-    return () => window.clearInterval(intervalId)
-  }, [enrichJobId, router])
 
   return (
     <div>
@@ -495,32 +480,24 @@ export function SubmissionsReviewList({
                 已選擇 {selectedCount} 筆
               </span>
             )}
-            {isEnrichRunning && enrichJob?.progress && (
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-cta transition-all"
-                    style={{ width: `${((enrichJob.progress as { processed?: number; total?: number })?.processed ?? 0) / Math.max((enrichJob.progress as { processed?: number; total?: number })?.total ?? 1, 1) * 100}%` }}
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {(enrichJob.progress as { processed?: number })?.processed ?? 0}/{(enrichJob.progress as { total?: number })?.total ?? 0}
-                </span>
-              </div>
-            )}
-            {enrichError && (
-              <span className="text-sm text-destructive">{enrichError}</span>
-            )}
             {bulkRejectError && (
               <span className="text-sm text-destructive">{bulkRejectError}</span>
             )}
             <Button
               size="sm"
               onClick={handleEnrichSelected}
-              disabled={selectedCount === 0 || isEnrichRunning || isSubmitting}
+              disabled={selectedCount === 0 || isEnriching}
               className="bg-cta hover:bg-cta/90"
             >
-              {isEnrichRunning ? '抓取中...' : '抓取資料'}
+              {isEnriching ? '抓取中...' : '抓取資料'}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleBulkApprove}
+              disabled={selectedCount === 0 || isPending}
+              className="bg-cta hover:bg-cta/90"
+            >
+              核准
             </Button>
             <Button
               size="sm"
@@ -528,18 +505,12 @@ export function SubmissionsReviewList({
               onClick={handleBulkReject}
               disabled={
                 selectedCount === 0 ||
-                isEnrichRunning ||
-                isSubmitting ||
+                isPending ||
                 (isBulkRejecting && !bulkRejectReason)
               }
             >
-              {isBulkRejecting ? '確認批次拒絕' : '批次拒絕'}
+              {isBulkRejecting ? '確認批次拒絕' : '拒絕'}
             </Button>
-            {enrichJobId && (
-              <Link href="/admin/jobs" className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground">
-                查看工作紀錄 →
-              </Link>
-            )}
           </div>
         </div>
         {isBulkRejecting && selectedCount > 0 && (
@@ -595,6 +566,7 @@ export function SubmissionsReviewList({
               <TableHead>資料充實</TableHead>
               <TableHead>提交者</TableHead>
               <TableHead>日期</TableHead>
+              <TableHead className="w-28 text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -690,11 +662,41 @@ export function SubmissionsReviewList({
                     </TableCell>
                     <TableCell className="max-w-[160px] truncate">{submission.submitterEmail}</TableCell>
                     <TableCell>{formatDate(submission.submittedAt)}</TableCell>
+                    <TableCell className="text-right">
+                      {submission.status === 'pending' && (
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(submission)}
+                            disabled={isPending}
+                            className="h-7 bg-cta px-2 text-xs hover:bg-cta/90"
+                          >
+                            核准
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={async () => {
+                              if (!confirm('確定要拒絕此提交？')) return
+                              startTransition(async () => {
+                                setError(null)
+                                const result = await rejectSubmissionAction(submission.id, 'other', '')
+                                if (result?.error) setError(result.error)
+                              })
+                            }}
+                            disabled={isPending}
+                            className="h-7 px-2 text-xs"
+                          >
+                            拒絕
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
                   </TableRow>
 
                   {expandedId === submission.id && (
                     <TableRow key={`${submission.id}-expanded`}>
-                      <TableCell colSpan={10} className="bg-background p-6">
+                      <TableCell colSpan={11} className="bg-background p-6">
                         <div className="space-y-4">
                           <EnrichedCard auto={hasEnrichment}>
                             <div className="space-y-3">
@@ -1063,7 +1065,7 @@ export function SubmissionsReviewList({
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={10}
+                  colSpan={11}
                   className="py-8 text-center text-muted-foreground"
                 >
                   找不到提交記錄。
