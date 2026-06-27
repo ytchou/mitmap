@@ -13,6 +13,7 @@ import type { Json } from '@/lib/supabase/database.types'
 
 type JobSummary = {
   success: number
+  skipped: number
   failed: number
 }
 
@@ -28,12 +29,14 @@ function asSummary(json: Json | null): JobSummary | null {
   if (!isRecord(json)) return null
   const hasSummaryCount =
     typeof json.success === 'number' ||
+    typeof json.skipped === 'number' ||
     typeof json.failed === 'number'
 
   if (!hasSummaryCount) return null
 
   return {
     success: readNum(json.success),
+    skipped: readNum(json.skipped),
     failed: readNum(json.failed),
   }
 }
@@ -43,7 +46,7 @@ function formatSummary(result: Json | null): string {
 
   if (!summary) return '-'
 
-  return `${summary.success} success, ${summary.failed} failed`
+  return `${summary.success} success, ${summary.skipped} skipped, ${summary.failed} failed`
 }
 
 function formatDuration(startedAt: string | null, completedAt: string | null) {
@@ -81,8 +84,8 @@ function operationLabel(op: string, dryRun: boolean) {
 
 function JobStatusBadge({ status }: { status: CurationJob['status'] }) {
   const config: Record<CurationJob['status'], { label: string; className: string }> = {
-    pending: { label: '待處理', className: 'bg-[#F5F4F1] text-[#7C7570]' },
-    running: { label: '執行中', className: 'bg-[#F5F4F1] text-[#7C7570]' },
+    pending: { label: '待處理', className: 'bg-secondary text-muted-foreground' },
+    running: { label: '執行中', className: 'animate-pulse bg-secondary text-muted-foreground' },
     completed: { label: '已完成', className: 'bg-[#EAF3E8] text-[#2D5A27]' },
     failed: { label: '失敗', className: 'bg-[#FDF3EC] text-[#D94F3D]' },
   }
@@ -105,7 +108,7 @@ export function JobHistoryList({
             href={railwayLogsUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-md border border-[#E5E0D8] bg-white px-3 py-2 text-sm font-medium text-[#1C1C1C] shadow-sm transition-colors hover:bg-[#FAF8F3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
             View Railway Logs
@@ -127,7 +130,7 @@ export function JobHistoryList({
           <TableBody>
             {initialJobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-[#7C7570]">
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   目前沒有任何工作紀錄。
                 </TableCell>
               </TableRow>

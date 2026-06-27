@@ -542,8 +542,10 @@ export async function runEnrich(
     const { data: submissions, error } = await query
 
     if (error) {
-      result.errors.push(error.message ?? 'Failed to fetch submissions')
-      return finishEnrichResult(result, startedAt, onProgress)
+      const message = error.message ?? 'Failed to fetch submissions'
+      result.errors.push(message)
+      onProgress(`[ENRICH] ERROR: Failed to fetch submissions: ${message}`)
+      throw error
     }
 
     allBrands = ((submissions ?? []) as SubmissionEnrichmentRow[]).map(submissionToEnrichBrand)
@@ -573,8 +575,10 @@ export async function runEnrich(
     const { data, error } = await query
 
     if (error) {
-      result.errors.push(error.message ?? 'Failed to fetch brands')
-      return finishEnrichResult(result, startedAt, onProgress)
+      const message = error.message ?? 'Failed to fetch brands'
+      result.errors.push(message)
+      onProgress(`[ENRICH] ERROR: Failed to fetch brands: ${message}`)
+      throw error
     }
 
     allBrands = (data ?? []) as EnrichBrand[]

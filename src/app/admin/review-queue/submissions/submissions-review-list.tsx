@@ -213,6 +213,7 @@ export function SubmissionsReviewList({
   const [overridesById, setOverridesById] = useState<Record<string, OverrideForm>>({})
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [isEnriching, startEnrichTransition] = useTransition()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const router = useRouter()
 
@@ -329,11 +330,11 @@ export function SubmissionsReviewList({
   }
 
   function handleEnrichSelected() {
-    if (isPending) return
+    if (isEnriching) return
     const submissionIds = [...selectedIds]
     if (submissionIds.length === 0) return
 
-    startTransition(async () => {
+    startEnrichTransition(async () => {
       const result = await startCurationJobAction('enrich', { submissionIds }, false)
       if ('error' in result) {
         toast.error(result.error)
@@ -383,10 +384,10 @@ export function SubmissionsReviewList({
             <Button
               size="sm"
               onClick={handleEnrichSelected}
-              disabled={selectedCount === 0 || isPending}
+              disabled={selectedCount === 0 || isEnriching}
               className="bg-cta hover:bg-cta/90"
             >
-              {isPending ? '抓取中...' : '抓取資料'}
+              {isEnriching ? '抓取中...' : '抓取資料'}
             </Button>
           </div>
         </div>
