@@ -54,43 +54,9 @@ type CurationBrand = {
   tag_slugs?: string[] | null
 }
 
-type AutoTagPatch = Partial<Pick<CurationBrand, 'product_type'>>
 type TriagePatch = Partial<Pick<CurationBrand, 'slug' | 'product_type' | 'tag_slugs'>>
-type NamePatch = Partial<Pick<CurationBrand, 'name'>>
-type CurationPatch = NamePatch & AutoTagPatch & TriagePatch
 
-type SupabaseError = {
-  message?: string
-}
-
-type SupabaseResult<T> = Promise<{
-  data: T | null
-  error: SupabaseError | null
-}>
-
-type BrandsSelectQuery = PromiseLike<{
-  data: CurationBrand[] | null
-  error: SupabaseError | null
-}> & {
-  in: (column: 'slug', values: string[]) => BrandsSelectQuery
-  eq: (column: 'status', value: string) => BrandsSelectQuery
-  is: (column: string, value: null) => BrandsSelectQuery
-  or: (filter: string) => BrandsSelectQuery
-  limit: (count: number) => BrandsSelectQuery
-}
-
-type BrandsUpdateQuery = {
-  eq: (column: 'id', value: string) => SupabaseResult<unknown>
-}
-
-type BrandsTable = {
-  select: (columns: string) => BrandsSelectQuery
-  update: (patch: CurationPatch) => BrandsUpdateQuery
-}
-
-type SupabaseLike = {
-  from: (table: 'brands') => BrandsTable
-}
+type SupabaseLike = Pick<SupabaseClient, 'from'>
 
 type JsonObject = Record<string, unknown>
 
@@ -656,39 +622,72 @@ export async function runEnrich(
   }
 
   const phases = config.phases as RunEnrichPhase[]
+  const target = config.target ?? (config.slugs?.length ? 'brands' : 'submissions')
   const enrichDelayMs = phases.includes('discover') ? SEARCH_DELAY_MS : SCRAPE_DELAY_MS
   const includesDiscover = phases.includes('discover')
   let weakBrandCount = 0
-  let query = supabase
-    .from('brands')
-    .select(
-      'id, slug, name, status, description, product_type, brand_highlights, social_instagram, social_threads, social_facebook, purchase_website, purchase_pinkoi, purchase_shopee, hero_image_url, product_photos'
-    )
+  let allBrands: EnrichBrand[] = []
 
-  if (config.slugs && config.slugs.length > 0) {
-    query = query.in('slug', config.slugs)
+  if (target === 'submissions') {
+    let query = supabase
+      .from('brand_submissions')
+      .select('*')
+      .eq('status', 'pending')
+      .is('brand_id', null)
+
+    if (config.submissionIds?.length) {
+      query = query.in('id', config.submissionIds)
+    }
+
+    if (!config.overwrite) {
+      query = query.is('enriched_data', null)
+    }
+
+    if (config.limit !== undefined) {
+      query = query.limit(config.limit)
+    }
+
+    const { data: submissions, error } = await query
+
+    if (error) {
+      result.errors.push(error.message ?? 'Failed to fetch submissions')
+      return result
+    }
+
+    allBrands = ((submissions ?? []) as SubmissionEnrichmentRow[]).map(submissionToEnrichBrand)
+  } else {
+    let query = supabase
+      .from('brands')
+      .select(
+        'id, slug, name, status, description, product_type, brand_highlights, social_instagram, social_threads, social_facebook, purchase_website, purchase_pinkoi, purchase_shopee, hero_image_url, product_photos'
+      )
+
+    if (config.slugs && config.slugs.length > 0) {
+      query = query.in('slug', config.slugs)
+    }
+
+    if (config.status) {
+      query = query.eq('status', config.status)
+    }
+
+    if (!config.overwrite) {
+      query = query.is('brand_enriched_at', null)
+    }
+
+    if (config.limit !== undefined) {
+      query = query.limit(config.limit)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      result.errors.push(error.message ?? 'Failed to fetch brands')
+      return result
+    }
+
+    allBrands = (data ?? []) as EnrichBrand[]
   }
 
-  if (config.status) {
-    query = query.eq('status', config.status)
-  }
-
-  if (!config.overwrite) {
-    query = query.or('serp_enriched_at.is.null,images_enriched_at.is.null,brand_enriched_at.is.null')
-  }
-
-  if (config.limit !== undefined) {
-    query = query.limit(config.limit)
-  }
-
-  const { data, error } = await query
-
-  if (error) {
-    result.errors.push(error.message ?? 'Failed to fetch brands')
-    return result
-  }
-
-  const allBrands = (data ?? []) as EnrichBrand[]
   const totalBrands = allBrands.length
   config.onProgress?.(`[ENRICH] ${totalBrands} brands to process in ${Math.ceil(totalBrands / 20)} batches`)
   const brandChunks = chunkItems(allBrands, 20)

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createServiceClient } from '@/lib/supabase/server'
-import { processEnrichBrand, mergeEnrichPatches, persistSubmissionEnrichmentResults } from '../curation-operations'
+import { processEnrichBrand, mergeEnrichPatches, persistSubmissionEnrichmentResults, runEnrich } from '../curation-operations'
 import type { CurationConfig } from '../curation-operations'
 import { describeWithDb } from '@/test/setup'
 
@@ -232,6 +232,116 @@ const serviceSupabase =
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
     ? createServiceClient()
     : null
+
+describeWithDb("runEnrich submissions mode", () => {
+  let testSubmissionId: string | null = null
+  let testBrandId: string | null = null
+
+  beforeEach(async () => {
+    const { data: submission, error } = await serviceSupabase!
+      .from("brand_submissions")
+      .insert({
+        brand_name: "[TEST-RUN-ENRICH-SUB] Brand",
+        submitter_email: "run-enrich-sub@example.com",
+        website_url: "https://test-run-enrich-sub.example.com",
+        social_instagram: "https://instagram.com/testrunenrichsub",
+        status: "pending",
+        brand_id: null,
+      })
+      .select("id")
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    testSubmissionId = submission!.id
+  })
+
+  afterEach(async () => {
+    if (testSubmissionId) {
+      await serviceSupabase!.from("brand_submissions").delete().eq("id", testSubmissionId)
+      testSubmissionId = null
+    }
+
+    if (testBrandId) {
+      await serviceSupabase!.from("brands").delete().eq("id", testBrandId)
+      testBrandId = null
+    }
+  })
+
+  it("should target submissions when no slugs provided", async () => {
+    const result = await runEnrich({ dryRun: true, phases: ["discover"] }, serviceSupabase!)
+
+    expect(result.processed).toBeGreaterThanOrEqual(0)
+  })
+
+  it("should filter by submissionIds when provided", async () => {
+    const result = await runEnrich(
+      {
+        target: "submissions",
+        submissionIds: [testSubmissionId!],
+        dryRun: true,
+        phases: ["discover"],
+      },
+      serviceSupabase!
+    )
+
+    expect(result.processed).toBe(1)
+  })
+
+  it("should skip submissions with brand_id set", async () => {
+    const { data: brand, error } = await serviceSupabase!
+      .from("brands")
+      .insert({
+        name: "[TEST-RUN-ENRICH-SUB] Linked Brand",
+        slug: `test-run-enrich-sub-${testSubmissionId}`,
+        status: "hidden",
+      })
+      .select("id")
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    testBrandId = brand!.id
+
+    const { error: updateError } = await serviceSupabase!
+      .from("brand_submissions")
+      .update({ brand_id: testBrandId })
+      .eq("id", testSubmissionId!)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    const result = await runEnrich(
+      {
+        target: "submissions",
+        submissionIds: [testSubmissionId!],
+        dryRun: true,
+        phases: ["discover"],
+      },
+      serviceSupabase!
+    )
+
+    expect(result.processed).toBe(0)
+  })
+
+  it("should default to brands mode when slugs provided", async () => {
+    const result = await runEnrich(
+      {
+        slugs: ["some-brand"],
+        dryRun: true,
+        phases: ["discover"],
+      },
+      serviceSupabase!
+    )
+
+    expect(result.processed).toBe(0)
+  })
+})
 
 describeWithDb('enrichment write routing', () => {
   const testBrandName = '[TEST-ENRICH-ROUTE] Brand'
