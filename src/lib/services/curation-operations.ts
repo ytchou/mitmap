@@ -35,9 +35,22 @@ import {
   type SearchPhaseResult,
   hasPatchValues,
 } from './enrich-phases'
+import {
+  formatBrandComplete,
+  formatJobStart,
+  formatJobSummary,
+  formatPhaseProgress,
+  logEnrichmentProgress,
+  type BrandPhaseProgress,
+  type EnrichmentSummary,
+} from './enrichment-logger'
 
 export type { BrandOutcome, CurationConfig, OperationResult }
 export { shouldSkipForNonBrand } from './enrich-phases/triage'
+
+type EnrichOperationResult = OperationResult & {
+  enrichmentSummary: EnrichmentSummary
+}
 
 type CurationBrand = {
   id: string
@@ -322,6 +335,84 @@ function changedFieldsFromPhaseResults(phaseResults: PhaseResult[]): string[] {
   return [...new Set(phaseResults.flatMap((phaseResult) => phaseResult.changedFields))]
 }
 
+function phaseProgressStatus(status: PhaseResult['status']): BrandPhaseProgress['status'] {
+  if (status === 'succeeded') {
+    return 'success'
+  }
+
+  return status
+}
+
+function logPhaseResult(
+  onProgress: (message: string) => void,
+  brand: EnrichBrand,
+  brandIndex: number,
+  totalBrands: number,
+  phaseResult: PhaseResult,
+  phaseIndex: number,
+  totalPhases: number
+): void {
+  onProgress(formatPhaseProgress({
+    brandSlug: brand.slug,
+    brandIndex,
+    totalBrands,
+    phaseName: phaseResult.phase,
+    phaseIndex,
+    totalPhases,
+    status: phaseProgressStatus(phaseResult.status),
+    durationMs: phaseResult.durationMs,
+    ...(phaseResult.error !== undefined ? { error: phaseResult.error } : {}),
+  }))
+}
+
+function buildBrandPhaseOrder(phases: RunEnrichPhase[], hasTriagePhases: boolean): string[] {
+  return [
+    hasTriagePhases && 'triage',
+    'clean',
+    'links',
+    'images',
+    'descriptions',
+    phases.includes('tags') && 'tags',
+  ].filter((phase): phase is string => Boolean(phase))
+}
+
+export function createEnrichmentSummary(result: OperationResult, durationMs: number): EnrichmentSummary {
+  return {
+    success: result.brandOutcomes.filter((outcome) => outcome.status === 'succeeded').length,
+    skipped: result.brandOutcomes.filter((outcome) => outcome.status === 'skipped').length,
+    failed: result.brandOutcomes.filter((outcome) => outcome.status === 'failed').length,
+    failedBrands: result.brandOutcomes
+      .filter((outcome): outcome is BrandOutcome & { error: string } =>
+        outcome.status === 'failed' && typeof outcome.error === 'string'
+      )
+      .map((outcome) => {
+        const failedPhase = outcome.phaseResults?.find((phaseResult) => phaseResult.status === 'failed')
+        return {
+          slug: outcome.slug,
+          phase: failedPhase?.phase ?? 'brand',
+          error: failedPhase?.error ?? outcome.error,
+        }
+      }),
+    durationMs,
+  }
+}
+
+function finishEnrichResult(
+  result: OperationResult,
+  startedAt: number,
+  onProgress: (message: string) => void
+): EnrichOperationResult {
+  const enrichmentSummary = createEnrichmentSummary(result, Date.now() - startedAt)
+  for (const line of formatJobSummary(enrichmentSummary)) {
+    onProgress(line)
+  }
+
+  return {
+    ...result,
+    enrichmentSummary,
+  }
+}
+
 function appendPatch(state: BrandEnrichState, patch: Record<string, unknown>): void {
   Object.assign(state.patches, patch)
 }
@@ -411,7 +502,9 @@ export async function persistEnrichmentResults(
 export async function runEnrich(
   config: CurationConfig & { phases: string[] },
   supabase: SupabaseLike
-): Promise<OperationResult> {
+): Promise<EnrichOperationResult> {
+  const startedAt = Date.now()
+  const onProgress = config.onProgress ?? logEnrichmentProgress
   const result: OperationResult = {
     processed: 0,
     updated: 0,
@@ -449,8 +542,10 @@ export async function runEnrich(
     const { data: submissions, error } = await query
 
     if (error) {
-      result.errors.push(error.message ?? 'Failed to fetch submissions')
-      return result
+      const message = error.message ?? 'Failed to fetch submissions'
+      result.errors.push(message)
+      onProgress(`[ENRICH] ERROR: Failed to fetch submissions: ${message}`)
+      throw error
     }
 
     allBrands = ((submissions ?? []) as SubmissionEnrichmentRow[]).map(submissionToEnrichBrand)
@@ -480,15 +575,19 @@ export async function runEnrich(
     const { data, error } = await query
 
     if (error) {
-      result.errors.push(error.message ?? 'Failed to fetch brands')
-      return result
+      const message = error.message ?? 'Failed to fetch brands'
+      result.errors.push(message)
+      onProgress(`[ENRICH] ERROR: Failed to fetch brands: ${message}`)
+      throw error
     }
 
     allBrands = (data ?? []) as EnrichBrand[]
   }
 
   const totalBrands = allBrands.length
-  config.onProgress?.(`[ENRICH] ${totalBrands} brands to process in ${Math.ceil(totalBrands / 20)} batches`)
+  for (const line of formatJobStart(totalBrands)) {
+    onProgress(line)
+  }
   const brandChunks = chunkItems(allBrands, 20)
 
   for (let chunkIndex = 0; chunkIndex < brandChunks.length; chunkIndex += 1) {
@@ -506,7 +605,7 @@ export async function runEnrich(
       phases.includes('descriptions') && phases.includes('tags') && 'descriptions+tags',
       phases.includes('descriptions') && !phases.includes('tags') && 'descriptions',
     ].filter(Boolean)
-    config.onProgress?.(`\n[BATCH ${chunkIndex + 1}/${brandChunks.length}] ${chunk.length} brands — fetching ${activeSteps.join(' + ')}...`)
+    onProgress(`\n[BATCH ${chunkIndex + 1}/${brandChunks.length}] ${chunk.length} brands — fetching ${activeSteps.join(' + ')}...`)
 
     const chunkBrandNames = chunk.map(displayBrandName)
     const batchContext = {
@@ -514,7 +613,7 @@ export async function runEnrich(
       chunkBrandNames,
       phases,
       dryRun: config.dryRun,
-      onProgress: config.onProgress,
+      onProgress,
       supabase: supabase as unknown as SupabaseClient,
     }
 
@@ -539,7 +638,7 @@ export async function runEnrich(
       searchResults = cachedByName
       const cachedCount = [...searchResults.values()].filter(r => r.snippets.length > 0).length
       if (cachedCount > 0) {
-        config.onProgress?.(`  [SERP-CACHE] Loaded ${cachedCount} cached snippet sets`)
+        onProgress(`  [SERP-CACHE] Loaded ${cachedCount} cached snippet sets`)
       }
     }
 
@@ -550,7 +649,23 @@ export async function runEnrich(
 
     for (const brand of chunk) {
       result.processed += 1
-      config.onProgress?.(`Processing ${brand.slug} (${result.processed}/${totalBrands})`)
+      const brandIndex = result.processed
+      const brandStartedAt = Date.now()
+      const phaseOrder = buildBrandPhaseOrder(phases, hasTriagePhases)
+      const totalPhases = phaseOrder.length
+      const logCurrentPhase = (phaseResult: PhaseResult): void => {
+        const rawIndex = phaseOrder.indexOf(phaseResult.phase)
+        const phaseIndex = rawIndex >= 0 ? rawIndex + 1 : totalPhases
+        logPhaseResult(
+          onProgress,
+          brand,
+          brandIndex,
+          totalBrands,
+          phaseResult,
+          phaseIndex,
+          totalPhases,
+        )
+      }
       let outcomePhaseResults: PhaseResult[] = []
 
       try {
@@ -567,6 +682,7 @@ export async function runEnrich(
         const triageApplication = applyTriageResult(triageResult, brand, phases)
         if (hasTriagePhases) {
           state.phaseResults.push(triageApplication.phaseResult)
+          logCurrentPhase(triageApplication.phaseResult)
         }
         appendPatch(state, triageApplication.patch)
 
@@ -581,7 +697,7 @@ export async function runEnrich(
             .neq('id', brand.id)
             .maybeSingle()
           if (slugOwner) {
-            config.onProgress?.(`  [SLUG-CONFLICT] "${triageSlug}" already taken — keeping original slug`)
+            onProgress(`  [SLUG-CONFLICT] "${triageSlug}" already taken — keeping original slug`)
             delete state.patches.slug
             triageApplication.phaseResult.changedFields = triageApplication.phaseResult.changedFields.filter(
               (field) => field !== 'slug'
@@ -591,7 +707,7 @@ export async function runEnrich(
         }
 
         if (triageApplication.isNonBrand) {
-          config.onProgress?.(`  [NON-BRAND] ${brand.slug}: ${triageResult?.nonBrandReason ?? 'non-brand'} (${triageResult?.confidence})`)
+          onProgress(`  [NON-BRAND] ${brand.slug}: ${triageResult?.nonBrandReason ?? 'non-brand'} (${triageResult?.confidence})`)
 
           if (target === 'brands' && !config.dryRun) {
             await insertTriageResult({
@@ -619,6 +735,7 @@ export async function runEnrich(
             phaseResults: state.phaseResults,
           })
           result.skipped += 1
+          onProgress(formatBrandComplete(brand.slug, brandIndex, totalBrands, Date.now() - brandStartedAt))
           continue
         }
 
@@ -638,7 +755,7 @@ export async function runEnrich(
         let imageSearchUrls: string[] = []
         if (phases.includes('images')) {
           imageSearchUrls = imageSearchResults.get(displayBrandName(brand)) ?? []
-          config.onProgress?.(`  [IMAGE-SEARCH] ${imageSearchUrls.length} images found`)
+          onProgress(`  [IMAGE-SEARCH] ${imageSearchUrls.length} images found`)
         }
 
         if (
@@ -649,7 +766,7 @@ export async function runEnrich(
         ) {
           if (includesDiscover && state.discoveredUrls.length <= 1) {
             weakBrandCount += 1
-            config.onProgress?.(`  [WEAK-BRAND] ${brand.slug}: no useful data found (${state.discoveredUrls.length} search results, nothing to scrape)`)
+            onProgress(`  [WEAK-BRAND] ${brand.slug}: no useful data found (${state.discoveredUrls.length} search results, nothing to scrape)`)
           }
           result.brandOutcomes.push({
             slug: brand.slug,
@@ -660,11 +777,13 @@ export async function runEnrich(
             phaseResults: state.phaseResults,
           })
           result.skipped += 1
+          onProgress(formatBrandComplete(brand.slug, brandIndex, totalBrands, Date.now() - brandStartedAt))
           continue
         }
 
         const cleanResult = await runCleanPhase(brand, phases)
         state.phaseResults.push(cleanResult.phaseResult)
+        logCurrentPhase(cleanResult.phaseResult)
         appendPatch(state, cleanResult.patch)
 
         const linksResult = await runLinksPhase({
@@ -674,6 +793,7 @@ export async function runEnrich(
           knownUrls: state.knownUrls,
         })
         state.phaseResults.push(linksResult.phaseResult)
+        logCurrentPhase(linksResult.phaseResult)
         state.scrapedData = linksResult.scrapedData ?? {}
         appendPatch(state, linksResult.patch)
 
@@ -685,6 +805,7 @@ export async function runEnrich(
           imageStorageId: brand.id,
         })
         state.phaseResults.push(brandImageResult.phaseResult)
+        logCurrentPhase(brandImageResult.phaseResult)
         appendPatch(state, brandImageResult.patch)
 
         const descriptionsResult = await runDescriptionsPhase({
@@ -694,6 +815,7 @@ export async function runEnrich(
           serpSnippets: state.serpSnippets,
         })
         state.phaseResults.push(descriptionsResult.phaseResult)
+        logCurrentPhase(descriptionsResult.phaseResult)
         appendPatch(state, descriptionsResult.patch)
 
         let classification: ClassificationResult | null = null
@@ -703,27 +825,32 @@ export async function runEnrich(
         }
 
         if (classification) {
+          const tagStartedAt = Date.now()
           hasCompletedTagClassification = true
           if (classification.productType !== brand.product_type) {
             appendPatch(state, { product_type: classification.productType })
-            state.phaseResults.push(buildPhaseResult('tags', 'succeeded', ['product_type'], 0))
-            config.onProgress?.(`  [TAG] ${brand.slug}: ${brand.product_type ?? 'null'} → ${classification.productType} (${classification.confidence})`)
+            const tagPhaseResult = buildPhaseResult('tags', 'succeeded', ['product_type'], Date.now() - tagStartedAt)
+            state.phaseResults.push(tagPhaseResult)
+            logCurrentPhase(tagPhaseResult)
+            onProgress(`  [TAG] ${brand.slug}: ${brand.product_type ?? 'null'} → ${classification.productType} (${classification.confidence})`)
           } else {
-            state.phaseResults.push(buildPhaseResult('tags', 'succeeded', [], 0))
-            config.onProgress?.(`  [TAG] ${brand.slug}: ${brand.product_type} (unchanged)`)
+            const tagPhaseResult = buildPhaseResult('tags', 'succeeded', [], Date.now() - tagStartedAt)
+            state.phaseResults.push(tagPhaseResult)
+            logCurrentPhase(tagPhaseResult)
+            onProgress(`  [TAG] ${brand.slug}: ${brand.product_type} (unchanged)`)
           }
         }
 
         const patch = state.patches
         if (includesDiscover) {
-          config.onProgress?.(`  [DISCOVER] ${state.discoveredUrls.length} new URLs found`)
+          onProgress(`  [DISCOVER] ${state.discoveredUrls.length} new URLs found`)
         }
         const patchKeys = Object.keys(patch)
         if (patchKeys.length > 0) {
           for (const key of patchKeys) {
             const val = (patch as Record<string, unknown>)[key]
             const display = Array.isArray(val) ? `[${val.length} items]` : typeof val === 'string' && val.length > 60 ? `${val.slice(0, 60)}…` : val
-            config.onProgress?.(`  [ENRICH] ${key}: ${display}`)
+            onProgress(`  [ENRICH] ${key}: ${display}`)
           }
         }
 
@@ -732,7 +859,7 @@ export async function runEnrich(
         if (!hasPatchValues(patch) && !hasCompletedTagClassification) {
           if (includesDiscover && state.discoveredUrls.length <= 1) {
             weakBrandCount += 1
-            config.onProgress?.(`  [WEAK-BRAND] ${brand.slug}: no useful data found (${state.discoveredUrls.length} search results, no enrichment changes)`)
+            onProgress(`  [WEAK-BRAND] ${brand.slug}: no useful data found (${state.discoveredUrls.length} search results, no enrichment changes)`)
           }
           result.brandOutcomes.push({
             slug: brand.slug,
@@ -743,6 +870,7 @@ export async function runEnrich(
             phaseResults: state.phaseResults,
           })
           result.skipped += 1
+          onProgress(formatBrandComplete(brand.slug, brandIndex, totalBrands, Date.now() - brandStartedAt))
           continue
         }
 
@@ -793,6 +921,7 @@ export async function runEnrich(
               error: errMsg,
             })
             result.skipped += 1
+            onProgress(formatBrandComplete(brand.slug, brandIndex, totalBrands, Date.now() - brandStartedAt))
             continue
           }
 
@@ -810,6 +939,7 @@ export async function runEnrich(
           phaseResults: state.phaseResults,
         })
         result.updated += 1
+        onProgress(formatBrandComplete(brand.slug, brandIndex, totalBrands, Date.now() - brandStartedAt))
       } catch (err) {
         const errMsg = errorMessage(err)
         result.errors.push(`${brand.slug}: ${errMsg}`)
@@ -823,15 +953,16 @@ export async function runEnrich(
           error: errMsg,
         })
         result.skipped += 1
+        onProgress(formatBrandComplete(brand.slug, brandIndex, totalBrands, Date.now() - brandStartedAt))
       }
     }
 
-    config.onProgress?.(`[PROGRESS] ${result.processed}/${totalBrands} processed | ${result.updated} updated | ${result.skipped} skipped | ${result.errors.length} errors`)
+    onProgress(`[PROGRESS] ${result.processed}/${totalBrands} processed | ${result.updated} updated | ${result.skipped} skipped | ${result.errors.length} errors`)
   }
 
   if (weakBrandCount > 0) {
-    config.onProgress?.(`\n[WEAK-BRAND SUMMARY] ${weakBrandCount} brand(s) had no useful search results — review for potential non-brands`)
+    onProgress(`\n[WEAK-BRAND SUMMARY] ${weakBrandCount} brand(s) had no useful search results — review for potential non-brands`)
   }
 
-  return result
+  return finishEnrichResult(result, startedAt, onProgress)
 }

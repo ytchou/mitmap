@@ -1,31 +1,24 @@
 import { revalidateTag } from 'next/cache'
 import {
   ENRICH_PHASES,
+  createEnrichmentSummary,
   runEnrich,
   type BrandOutcome,
   type OperationResult as CurationOperationResult,
 } from '@/lib/services/curation-operations'
+import {
+  logEnrichmentProgress,
+  type EnrichmentSummary,
+} from '@/lib/services/enrichment-logger'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/supabase/database.types'
-
-export const VALID_OPERATIONS = ['enrich'] as const
-export const DEPRECATED_OPERATIONS = [
-  'clean-names',
-  'normalize-slugs',
-  'detect-non-brands',
-  'enrich-descriptions',
-  'enrich-links',
-  'enrich-images',
-  'score-and-scrape',
-  'set-visibility',
-] as const
 
 const STALE_JOB_MINUTES = 30
 const STALE_PENDING_JOB_MINUTES = 10
 
 type Supabase = ReturnType<typeof createServiceClient>
 type OperationSupabase = Parameters<typeof runEnrich>[1]
-type ValidOperation = (typeof VALID_OPERATIONS)[number]
+type ValidOperation = 'enrich'
 type CurationJobStatus = 'pending' | 'running' | 'completed' | 'failed'
 type EnrichPhase = (typeof ENRICH_PHASES)[number]
 type EnrichTarget = 'brands' | 'submissions'
@@ -55,17 +48,20 @@ type JobParams = {
   phases?: EnrichPhase[]
   status?: BrandStatus
 }
-type Progress = {
+type ProgressJsonInput = {
   processed: number
   total: number
   skipped: number
   failed: number
 }
-type OperationResult = Progress & {
+type OperationResult = ProgressJsonInput & {
   changed: number
   changes: Array<Record<string, unknown>>
   errors: Array<{ slug: string; error: string }>
   brandOutcomes: BrandOutcome[]
+}
+type OperationWithSummary = CurationOperationResult & {
+  enrichmentSummary: EnrichmentSummary
 }
 type CurationJobsMutation = PromiseLike<{ error: { message: string } | null }> & {
   eq: (column: string, value: string) => CurationJobsMutation
@@ -74,25 +70,12 @@ type CurationJobsMutation = PromiseLike<{ error: { message: string } | null }> &
   or: (filter: string) => CurationJobsMutation
 }
 type CurationJobsTable = {
-  select: (columns: string) => {
-    eq: (column: string, value: string) => {
-      single: () => Promise<{ data: CurationJob | null; error: { message: string } | null }>
-    }
-  }
   update: (patch: CurationJobUpdate) => CurationJobsMutation
 }
 type CurationJobsFrom = (table: 'curation_jobs') => CurationJobsTable
 type RevalidateTagOneArg = (tag: string) => void
 
-export async function fetchJob(jobId: string): Promise<{ data: CurationJob | null; error: { message: string } | null }> {
-  const supabase = createServiceClient()
-  return curationJobs(supabase)
-    .select('*')
-    .eq('id', jobId)
-    .single()
-}
-
-export async function runJob(job: CurationJob): Promise<void> {
+export async function runJob(job: CurationJob): Promise<EnrichmentSummary> {
   const supabase = createServiceClient()
 
   try {
@@ -107,52 +90,36 @@ export async function runJob(job: CurationJob): Promise<void> {
     await updateJob(supabase, job.id, {
       status: 'completed',
       completed_at: new Date().toISOString(),
-      progress: progressJson(result),
-      result: result as unknown as Json,
+      progress: progressJson(normalizeOperationResult(result)),
+      result: result.enrichmentSummary as unknown as Json,
     })
     const revalidateTagOneArg = revalidateTag as RevalidateTagOneArg
     revalidateTagOneArg('quality-metrics')
+    return result.enrichmentSummary
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     await updateJob(supabase, job.id, {
       status: 'failed',
       completed_at: new Date().toISOString(),
-      result: { error: message } as Json,
+      result: {
+        status: 'failed',
+        error: message,
+      } as Json,
     })
+    throw error
   }
 }
 
-async function runOperation(supabase: Supabase, job: CurationJob): Promise<OperationResult> {
+async function runOperation(supabase: Supabase, job: CurationJob): Promise<OperationWithSummary> {
   const operation = parseOperation(job.operation)
   const params = parseParams(job.params)
-  const progress: Progress = {
-    processed: 0,
-    total: params.stopAfter ?? params.slugs?.length ?? params.submissionIds?.length ?? 0,
-    skipped: 0,
-    failed: 0,
-  }
-  let progressUpdate = Promise.resolve()
   const config = {
     dryRun: job.dry_run,
     slugs: params.slugs,
     limit: params.stopAfter,
-    onProgress: (message: string) => {
-      const processed = processedBrandCount(message)
-      if (processed === undefined) {
-        return
-      }
-
-      progress.processed = processed
-      progress.total = Math.max(progress.total, totalBrandCount(message) ?? progress.total)
-      const nextProgress = { ...progress }
-      progressUpdate = progressUpdate
-        .then(() => updateProgress(supabase, job.id, nextProgress))
-        .catch((error) => {
-          console.error('[admin:run-job] progress update failed:', error)
-        })
-    },
+    onProgress: logEnrichmentProgress,
   }
-  let result: CurationOperationResult
+  let result: OperationWithSummary
   const status = params.status
 
   switch (operation) {
@@ -176,16 +143,26 @@ async function runOperation(supabase: Supabase, job: CurationJob): Promise<Opera
       throw new Error(`Unhandled operation: ${operation}`)
   }
 
-  await progressUpdate
-  return normalizeOperationResult(result)
+  return result
 }
 
 function parseOperation(operation: string): ValidOperation {
-  if ((VALID_OPERATIONS as readonly string[]).includes(operation)) {
-    return operation as ValidOperation
+  if (operation === 'enrich') {
+    return operation
   }
 
-  if ((DEPRECATED_OPERATIONS as readonly string[]).includes(operation)) {
+  if (
+    [
+      'clean-names',
+      'normalize-slugs',
+      'detect-non-brands',
+      'enrich-descriptions',
+      'enrich-links',
+      'enrich-images',
+      'score-and-scrape',
+      'set-visibility',
+    ].includes(operation)
+  ) {
     console.warn(`[admin:run-job] Deprecated operation requested: ${operation}`)
     throw new Error('Operation removed — use enrich instead')
   }
@@ -231,7 +208,8 @@ export async function runSubmissionEnrichment(
     phases?: EnrichPhase[]
     onProgress?: (message: string) => void
   }
-): Promise<CurationOperationResult> {
+): Promise<OperationWithSummary> {
+  const startedAt = Date.now()
   const submissionIds = params.submissionIds ?? []
   const result: CurationOperationResult = {
     processed: 0,
@@ -247,7 +225,7 @@ export async function runSubmissionEnrichment(
 
   if (error) {
     result.errors.push(error.message)
-    return result
+    return attachEnrichmentSummary(result, Date.now() - startedAt)
   }
 
   const submissions = (data ?? []) as Array<{ id: string; brand_id: string | null; brand_name: string }>
@@ -294,7 +272,7 @@ export async function runSubmissionEnrichment(
     result.brandOutcomes.push(...directResult.brandOutcomes)
   }
 
-  return result
+  return attachEnrichmentSummary(result, Date.now() - startedAt)
 }
 
 async function getBrandSlugsForIds(supabase: Supabase, brandIds: string[]): Promise<string[]> {
@@ -384,17 +362,13 @@ function parseOperationError(error: string): { slug: string; error: string } {
   return { slug: slug.trim(), error: message.trim() }
 }
 
-function progressJson(progress: Progress): Json {
+function progressJson(progress: ProgressJsonInput): Json {
   return {
     processed: progress.processed,
     total: progress.total,
     skipped: progress.skipped,
     failed: progress.failed,
   } as Json
-}
-
-async function updateProgress(supabase: Supabase, jobId: string, progress: Progress): Promise<void> {
-  await updateJob(supabase, jobId, { progress: progressJson(progress) })
 }
 
 async function updateJob(supabase: Supabase, jobId: string, patch: CurationJobUpdate): Promise<void> {
@@ -428,19 +402,19 @@ async function recoverStaleJobs(supabase: Supabase, currentJobId: string): Promi
   }
 }
 
-function processedBrandCount(message: string): number | undefined {
-  const match = message.match(/^Processing\s+\S+\s+\((\d+)\/\d+\)$/)
-  return match ? Number(match[1]) : undefined
-}
-
-function totalBrandCount(message: string): number | undefined {
-  const match = message.match(/^Processing\s+\S+\s+\(\d+\/(\d+)\)$/)
-  return match ? Number(match[1]) : undefined
-}
-
 function operationResultTotal(result: CurationOperationResult): number {
   const total = (result as CurationOperationResult & { total?: unknown }).total
   return typeof total === 'number' && Number.isFinite(total) ? total : result.processed
+}
+
+function attachEnrichmentSummary(
+  result: CurationOperationResult,
+  durationMs: number
+): OperationWithSummary {
+  return {
+    ...result,
+    enrichmentSummary: createEnrichmentSummary(result, durationMs),
+  }
 }
 
 function curationJobs(supabase: Supabase): CurationJobsTable {
