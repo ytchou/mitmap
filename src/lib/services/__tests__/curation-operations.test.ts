@@ -149,28 +149,6 @@ describe('mergeEnrichPatches', () => {
 })
 
 describe('runEnrich triage integration', () => {
-  it('calls triageBrandsBatch when detect/slugs/tags phases are active', async () => {
-    const { triageBrandsBatch } = await import('../product-type-classifier')
-    const mockTriage = vi.mocked(triageBrandsBatch)
-    mockTriage.mockResolvedValueOnce(
-      new Map([
-        ['brand-a', {
-          isNonBrand: false,
-          nonBrandReason: null,
-          slug: 'brand-a',
-          slugGenerated: 'brand-a',
-          productType: 'beauty',
-          valueTags: [],
-          confidence: 'high' as const,
-        }],
-      ])
-    )
-
-    const result = await mockTriage([{ slug: 'brand-a', name: 'Brand A', description: null, website: null }])
-    expect(result.size).toBe(1)
-    expect(result.get('brand-a')?.productType).toBe('beauty')
-  })
-
   it('applies non-brand gating — skips tier 3+4 for flagged brands', async () => {
     const { shouldSkipForNonBrand } = await import('../curation-operations')
 
