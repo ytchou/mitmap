@@ -580,7 +580,7 @@ const BRAND_COLUMNS = [
   'other_urls', 'retail_locations', 'product_photos', 'site_content',
   'status', 'submitted_at', 'approved_at', 'created_at', 'updated_at',
   'draft_data', 'draft_updated_at', 'founder', 'founding_year',
-  'brand_highlights', 'mit_status', 'mit_claimed_at', 'mit_verified_at',
+  'brand_highlights', 'mit_status', 'mit_verified_at',
   'mit_evidence', 'source', 'tag_slugs', 'is_demo',
 ].join(', ')
 
