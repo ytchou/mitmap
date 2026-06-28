@@ -16,12 +16,8 @@ export type { TagCategory, TaxonomyTag } from './taxonomy'
 export type {
   BrandSubmission,
   DenialReason,
-  FormPurchaseLink,
-  FormRetailLocation,
-  FormSocialLinks,
   OwnerLocale,
   SourceAttribution,
-  ValidationStatus,
 } from './submission'
 
 export {

@@ -1,6 +1,6 @@
 import type { OtherUrl, SubmissionStatus } from './brand'
 
-export type ValidationStatus = 'valid' | 'incomplete'
+type ValidationStatus = 'valid' | 'incomplete'
 export type SourceAttribution =
   | 'bought_product'
   | 'saw_at_market'
@@ -49,7 +49,7 @@ export type BrandSubmission = {
   purchasePinkoi: string | null
   purchaseShopee: string | null
   otherUrls: OtherUrl[]
-  suggestedTags: string[] | { region?: string; values?: string[] }
+  suggestedTags: string[] | { values?: string[] }
   status: SubmissionStatus
   reviewerNotes: string | null
   submittedAt: string
@@ -65,28 +65,7 @@ export type BrandSubmission = {
   unifiedBusinessNumber?: string
 }
 
-/** Form-level purchase link fields */
-export type FormPurchaseLink = {
-  purchaseWebsite: string
-  purchasePinkoi: string
-  purchaseShopee: string
-  otherUrls: OtherUrl[]
-}
-
-/** Form-level social link fields */
-export type FormSocialLinks = {
-  socialInstagram: string
-  socialThreads: string
-  socialFacebook: string
-}
-
-/** Form-level retail location */
-export type FormRetailLocation = {
-  name: string
-  address: string
-}
-
-export type DuplicateCandidate = {
+type DuplicateCandidate = {
   id: string
   name: string
   slug: string

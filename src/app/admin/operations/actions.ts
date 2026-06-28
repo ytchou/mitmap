@@ -3,6 +3,7 @@
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
 import { createClient } from '@/lib/supabase/server'
 import {
+  cancelCurationJob,
   checkForRunningJob,
   createCurationJob,
   listCurationJobs,
@@ -18,10 +19,10 @@ const BATCH_SIZE = 20
 
 export type { CurationJobParams }
 
-export type CurationOperation = 'enrich'
+type CurationOperation = 'enrich'
 type StartCurationOperation = CurationOperation | 'clean-names'
 type StartCurationJobResult =
-  | { jobId: string; summary: EnrichmentSummary }
+  | { jobId: string; jobIds: string[]; summary: EnrichmentSummary }
   | { jobIds: string[]; queued: true; message: string }
   | { error: string }
 
@@ -71,6 +72,7 @@ export async function startCurationJobAction(
       })
 
       if ('error' in createdJob) {
+        await Promise.all(jobs.map((j) => cancelCurationJob(j.id)))
         return { error: createdJob.error }
       }
 
@@ -87,7 +89,7 @@ export async function startCurationJobAction(
 
     const summary = await runJob(jobs[0])
 
-    return { jobId: jobs[0].id, summary }
+    return { jobId: jobs[0].id, jobIds: jobs.map((j) => j.id), summary }
   } catch (err) {
     console.error('[admin:startCurationJobAction]', err)
     return {
