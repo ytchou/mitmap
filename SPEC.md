@@ -109,13 +109,13 @@ A brand carries two **orthogonal** trust signals, plus an independent owner sign
 
 1. **Listing / approval status** (`brands.status`) — whether the brand is published in the directory. Managed via the admin approval queue (pending → approved | rejected | hidden). This governs visibility, not trustworthiness.
 
-2. **MIT verification tier** (`brands.mit_status`: `unverified` | `claimed` | `verified` | `rejected`) — admin-verified against the **MIT 微笑標章 / MIT Smile** registry. When `verified`, the brand shows a gold **MIT 已驗證 / MIT Verified** badge. This is the registry-backed trust signal that resolves the self-attestation gap (see ASSUMPTIONS.md A7).
+2. **MIT verification tier** (`brands.mit_status`: `unverified` | `verified`) — automatically verified via weekly dataset sync from data.gov.tw #6027. When `verified`, the brand shows a gold **MIT 已驗證 / MIT Verified** badge. This is the registry-backed trust signal that resolves the self-attestation gap (see ASSUMPTIONS.md A7).
 
 3. **Owner / brand-managed signal** (independent) — the badge formerly labeled "Verified" is now **品牌經營 / Brand-managed**, indicating the listing is claimed and maintained by its owner. Independent of MIT status; both badges may appear on one brand.
 
 **Neutral Community absence:** a brand with neither the MIT nor the brand-managed badge displays a muted **社群品牌 / Community brand** label. Absence of a badge reads as intentional and complete, never as "missing" — MIT Smile certification is hard to obtain, so most brands legitimately lack it.
 
-**Admin verification path:** owners may optionally submit a MIT 微笑標章 number on the claim form (`claim_requests.mit_smile_cert`). An admin verifies or rejects MIT status from the claim-review screen or per-brand on `/admin/brands` (service: `verifyMitStatus` / `rejectMitStatus`; server actions: `verifyMitAction` / `rejectMitAction`). v1 bulk import: admin-only CSV import page at `/admin/bulk-import` (DEV-806). MIT queue and middle tier still deferred to v2. v2 bulk-match lever = data.gov.tw dataset #6027.
+**Automated verification:** a weekly cron syncs the government MIT dataset (data.gov.tw #6027) into a local `mit_registry` table. Brand owners submit their MIT 微笑標章 cert number via the dashboard, submission form, or claim flow. On submission, an instant exact lookup against `mit_registry` sets `mit_status` to `verified`; otherwise it remains `unverified`. No admin action required for MIT verification.
 
 **Moderation under admin god mode (DEV-764):** when a god-mode admin edits a brand they do not own via the owner path, the edit runs `scanContent()` + `saveModerationFlags()` (same as any owner edit) and then immediately calls `markFlagsReviewed()` so the resulting flags are recorded as **auto-resolved** — `status='reviewed'` with `flag_reason` prefixed `admin-edit:`. This keeps a full audit trail but does **not** require human review. The tier-1 spam hard-block still applies to everyone, admins included. No DB migration is needed for this behavior.
 
@@ -156,7 +156,7 @@ See `docs/strategy/brand-success-playbook.md` for full specification.
 ### Brand
 - id, slug, name, description, logoUrl
 - status: pending | approved | rejected | hidden (listing/approval signal)
-- mitStatus: unverified | claimed | verified | rejected (MIT 微笑標章 verification signal — orthogonal to status)
+- mitStatus: unverified | verified (MIT 微笑標章 verification signal — orthogonal to status)
 - product_type (single product category, validated against PRODUCT_TYPE_CATEGORIES — one of: fashion, bags-accessories, jewelry, beauty, home, food-drink, crafts, tech, outdoor, kids-pets)
 - tags[] (additional taxonomy tags)
 - purchaseLinks[] (platform, url, label)

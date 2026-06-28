@@ -1,5 +1,11 @@
 # SPEC Changelog
 
+## 2026-06-28
+
+- DEV-889 (2026-06-28) — MIT verification automated: replaced manual admin verification with
+  dataset-backed cert lookup. Simplified mit_status to binary (unverified|verified). Removed
+  claimed/rejected statuses and UBN columns.
+
 ## 2026-06-23
 
 ### DEV-877 — Submission workflow redesign
