@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { MoreHorizontal } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Brand, BrandStatus } from '@/lib/types'
 import { BrandStatusBadge } from './status-badge'
 import { BrandEditDialog } from './brand-edit-dialog'
@@ -13,7 +14,7 @@ import {
   deleteBrandAction,
 } from '@/app/admin/actions'
 import { startCurationJobAction } from '@/app/admin/operations/actions'
-import type { CurationJobParams } from '@/app/admin/operations/actions'
+import type { CurationJobParams } from '@/lib/services/curation-jobs'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -160,6 +161,11 @@ export function BrandList({ brands }: { brands: Brand[] }) {
 
       if ('error' in result) {
         setError(result.error)
+        return
+      }
+
+      if ('queued' in result) {
+        toast.info(result.message)
         return
       }
 

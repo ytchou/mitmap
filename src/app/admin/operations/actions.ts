@@ -17,8 +17,6 @@ import type { EnrichmentSummary } from '@/lib/services/enrichment-logger'
 
 const BATCH_SIZE = 20
 
-export type { CurationJobParams }
-
 type CurationOperation = 'enrich'
 type StartCurationOperation = CurationOperation | 'clean-names'
 type StartCurationJobResult =
