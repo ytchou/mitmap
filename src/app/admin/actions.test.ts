@@ -471,7 +471,6 @@ describe('updateBrandAction moderation audit', () => {
       fields: {
         name: 'Test Brand',
         description: 'bad word',
-        brandHighlights: undefined,
         website: undefined,
         purchaseUrl: undefined,
       },

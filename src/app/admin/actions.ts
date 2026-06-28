@@ -421,7 +421,6 @@ export async function updateBrandAction(
     description?: string
     category?: string
     status?: string
-    brandHighlights?: string
     website?: string
     purchaseUrl?: string
     productType?: string
@@ -451,7 +450,6 @@ export async function updateBrandAction(
     const {
       name,
       description,
-      brandHighlights,
       website,
       purchaseUrl,
       socialInstagram,
@@ -465,7 +463,6 @@ export async function updateBrandAction(
       fields: {
         name,
         description,
-        brandHighlights,
         website,
         purchaseUrl,
         socialInstagram: socialInstagram ?? undefined,
