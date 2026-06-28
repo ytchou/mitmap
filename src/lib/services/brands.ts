@@ -116,7 +116,7 @@ export type SearchResult = {
   similarity: number
 }
 
-type SearchBrandsRpcRow = {
+type SearchBrandsRow = {
   id: string
   name: string
   slug: string
@@ -126,22 +126,17 @@ type SearchBrandsRpcRow = {
   search_source: string
 }
 
-type SearchBrandsRpc = (
-  fn: 'search_brands',
-  args: {
-    search_query: string
-    result_limit: number | null
-    prefix_mode: boolean
-    filter_categories: string[] | null
-    filter_tags: string[] | null
-    filter_verification: string | null
-    filter_status: string
-    include_test_brands: boolean
-  },
-) => Promise<{
-  data: SearchBrandsRpcRow[] | null
+type SearchBrandsResult = {
+  data: SearchBrandsRow[] | null
   error: { code?: string; message?: string } | null
-}>
+}
+
+export type SearchBrandAutocompleteResult = {
+  id: string
+  slug: string
+  name: string
+  category: string
+}
 
 export type SimilarBrand = {
   inputName: string
@@ -701,8 +696,7 @@ export async function getBrands(
         ? filters.verificationFilter
         : null
 
-    const searchBrandsRpc = supabase.rpc as unknown as SearchBrandsRpc
-    const { data: rpcData, error: rpcError } = await searchBrandsRpc('search_brands', {
+    const { data: rpcData, error: rpcError } = (await supabase.rpc('search_brands', {
       search_query: trimmed,
       result_limit: null,
       prefix_mode: false,
@@ -711,7 +705,7 @@ export async function getBrands(
       filter_verification: verificationFilter,
       filter_status: filters.status || 'approved',
       include_test_brands: filters.includeTestBrands ?? false,
-    })
+    })) as SearchBrandsResult
 
     if (rpcError) {
       console.error('getBrands search_brands RPC error:', rpcError)
@@ -833,6 +827,29 @@ export async function getBrands(
   const brands = (data ?? []).map(brandToDomain)
   if (sortKey === 'random') shuffleArray(brands)
   return { brands, totalCount: count ?? 0 }
+}
+
+export async function searchBrandsAutocomplete(
+  query: string,
+  limit?: number
+): Promise<SearchBrandAutocompleteResult[]> {
+  const supabase = createServiceClient()
+  const { data, error } = (await supabase.rpc('search_brands', {
+    search_query: query,
+    prefix_mode: true,
+    result_limit: limit ?? 5,
+  })) as SearchBrandsResult
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    category: row.primary_category_name ?? '',
+  }))
 }
 
 export async function getBrandBySlug(slug: string): Promise<Brand> {
