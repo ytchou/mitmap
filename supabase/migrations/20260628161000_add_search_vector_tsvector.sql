@@ -11,7 +11,7 @@ BEGIN
     setweight(to_tsvector('english', COALESCE(NEW.description, '')), 'D');
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql VOLATILE;
 
 -- Attach trigger
 DROP TRIGGER IF EXISTS brands_search_vector_trigger ON brands;
