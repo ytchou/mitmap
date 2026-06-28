@@ -42,7 +42,7 @@ const SOURCE_ATTRIBUTION_LABELS: Record<SourceAttribution, string> = {
   work_there: 'I work there or know the team',
 }
 
-const TAG_CATEGORIES = ['product_type', 'region', 'value', 'material', 'price_range']
+const TAG_CATEGORIES = ['product_type', 'value', 'material', 'price_range']
 
 function readinessBadgeClass(tone: 'green' | 'amber' | 'red' | 'grey') {
   switch (tone) {
@@ -53,7 +53,7 @@ function readinessBadgeClass(tone: 'green' | 'amber' | 'red' | 'grey') {
     case 'red':
       return 'bg-red-50 text-[#D94F3D]'
     case 'grey':
-      return 'bg-[#F5F4F1] text-[#7C7570]'
+      return 'bg-[#F5F4F1] text-muted-foreground'
   }
 }
 
@@ -79,7 +79,6 @@ function getImageCount(enrichment: BrandEnrichment) {
 }
 
 type StructuredSuggestedTags = {
-  region?: string
   values?: string[]
 }
 
@@ -88,12 +87,11 @@ function isStructuredSuggestedTags(value: unknown): value is StructuredSuggested
 }
 
 function getStructuredSuggestedTagSections(tags: StructuredSuggestedTags) {
-  const region = typeof tags.region === 'string' ? tags.region : undefined
   const values = Array.isArray(tags.values)
     ? tags.values.filter((v): v is string => typeof v === 'string')
     : []
 
-  return { region, values }
+  return { values }
 }
 
 export function SubmissionsList({
@@ -283,7 +281,7 @@ export function SubmissionsList({
                     <TableCell colSpan={8} className="bg-background p-6">
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm font-medium text-[#7C7570]">
+                          <p className="text-sm font-medium text-muted-foreground">
                             Review Readiness
                           </p>
                           {submission.brandEnrichment ? (
@@ -293,7 +291,7 @@ export function SubmissionsList({
                                 {submission.brandEnrichment.productType.trim() ? (
                                   submission.brandEnrichment.productType
                                 ) : (
-                                  <span className="text-[#7C7570]">Not set</span>
+                                  <span className="text-muted-foreground">Not set</span>
                                 )}
                               </p>
                               <p>
@@ -326,7 +324,7 @@ export function SubmissionsList({
 
                                     if (entries.length === 0) {
                                       return (
-                                        <p className="text-[#7C7570]">No tags assigned</p>
+                                        <p className="text-muted-foreground">No tags assigned</p>
                                       )
                                     }
 
@@ -343,7 +341,7 @@ export function SubmissionsList({
                               </div>
                             </div>
                           ) : (
-                            <p className="mt-2 text-sm text-[#7C7570]">
+                            <p className="mt-2 text-sm text-muted-foreground">
                               No brand record linked (legacy submission)
                             </p>
                           )}
@@ -351,7 +349,7 @@ export function SubmissionsList({
 
                         {submission.description && (
                           <div>
-                            <p className="text-sm font-medium text-[#7C7570]">
+                            <p className="text-sm font-medium text-muted-foreground">
                               Description
                             </p>
                             <p className="mt-1 text-sm">
@@ -373,7 +371,7 @@ export function SubmissionsList({
 
                         {!submission.isBrandOwner && submission.sourceAttribution && (
                           <div>
-                            <p className="text-sm font-medium text-[#7C7570]">
+                            <p className="text-sm font-medium text-muted-foreground">
                               How do you know this brand?
                             </p>
                             <p className="mt-1 text-sm">
@@ -387,7 +385,7 @@ export function SubmissionsList({
                             <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">
                               Taxonomy gap
                             </span>
-                            <p className="mt-1 text-sm text-[#7C7570]">
+                            <p className="mt-1 text-sm text-muted-foreground">
                               {submission.productTypeNote}
                             </p>
                           </div>
@@ -399,14 +397,14 @@ export function SubmissionsList({
                           if (Array.isArray(suggestedTags)) {
                             return suggestedTags.length > 0 && (
                               <div>
-                                <p className="text-sm font-medium text-[#7C7570]">
+                                <p className="text-sm font-medium text-muted-foreground">
                                   Suggested Tags
                                 </p>
                                 <div className="mt-1 flex flex-wrap gap-2">
                                   {suggestedTags.map((tag) => (
                                     <span
                                       key={tag}
-                                      className="inline-flex rounded-full bg-[#F5F4F1] px-2.5 py-0.5 text-xs font-medium text-[#7C7570]"
+                                      className="inline-flex rounded-full bg-[#F5F4F1] px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
                                     >
                                       {tag}
                                     </span>
@@ -417,16 +415,15 @@ export function SubmissionsList({
                           }
 
                           if (isStructuredSuggestedTags(suggestedTags)) {
-                            const { region, values } =
+                            const { values } =
                               getStructuredSuggestedTagSections(suggestedTags)
 
-                            return (region || values.length > 0) && (
+                            return values.length > 0 && (
                               <div>
-                                <p className="text-sm font-medium text-[#7C7570]">
+                                <p className="text-sm font-medium text-muted-foreground">
                                   Suggested Tags
                                 </p>
                                 <div className="mt-1 space-y-1 text-sm">
-                                  {region && <p>Region: {region}</p>}
                                   {values.length > 0 && (
                                     <p>Values: {values.join(', ')}</p>
                                   )}
@@ -440,7 +437,7 @@ export function SubmissionsList({
 
                         {(submission.socialInstagram || submission.socialThreads || submission.socialFacebook) && (
                           <div>
-                            <p className="text-sm font-medium text-[#7C7570]">
+                            <p className="text-sm font-medium text-muted-foreground">
                               Social Links
                             </p>
                             <div className="mt-1 space-y-1 text-sm">
@@ -513,7 +510,7 @@ export function SubmissionsList({
               <TableRow>
                 <TableCell
                   colSpan={8}
-                  className="py-8 text-center text-[#7C7570]"
+                  className="py-8 text-center text-muted-foreground"
                 >
                   找不到提交記錄。
                 </TableCell>

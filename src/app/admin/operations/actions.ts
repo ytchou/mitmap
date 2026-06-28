@@ -3,25 +3,26 @@
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
 import { createClient } from '@/lib/supabase/server'
 import {
+  cancelCurationJob,
   checkForRunningJob,
   createCurationJob,
   listCurationJobs,
+  recoverStaleJobs,
+  splitIntoBatches,
   type CurationJob,
+  type CurationJobParams,
 } from '@/lib/services/curation-jobs'
-import { runJob, type CurationJob as RunnerCurationJob } from '@/lib/services/job-runner'
+import { runJob } from '@/lib/services/job-runner'
 import type { EnrichmentSummary } from '@/lib/services/enrichment-logger'
-import type { Json } from '@/lib/supabase/database.types'
 
-export type CurationJobParams = Record<string, Json | undefined> & {
-  slugs?: string[]
-  submissionIds?: string[]
-  stopAfter?: number
-  phases?: string[]
-  status?: string
-}
+const BATCH_SIZE = 20
 
-export type CurationOperation = 'enrich'
+type CurationOperation = 'enrich'
 type StartCurationOperation = CurationOperation | 'clean-names'
+type StartCurationJobResult =
+  | { jobId: string; jobIds: string[]; summary: EnrichmentSummary }
+  | { jobIds: string[]; queued: true; message: string }
+  | { error: string }
 
 async function requireAdmin(): Promise<{ userId: string; email: string } | { error: string }> {
   const supabase = await createClient()
@@ -45,34 +46,48 @@ export async function startCurationJobAction(
   operation: StartCurationOperation,
   params: CurationJobParams,
   dryRun: boolean
-): Promise<{ jobId: string; summary: EnrichmentSummary } | { error: string }> {
+): Promise<StartCurationJobResult> {
   try {
     const auth = await requireAdmin()
     if ('error' in auth) return auth
+
+    await recoverStaleJobs()
 
     const runningJob = await checkForRunningJob()
     if (runningJob.error) {
       return { error: runningJob.error }
     }
 
+    const batches = splitIntoBatches(params, BATCH_SIZE)
+    const jobs: CurationJob[] = []
+
+    for (const batch of batches) {
+      const createdJob = await createCurationJob({
+        operation,
+        params: batch,
+        dryRun,
+        startedBy: auth.email,
+      })
+
+      if ('error' in createdJob) {
+        await Promise.all(jobs.map((j) => cancelCurationJob(j.id)))
+        return { error: createdJob.error }
+      }
+
+      jobs.push(createdJob.job)
+    }
+
     if (runningJob.hasRunningJob) {
-      return { error: 'A curation job is already running' }
+      return {
+        jobIds: jobs.map((job) => job.id),
+        queued: true,
+        message: `Queued ${jobs.length} curation ${jobs.length === 1 ? 'job' : 'jobs'}.`,
+      }
     }
 
-    const createdJob = await createCurationJob({
-      operation,
-      params,
-      dryRun,
-      startedBy: auth.email,
-    })
+    const summary = await runJob(jobs[0])
 
-    if ('error' in createdJob) {
-      return { error: createdJob.error }
-    }
-
-    const summary = await runJob(createdJob.job as RunnerCurationJob)
-
-    return { jobId: createdJob.job.id, summary }
+    return { jobId: jobs[0].id, jobIds: jobs.map((j) => j.id), summary }
   } catch (err) {
     console.error('[admin:startCurationJobAction]', err)
     return {

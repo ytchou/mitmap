@@ -31,7 +31,6 @@ export const scrapeUrlSchema = z.object({
 
 function buildFieldSchemas(t: Translator) {
   const nameField = z.string().min(2, t('validation.nameMinLength')).max(100)
-  const regionField = z.string().min(1, t('validation.regionRequired'))
   const websiteField = httpUrl(t('validation.urlInvalid'))
 
   const purchaseLinkSchema = z.object({
@@ -48,7 +47,6 @@ function buildFieldSchemas(t: Translator) {
 
   return {
     nameField,
-    regionField,
     websiteField,
     purchaseLinkSchema,
     socialLinksSchema,
@@ -56,15 +54,13 @@ function buildFieldSchemas(t: Translator) {
 }
 
 export function getBrandInfoSchema(t: Translator) {
-  const { nameField, regionField, websiteField } = buildFieldSchemas(t)
+  const { nameField, websiteField } = buildFieldSchemas(t)
   return z.object({
     name: nameField,
     website: websiteField,
-    region: regionField,
   })
 }
 
-export const BrandInfoSchema = getBrandInfoSchema
 
 export function getLinksSchema(t: Translator) {
   const { purchaseLinkSchema, socialLinksSchema } = buildFieldSchemas(t)
@@ -82,7 +78,7 @@ export function getLinksSchema(t: Translator) {
   })
 }
 
-export function getReviewSchema(t: Translator) {
+function getReviewSchema(t: Translator) {
   return z.object({
     pdpaConsent: z.boolean().refine((v) => v === true, {
       message: t('validation.pdpaRequired'),
@@ -90,7 +86,7 @@ export function getReviewSchema(t: Translator) {
   })
 }
 
-export function getBotDetectionSchema(_t: Translator) {
+function getBotDetectionSchema(_t: Translator) {
   void _t
   return z.object({
     turnstileToken: z.string().min(1),
@@ -104,7 +100,6 @@ export function getBotDetectionSchema(_t: Translator) {
 const zhT = (key: string): string => {
   const map: Record<string, string> = {
     'validation.nameMinLength': '品牌名稱至少需要 2 個字元',
-    'validation.regionRequired': '請選擇地區',
     'validation.platformRequired': '請選擇平台',
     'validation.urlInvalid': '請輸入有效的網址',
     'validation.pdpaRequired': '請同意隱私政策',
@@ -183,13 +178,12 @@ function requireSourceAttribution<Schema extends z.ZodType>(
  * that call getTranslations should pass the result here).
  */
 export function createSubmissionSchema(isOwner: boolean, t: Translator = zhT) {
-  const { nameField, regionField, websiteField, purchaseLinkSchema, socialLinksSchema } =
+  const { nameField, websiteField, purchaseLinkSchema, socialLinksSchema } =
     buildFieldSchemas(t)
 
   const brandInfoBase = z.object({
     name: nameField,
     website: websiteField,
-    region: regionField,
   })
 
   const linksBase = z.object({
@@ -226,7 +220,6 @@ export function createSubmissionSchema(isOwner: boolean, t: Translator = zhT) {
   return requireSourceAttribution(schema, true)
 }
 
-export { SOURCE_ATTRIBUTION_VALUES }
 
 export const fullSubmissionSchema = requireSourceAttribution(
   brandInfoSchema

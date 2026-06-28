@@ -56,7 +56,7 @@ type SubmissionRowInput = Pick<
   | 'status'
 >>
 
-type SuggestedTagsInput = string[] | { region?: string; values?: string[] }
+type SuggestedTagsInput = string[] | { values?: string[] }
 type ServiceClient = SupabaseClient<Database>
 type BrandInsert = Database['public']['Tables']['brands']['Insert']
 
@@ -107,7 +107,7 @@ export type CreateSubmissionInput = {
   purchasePinkoi?: string | null
   purchaseShopee?: string | null
   otherUrls?: OtherUrl[]
-  suggestedTags?: string[] | { region?: string; values?: string[] }
+  suggestedTags?: string[] | { values?: string[] }
   pdpaConsentAt?: string
   isOwner?: boolean
   sourceAttribution?: SourceAttribution | null
@@ -215,7 +215,7 @@ export function submissionToInsert(
   return row
 }
 
-function isStructuredTags(v: unknown): v is { region?: string; values?: string[]; productType?: string } {
+function isStructuredTags(v: unknown): v is { values?: string[]; productType?: string } {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
@@ -256,7 +256,7 @@ function cleanRecord<T extends Record<string, unknown>>(record: T): Partial<T> {
   ) as Partial<T>
 }
 
-export function submissionToBrandBase(row: SubmissionRow): BrandInsert {
+function submissionToBrandBase(row: SubmissionRow): BrandInsert {
   return {
     name: row.brand_name,
     slug: generateSlug(row.brand_name),
@@ -338,7 +338,6 @@ async function applySuggestedTags(
   options?: { enrichedTagSlugs?: string[]; applyProductType?: boolean }
 ): Promise<void> {
   const tagSlugs = [
-    ...(isStructuredTags(suggestedTags) ? [suggestedTags.region] : []),
     ...(isStructuredTags(suggestedTags) && Array.isArray(suggestedTags.values) ? suggestedTags.values : []),
     ...(options?.enrichedTagSlugs ?? []),
   ].filter((slug): slug is string => Boolean(slug))

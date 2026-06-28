@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTestClient, describeWithDb } from '@/test/setup'
-import type { CurationJob } from '../job-runner'
+import type { EnrichmentSummary } from '@/lib/services/enrichment-logger'
+import type { CurationJob } from '@/lib/services/curation-jobs'
 
 const dbClient =
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -14,11 +15,18 @@ type MockSubmission = {
 }
 
 const operationResult = {
-  processed: 0,
-  updated: 0,
+  processed: 1,
+  updated: 1,
   skipped: 0,
   errors: [],
-  brandOutcomes: [],
+  brandOutcomes: [{ slug: 'brand-a', name: 'Brand A', status: 'succeeded' as const }],
+  enrichmentSummary: {
+    success: 1,
+    skipped: 0,
+    failed: 0,
+    failedBrands: [],
+    durationMs: 10,
+  },
 }
 
 afterEach(() => {
@@ -26,6 +34,7 @@ afterEach(() => {
   vi.resetModules()
   vi.doUnmock('../curation-operations')
   vi.doUnmock('@/lib/supabase/server')
+  vi.doUnmock('@/lib/services/curation-jobs')
   vi.doUnmock('next/cache')
 })
 
@@ -70,6 +79,72 @@ describe('job-runner enrich routing', () => {
   })
 })
 
+describe('job-runner single-job processing', () => {
+  it('processes exactly one job per call without draining the queue', async () => {
+    const { runEnrich, runJob } = await importRunnerWithMocks()
+
+    const summary = await runJob(job({ id: 'job-1', params: { slugs: ['brand-a'] } }))
+
+    expect(runEnrich).toHaveBeenCalledTimes(1)
+    expect(summary).toMatchObject({ success: 1, skipped: 0, failed: 0, durationMs: 10 })
+  })
+
+  it('returns a failed summary when the job throws without processing further jobs', async () => {
+    const runEnrich = vi.fn().mockRejectedValueOnce(new Error('first job failed'))
+    const { runJob } = await importRunnerWithMocks([], runEnrich)
+
+    const summary = await runJob(job({ id: 'job-1' }))
+
+    expect(runEnrich).toHaveBeenCalledTimes(1)
+    expect(summary.success).toBe(0)
+    expect(summary.failed).toBe(1)
+    expect(summary.failedBrands[0]).toMatchObject({
+      slug: 'job-1',
+      phase: 'job',
+      error: 'first job failed',
+    })
+  })
+
+  it('calls recoverStaleJobs at the start of each run', async () => {
+    const { recoverStaleJobs, runJob } = await importRunnerWithMocks()
+
+    await runJob(job({ id: 'job-1' }))
+
+    expect(recoverStaleJobs).toHaveBeenCalledTimes(1)
+  })
+
+  it('merges enrichment summaries from multiple jobs', async () => {
+    const { mergeSummaries } = await import('../job-runner')
+    const summaries: EnrichmentSummary[] = [
+      {
+        success: 2,
+        skipped: 1,
+        failed: 1,
+        failedBrands: [{ slug: 'a', phase: 'links', error: 'bad url' }],
+        durationMs: 100,
+      },
+      {
+        success: 3,
+        skipped: 2,
+        failed: 1,
+        failedBrands: [{ slug: 'b', phase: 'images', error: 'missing' }],
+        durationMs: 250,
+      },
+    ]
+
+    expect(mergeSummaries(summaries)).toEqual({
+      success: 5,
+      skipped: 3,
+      failed: 2,
+      failedBrands: [
+        { slug: 'a', phase: 'links', error: 'bad url' },
+        { slug: 'b', phase: 'images', error: 'missing' },
+      ],
+      durationMs: 350,
+    })
+  })
+})
+
 describeWithDb('runSubmissionEnrichment direct submissions', () => {
   const supabase = dbClient!
   let submissionId: string | null = null
@@ -111,15 +186,21 @@ describeWithDb('runSubmissionEnrichment direct submissions', () => {
   })
 })
 
-async function importRunnerWithMocks(submissions: MockSubmission[] = []) {
-  const runEnrich = vi.fn().mockResolvedValue(operationResult)
+async function importRunnerWithMocks(
+  submissions: MockSubmission[] = [],
+  runEnrich = vi.fn().mockResolvedValue(operationResult)
+) {
   const createServiceClient = vi.fn(() => mockSupabase(submissions))
+  const recoverStaleJobs = vi.fn().mockResolvedValue(undefined)
 
   vi.doMock('next/cache', () => ({
     revalidateTag: vi.fn(),
   }))
   vi.doMock('@/lib/supabase/server', () => ({
     createServiceClient,
+  }))
+  vi.doMock('@/lib/services/curation-jobs', () => ({
+    recoverStaleJobs,
   }))
   vi.doMock('../curation-operations', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../curation-operations')>()
@@ -130,7 +211,7 @@ async function importRunnerWithMocks(submissions: MockSubmission[] = []) {
   })
 
   const runner = await import('../job-runner')
-  return { ...runner, createServiceClient, runEnrich }
+  return { ...runner, createServiceClient, recoverStaleJobs, runEnrich }
 }
 
 function job(overrides: Partial<CurationJob> = {}): CurationJob {
