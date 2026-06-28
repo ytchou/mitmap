@@ -50,6 +50,7 @@ describe('curatedSubmissionToBrand', () => {
     purchaseLinks: [],
     socialLinks: { instagram: '', threads: '', facebook: '', website: '' },
     retailLocations: [],
+    customerVoices: [],
     region: null,
     valueTags: [],
   }

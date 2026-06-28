@@ -487,6 +487,7 @@ export type Database = {
           approved_at: string | null
           brand_enriched_at: string | null
           contact_email: string | null
+          customer_voices: Json | null
           created_at: string | null
           description: string | null
           draft_data: Json | null
@@ -528,6 +529,7 @@ export type Database = {
           approved_at?: string | null
           brand_enriched_at?: string | null
           contact_email?: string | null
+          customer_voices?: Json | null
           created_at?: string | null
           description?: string | null
           draft_data?: Json | null
@@ -569,6 +571,7 @@ export type Database = {
           approved_at?: string | null
           brand_enriched_at?: string | null
           contact_email?: string | null
+          customer_voices?: Json | null
           created_at?: string | null
           description?: string | null
           draft_data?: Json | null

@@ -24,6 +24,7 @@ const fixtureBrand: Brand = {
   purchaseShopee: null,
   otherUrls: [],
   retailLocations: [],
+  customerVoices: [],
   productPhotos: [],
     siteContent: null,
     priceRange: null,

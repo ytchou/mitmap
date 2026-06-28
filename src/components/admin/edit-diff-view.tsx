@@ -20,6 +20,7 @@ export function computeDiffFields(
     category: '類別',
     contactEmail: '聯絡信箱',
     foundingYear: '創立年份',
+    customerVoices: '顧客心聲',
   }
 
   const IMAGE_FIELDS = new Set(['heroImageUrl'])
