@@ -97,10 +97,10 @@ describe('BrandHealthCard', () => {
     expect(screen.getByText('dashboard.health.actionQueue.label.socialPresence')).toBeInTheDocument()
   })
 
-  it('renders the profile drill-down with 8 checklist items', async () => {
+  it('renders the profile drill-down with 7 checklist items', async () => {
     render(BrandHealthCard(defaultProps))
     const items = screen.getAllByTestId('completeness-checklist-item')
-    expect(items).toHaveLength(8)
+    expect(items).toHaveLength(7)
   })
 
   it('renders Edit Profile link with correct href', async () => {
