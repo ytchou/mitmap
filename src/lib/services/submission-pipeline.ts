@@ -11,8 +11,6 @@ export interface SubmitBrandForReviewParams {
   isBrandOwner?: boolean
   pdpaConsent?: boolean
   sourceAttribution?: SourceAttribution | null
-  ubn?: string | null
-  unifiedBusinessNumber?: string | null
   submitterEmail: string
   submitterName?: string
   description?: string | null
@@ -29,6 +27,7 @@ export interface SubmitBrandForReviewParams {
   suggestedTags?: { values?: string[]; productType?: string }
   productType?: string | null
   productTypeNote?: string | null
+  mitSmileCert?: string
 }
 
 export interface SubmitBrandForReviewResult {
@@ -39,8 +38,6 @@ export interface SubmitBrandForReviewResult {
 export async function submitBrandForReview(
   params: SubmitBrandForReviewParams
 ): Promise<SubmitBrandForReviewResult> {
-  const unifiedBusinessNumber = params.unifiedBusinessNumber ?? params.ubn ?? null
-
   // Map social links
   let socialInstagram = params.socialLinks?.instagram || null
   let socialThreads = params.socialLinks?.threads || null
@@ -71,6 +68,7 @@ export async function submitBrandForReview(
   const suggestedTags = {
     ...(params.suggestedTags ?? {}),
     ...(params.productType ? { productType: params.productType } : {}),
+    ...(params.mitSmileCert ? { mitSmileCert: params.mitSmileCert } : {}),
   }
 
   const submission = await createSubmission({
@@ -94,7 +92,6 @@ export async function submitBrandForReview(
     sourceAttribution: params.sourceAttribution ?? null,
     pdpaConsentAt: params.pdpaConsent ? new Date().toISOString() : undefined,
     productTypeNote: params.productTypeNote ?? null,
-    unifiedBusinessNumber: unifiedBusinessNumber ?? undefined,
   })
 
   return { submissionId: submission.id }

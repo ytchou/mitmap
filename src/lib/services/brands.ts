@@ -611,9 +611,10 @@ const BRAND_COLUMNS = [
   'purchase_shopee', 'social_instagram', 'social_threads', 'social_facebook',
   'other_urls', 'retail_locations', 'product_photos', 'site_content',
   'status', 'submitted_at', 'approved_at', 'created_at', 'updated_at',
-  'draft_data', 'draft_updated_at', 'founding_year', 'price_range',
-  'product_tags', 'mit_status', 'mit_claimed_at', 'mit_verified_at',
-  'mit_evidence', 'source', 'tag_slugs', 'unified_business_number', 'is_demo',
+  'draft_data', 'draft_updated_at', 'founder', 'founding_year',
+  'brand_highlights', 'price_range', 'product_tags',
+  'mit_status', 'mit_verified_at',
+  'mit_evidence', 'source', 'tag_slugs', 'is_demo',
 ].join(', ')
 
 export const BRAND_SELECT =
@@ -921,7 +922,6 @@ export async function createBrand(
   if (existing) throw new ValidationError(`Brand slug already exists: ${slug}`)
 
   const row = brandToInsert({ ...data, slug })
-  row.unified_business_number = data.unifiedBusinessNumber ?? null
   const { data: inserted, error } = await supabase
     .from('brands')
     .insert(row)
