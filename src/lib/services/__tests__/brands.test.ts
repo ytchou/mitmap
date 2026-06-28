@@ -158,6 +158,42 @@ describe('brandToDomain (flat link columns)', () => {
   })
 })
 
+describe('brandToDomain — brand detail enrichment fields', () => {
+  it('maps price_range to priceRange', () => {
+    const row = makeBrandRow({ price_range: 3 })
+    const brand = brandToDomain(row)
+    expect(brand.priceRange).toBe(3)
+  })
+
+  it('maps product_tags to productTags', () => {
+    const row = makeBrandRow({ product_tags: ['cotton', 'handmade'] })
+    const brand = brandToDomain(row)
+    expect(brand.productTags).toEqual(['cotton', 'handmade'])
+  })
+
+  it('defaults productTags to [] when product_tags is null', () => {
+    const row = makeBrandRow({ product_tags: null })
+    const brand = brandToDomain(row)
+    expect(brand.productTags).toEqual([])
+  })
+
+  it('defaults priceRange to null when price_range is not set', () => {
+    const row = makeBrandRow()
+    const brand = brandToDomain(row)
+    expect(brand.priceRange).toBeNull()
+  })
+
+  it('does not expose deprecated founder or brandHighlights properties', () => {
+    const row = makeBrandRow({
+      founder: 'Deprecated Founder',
+      brand_highlights: 'Deprecated highlights',
+    })
+    const brand = brandToDomain(row)
+    expect(brand).not.toHaveProperty('founder')
+    expect(brand).not.toHaveProperty('brandHighlights')
+  })
+})
+
 describe('brandToInsert — isDemo', () => {
   it('maps isDemo true to is_demo true', () => {
     const result = brandToInsert({ isDemo: true })
@@ -190,6 +226,23 @@ describe('brandToInsert (flat link columns)', () => {
     expect(result.social_threads).toBeNull()
     expect(result.purchase_website).toBe('https://testbrand.com')
     expect(result.other_urls).toEqual([{ label: 'Blog', url: 'https://blog.test.com' }])
+  })
+})
+
+describe('brandToInsert — brand detail enrichment fields', () => {
+  it('serializes priceRange to price_range', () => {
+    const result = brandToInsert({ priceRange: 2 })
+    expect(result.price_range).toBe(2)
+  })
+
+  it('serializes non-empty productTags to product_tags', () => {
+    const result = brandToInsert({ productTags: ['minimal', 'gift'] })
+    expect(result.product_tags).toEqual(['minimal', 'gift'])
+  })
+
+  it('does not serialize empty productTags', () => {
+    const result = brandToInsert({ productTags: [] })
+    expect(result).not.toHaveProperty('product_tags')
   })
 })
 
