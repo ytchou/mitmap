@@ -36,7 +36,6 @@ const liveBrand: Brand = {
     siteContent: null,
     priceRange: null,
     productTags: [],
-  tags: [{ id: 't1', name: 'Apparel', nameZh: '服飾', productType: true } as never],
   submittedAt: '2026-01-01T00:00:00Z',
   approvedAt: '2026-01-02T00:00:00Z',
   createdAt: '2026-01-01T00:00:00Z',

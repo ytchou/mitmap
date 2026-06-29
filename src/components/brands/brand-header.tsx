@@ -8,9 +8,10 @@ interface BrandHeaderProps {
   brand: Brand
   categoryLabel?: string | null
   actionsSlot?: ReactNode
+  adminSlot?: ReactNode
 }
 
-export function BrandHeader({ brand, categoryLabel, actionsSlot }: BrandHeaderProps) {
+export function BrandHeader({ brand, categoryLabel, actionsSlot, adminSlot }: BrandHeaderProps) {
   const t = useTranslations('brandDetail')
   const locationName = brand.retailLocations[0]?.name
   const hasMitVerifiedBadge = brand.mitVerified === true
@@ -21,9 +22,12 @@ export function BrandHeader({ brand, categoryLabel, actionsSlot }: BrandHeaderPr
   return (
     <div className="space-y-3">
       {/* Brand name */}
-      <h1 className="font-heading text-[26px] font-bold leading-tight text-foreground md:text-[32px]">
-        {brand.name}
-      </h1>
+      <div className="flex items-start justify-between gap-2">
+        <h1 className="font-heading text-[26px] font-bold leading-tight text-foreground md:text-[32px]">
+          {brand.name}
+        </h1>
+        {adminSlot}
+      </div>
 
       {/* CTA slot — rendered between name and meta row */}
       {actionsSlot}
@@ -50,16 +54,6 @@ export function BrandHeader({ brand, categoryLabel, actionsSlot }: BrandHeaderPr
             {priceRangeLabel}
           </span>
         )}
-
-        {/* Brand tags */}
-        {brand.tags.map((tag) => (
-          <span
-            key={tag.id}
-            className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground"
-          >
-            {tag.nameZh ?? tag.name}
-          </span>
-        ))}
 
         {/* Product tags */}
         {brand.productTags.length > 0 &&

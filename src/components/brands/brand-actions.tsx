@@ -17,6 +17,11 @@ interface BrandActionsProps {
   brandName: string
 }
 
+const activeCta =
+  'flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cta text-sm font-semibold text-cta-foreground transition-colors hover:bg-cta/90'
+const disabledCta =
+  'flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-muted text-sm font-semibold text-muted-foreground cursor-default'
+
 export function BrandActions({ websiteUrl, brandSlug = '', brandId, brandName }: BrandActionsProps) {
   const t = useTranslations('brandDetail')
   const handleWebsiteClick = () => {
@@ -34,17 +39,22 @@ export function BrandActions({ websiteUrl, brandSlug = '', brandId, brandName }:
   return (
     <>
       <div className="flex gap-2">
-        {websiteUrl && (
+        {websiteUrl ? (
           <a
             href={websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cta text-sm font-semibold text-cta-foreground transition-colors hover:bg-cta/90"
+            className={activeCta}
             onClick={handleWebsiteClick}
           >
             <ExternalLink className="size-[15px]" />
             {t('actions.visitWebsite')}
           </a>
+        ) : (
+          <span className={disabledCta} aria-disabled="true">
+            <ExternalLink className="size-[15px]" />
+            <span className="line-through">{t('actions.visitWebsite')}</span>
+          </span>
         )}
         <ShareDialog brandSlug={brandSlug} brandName={brandName} />
         {brandId && <SaveBrandButton brandId={brandId} variant="inline" className="rounded-xl" />}

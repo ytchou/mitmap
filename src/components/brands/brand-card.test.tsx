@@ -44,7 +44,6 @@ const mockBrand = {
   isDemo: false,
   heroImageUrl: null,
   foundingYear: 2020,
-  tags: [],
   productPhotos: [],
   socialInstagram: null,
   socialThreads: null,

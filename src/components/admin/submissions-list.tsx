@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useMemo, useState, useTransition } from 'react'
+import { Fragment, useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import type { BrandSubmission, SourceAttribution, SubmissionStatus } from '@/lib/types'
 import type { BrandEnrichment } from '@/lib/services/brands'
@@ -27,13 +27,6 @@ type BrandSubmissionWithRisk = BrandSubmission & {
   brandEnrichment?: BrandEnrichment | null
 }
 
-type ReviewTaxonomyTag = {
-  name: string
-  nameZh: string | null
-  slug: string
-  category: string
-}
-
 const SOURCE_ATTRIBUTION_LABELS: Record<SourceAttribution, string> = {
   bought_product: 'I bought their product',
   saw_at_market: 'I saw them at a market or event',
@@ -41,8 +34,6 @@ const SOURCE_ATTRIBUTION_LABELS: Record<SourceAttribution, string> = {
   friend_recommended: 'A friend recommended them',
   work_there: 'I work there or know the team',
 }
-
-const TAG_CATEGORIES = ['product_type', 'value', 'material', 'price_range']
 
 function readinessBadgeClass(tone: 'green' | 'amber' | 'red' | 'grey') {
   switch (tone) {
@@ -96,10 +87,8 @@ function getStructuredSuggestedTagSections(tags: StructuredSuggestedTags) {
 
 export function SubmissionsList({
   submissions,
-  taxonomyTags,
 }: {
   submissions: BrandSubmissionWithRisk[]
-  taxonomyTags: ReviewTaxonomyTag[]
 }) {
   const moderationT = useTranslations('admin.moderation')
   const [activeTab, setActiveTab] = useState<TabValue>('all')
@@ -109,11 +98,6 @@ export function SubmissionsList({
   const [error, setError] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  const tagsBySlug = useMemo(
-    () => new Map(taxonomyTags.map((tag) => [tag.slug, tag])),
-    [taxonomyTags]
-  )
 
   const filtered =
     activeTab === 'all'
@@ -198,7 +182,6 @@ export function SubmissionsList({
               <TableHead>品牌</TableHead>
               <TableHead className="w-16">分類</TableHead>
               <TableHead className="w-16">圖片</TableHead>
-              <TableHead className="w-16">標籤</TableHead>
               <TableHead>提交者</TableHead>
               <TableHead>日期</TableHead>
               <TableHead>來源</TableHead>
@@ -246,18 +229,6 @@ export function SubmissionsList({
                       <ReadinessBadge tone="grey">-</ReadinessBadge>
                     )}
                   </TableCell>
-                  <TableCell>
-                    {submission.brandEnrichment ? (
-                      (() => {
-                        const count = submission.brandEnrichment.tagSlugs.length
-                        const tone = count >= 3 ? 'green' : count >= 1 ? 'amber' : 'red'
-
-                        return <ReadinessBadge tone={tone}>{count}</ReadinessBadge>
-                      })()
-                    ) : (
-                      <ReadinessBadge tone="grey">-</ReadinessBadge>
-                    )}
-                  </TableCell>
                   <TableCell>{submission.submitterEmail}</TableCell>
                   <TableCell>{formatDate(submission.submittedAt)}</TableCell>
                   <TableCell>
@@ -278,7 +249,7 @@ export function SubmissionsList({
 
                 {expandedId === submission.id && (
                   <TableRow key={`${submission.id}-expanded`}>
-                    <TableCell colSpan={8} className="bg-background p-6">
+                    <TableCell colSpan={7} className="bg-background p-6">
                       <div className="space-y-4">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">
@@ -299,46 +270,6 @@ export function SubmissionsList({
                                 Hero {submission.brandEnrichment.heroImageUrl ? '✓' : '✗'} · Photos:{' '}
                                 {submission.brandEnrichment.productPhotos.length}
                               </p>
-                              <div>
-                                <p className="font-medium">Tags:</p>
-                                <div className="mt-1 space-y-1">
-                                  {(() => {
-                                    const groupedTags = new Map<string, string[]>()
-
-                                    for (const category of TAG_CATEGORIES) {
-                                      groupedTags.set(category, [])
-                                    }
-
-                                    for (const slug of submission.brandEnrichment.tagSlugs) {
-                                      const tag = tagsBySlug.get(slug)
-                                      if (tag) {
-                                        const list = groupedTags.get(tag.category) ?? []
-                                        list.push(tag.nameZh ?? tag.name)
-                                        groupedTags.set(tag.category, list)
-                                      }
-                                    }
-
-                                    const entries = Array.from(groupedTags.entries()).filter(
-                                      ([, tags]) => tags.length > 0
-                                    )
-
-                                    if (entries.length === 0) {
-                                      return (
-                                        <p className="text-muted-foreground">No tags assigned</p>
-                                      )
-                                    }
-
-                                    return entries.map(([category, tags]) => (
-                                      <p key={category}>
-                                        <span className="capitalize">
-                                          {category.replace('_', ' ')}:
-                                        </span>{' '}
-                                        {tags.join(', ')}
-                                      </p>
-                                    ))
-                                  })()}
-                                </div>
-                              </div>
                             </div>
                           ) : (
                             <p className="mt-2 text-sm text-muted-foreground">
@@ -498,7 +429,7 @@ export function SubmissionsList({
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={7}
                   className="py-8 text-center text-muted-foreground"
                 >
                   找不到提交記錄。

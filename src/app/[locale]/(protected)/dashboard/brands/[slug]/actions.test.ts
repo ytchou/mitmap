@@ -30,8 +30,6 @@ const publishDraft = vi.fn().mockResolvedValue({ slug: 'test-brand' })
 const discardDraft = vi.fn().mockResolvedValue({ snapshot: null })
 const diffRemovedImageUrls = vi.fn((): string[] => [])
 const deleteBrandImages = vi.fn().mockResolvedValue(undefined)
-const getTagBySlug = vi.fn()
-const updateBrandCategoryTags = vi.fn().mockResolvedValue(undefined)
 const cookieGet = vi.fn()
 const isActingAsAdmin = vi.fn().mockResolvedValue(false)
 const scanContent = vi.fn()
@@ -100,8 +98,7 @@ vi.mock('@/lib/services/moderation', () => ({
 import { approvePendingEdit, createPendingEdit } from '@/lib/services/pending-edits'
 
 vi.mock('@/lib/services/taxonomy', () => ({
-  getTagBySlug,
-  updateBrandCategoryTags,
+  getActiveCategories: vi.fn().mockResolvedValue([]),
 }))
 
 
@@ -159,11 +156,6 @@ describe('updateBrandAction', () => {
     })
     diffRemovedImageUrls.mockReturnValue([])
     scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
-    getTagBySlug.mockImplementation(async (slug: string) => (
-      slug === 'eco-friendly'
-        ? { id: 'tag-value-eco-friendly', slug, category: 'value' }
-        : { id: `tag-value-${slug}`, slug, category: 'value' }
-    ))
   })
 
   it('updates brand', async () => {
@@ -393,11 +385,6 @@ describe('updateBrandAction — admin bypass', () => {
     })
     diffRemovedImageUrls.mockReturnValue([])
     scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
-    getTagBySlug.mockImplementation(async (slug: string) => (
-      slug === 'eco-friendly'
-        ? { id: 'tag-value-eco-friendly', slug, category: 'value' }
-        : { id: `tag-value-${slug}`, slug, category: 'value' }
-    ))
   })
 
   it('lets a god-mode admin edit a brand they do not own', async () => {

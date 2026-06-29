@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getBrands, getPopularCategories, getFeaturedBrands } from '@/lib/services/brands'
-import { getActiveCategories, getTags, getValueTagsWithCoverage } from '@/lib/services/taxonomy'
+import { getActiveCategories } from '@/lib/services/taxonomy'
+import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
 import { buildBreadcrumbJsonLd, buildCategoryItemListJsonLd, buildWebSiteJsonLd } from '@/lib/json-ld'
 import { parsePageParam, parseSortParam, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import {
@@ -59,12 +60,11 @@ export async function generateMetadata({ params, searchParams }: BrandsPageProps
 
   if (typeof sp.category === 'string' && sp.category.trim() && !sp.category.includes(',')) {
     const categorySlug = sp.category.trim()
-    const categoryTags = await getTags('product_type')
-    const categoryTag = categoryTags.find((tag) => tag.slug === categorySlug)
+    const categoryTag = PRODUCT_TYPE_CATEGORIES.find((c) => c.slug === categorySlug)
 
     if (categoryTag) {
       const catT = await getTranslations('categories')
-      const displayName = safeLocale === 'zh-TW' ? categoryTag.nameZh ?? categoryTag.name : categoryTag.name
+      const displayName = safeLocale === 'zh-TW' ? categoryTag.nameZh : categoryTag.name
       const description = catT.has(`descriptions.${categorySlug}`)
         ? catT(`descriptions.${categorySlug}`)
         : catT('metadata.description', { displayName, name: categoryTag.name })
@@ -121,21 +121,18 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
     typeof sp.search === 'string' ? sp.search.trim() : ''
   const categoryFilter = parseCommaParam(sp.category)
   const verificationFilter = parseVerificationParam(sp.verification)
-  const tags = parseCommaParam(sp.tags)
 
-  const [{ brands, totalCount }, categories, valueTags] = await Promise.all([
+  const [{ brands, totalCount }, categories] = await Promise.all([
     getBrands({
       status: 'approved',
       search: search || undefined,
       category: categoryFilter.length > 0 ? categoryFilter : undefined,
       verificationFilter,
-      tags: tags.length > 0 ? tags : undefined,
       sort,
       limit: DEFAULT_PAGE_SIZE,
       offset: (page - 1) * DEFAULT_PAGE_SIZE,
     }),
     getActiveCategories(),
-    getValueTagsWithCoverage(),
   ])
 
   // Clamp page to last valid page if user navigated beyond
@@ -150,7 +147,6 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
       search: search || undefined,
       category: categoryFilter.length > 0 ? categoryFilter : undefined,
       verificationFilter,
-      tags: tags.length > 0 ? tags : undefined,
       sort,
       limit: DEFAULT_PAGE_SIZE,
       offset: (clampedPage - 1) * DEFAULT_PAGE_SIZE,
@@ -160,7 +156,7 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
 
   // Fetch empty-state fallback data when search yields zero results
   const hasActiveFilters =
-    categoryFilter.length > 0 || tags.length > 0 || verificationFilter !== 'all'
+    categoryFilter.length > 0 || verificationFilter !== 'all'
   let emptyStateData: {
     categories: { productType: string; count: number }[]
     featured: { id: string; name: string; slug: string; heroImageUrl: string | null; category: string }[]
@@ -176,7 +172,6 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
   // Build searchParams record for pagination links (excluding page)
   const paginationParams: Record<string, string> = {}
   if (search) paginationParams.search = search
-  if (tags.length > 0) paginationParams.tags = tags.join(',')
   if (sort !== 'name') paginationParams.sort = sort
   if (categoryFilter.length > 0) paginationParams.category = categoryFilter.join(',')
   if (verificationFilter !== 'all') paginationParams.verification = verificationFilter
@@ -186,11 +181,10 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
   if (categoryFilter.length === 1) {
     const categorySlug = categoryFilter[0]
     const catT = await getTranslations('categories')
-    const categoryTags = await getTags('product_type')
-    const categoryTag = categoryTags.find((tag) => tag.slug === categorySlug)
+    const categoryTag = PRODUCT_TYPE_CATEGORIES.find((c) => c.slug === categorySlug)
 
     if (categoryTag) {
-      const categoryName = safeLocale === 'zh-TW' ? categoryTag.nameZh ?? categoryTag.name : categoryTag.name
+      const categoryName = safeLocale === 'zh-TW' ? categoryTag.nameZh : categoryTag.name
       const editorialDescription = catT.has(`descriptions.${categorySlug}`)
         ? catT(`descriptions.${categorySlug}`)
         : undefined
@@ -231,7 +225,7 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
 
       <aside className="hidden lg:block" aria-label={t('filters.title')}>
         <div className="sticky top-24">
-          <BrandFilterSidebar categories={categories} valueTags={valueTags} />
+          <BrandFilterSidebar categories={categories} />
         </div>
       </aside>
 
@@ -241,7 +235,6 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
           <div className="flex items-center gap-3">
             <BrandFilterDrawer
               categories={categories}
-              valueTags={valueTags}
               totalCount={totalCount}
             />
             <p className="text-sm text-muted-foreground">

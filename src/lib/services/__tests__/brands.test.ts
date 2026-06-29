@@ -26,12 +26,10 @@ function makeBrandRow(overrides: Record<string, unknown> = {}) {
     customer_voices: [],
     product_photos: [],
     product_highlights: [],
-    tags: [],
     submitted_at: '2026-01-01T00:00:00Z',
     approved_at: '2026-01-02T00:00:00Z',
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
-    brand_taxonomy: [],
     brand_owners: null,
     ...overrides,
   }

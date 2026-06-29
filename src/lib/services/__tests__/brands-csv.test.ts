@@ -19,10 +19,10 @@ describe('parseBrandCSV', () => {
     expect(rows[0].name).toBe('Tea, Coffee & More')
   })
 
-  it('handles pipe-delimited array fields (valueTags)', () => {
-    const csv = `name,description,category,valueTags\nTest Brand,${MIN_DESCRIPTION},Food,handmade|local`
+  it('handles pipe-delimited array fields (productTags)', () => {
+    const csv = `name,description,category,productTags\nTest Brand,${MIN_DESCRIPTION},Food,handmade|local`
     const rows = parseBrandCSV(csv)
-    expect(rows[0].valueTags).toEqual(['handmade', 'local'])
+    expect(rows[0].productTags).toEqual(['handmade', 'local'])
   })
 
   it('returns empty array for empty input', () => {
@@ -52,7 +52,6 @@ describe('curatedSubmissionToBrand', () => {
     retailLocations: [],
     customerVoices: [],
     region: null,
-    valueTags: [],
   }
 
   it('sets status to approved and nulls sentinel fields', () => {

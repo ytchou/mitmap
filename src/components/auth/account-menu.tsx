@@ -58,11 +58,6 @@ export function AccountMenu() {
           {t('account.settings')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          render={<Link href="/dashboard" />}
-        >
-          {t('account.dashboard')}
-        </DropdownMenuItem>
-        <DropdownMenuItem
           render={<Link href="/favorites" />}
         >
           {t('account.favorites')}

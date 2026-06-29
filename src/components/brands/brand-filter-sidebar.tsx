@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from 'next-intl'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { trackCategoryFilterApplied } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
-import { useFilterParams } from '@/hooks/use-filter-params'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -19,7 +18,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import type { BrandFilters, TaxonomyTag } from '@/lib/types'
+import type { BrandFilters } from '@/lib/types'
 
 type VerificationFilterValue = NonNullable<BrandFilters['verificationFilter']>
 
@@ -31,7 +30,6 @@ type CategoryOption = {
 
 type BrandFilterSidebarProps = {
   categories: CategoryOption[]
-  valueTags: TaxonomyTag[]
   className?: string
   showSummary?: boolean
 }
@@ -96,7 +94,6 @@ function FilterSection({
 
 export function BrandFilterSidebar({
   categories,
-  valueTags,
   className,
   showSummary = true,
 }: BrandFilterSidebarProps) {
@@ -106,8 +103,6 @@ export function BrandFilterSidebar({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { selectedSlugs } = useFilterParams()
-
   const activeCategories = useMemo(
     () => new Set(parseCommaParam(searchParams.get('category'))),
     [searchParams]
@@ -119,19 +114,13 @@ export function BrandFilterSidebar({
       : 'all'
   ) as VerificationFilterValue
 
-  const selectedTags = useMemo(() => new Set(selectedSlugs), [selectedSlugs])
   const activeCount =
     activeCategories.size +
-    (activeVerification !== 'all' ? 1 : 0) +
-    selectedSlugs.length
+    (activeVerification !== 'all' ? 1 : 0)
   const useZh = locale === 'zh-TW'
 
   function categoryLabel(category: CategoryOption) {
     return useZh ? category.nameZh ?? category.name : category.name
-  }
-
-  function tagLabel(tag: TaxonomyTag) {
-    return useZh ? tag.nameZh ?? tag.name : tag.name
   }
 
   function toggleCategory(slug: string, checked: boolean) {
@@ -168,32 +157,11 @@ export function BrandFilterSidebar({
     )
   }
 
-  function toggleTag(slug: string, checked: boolean) {
-    const next = new Set(selectedSlugs)
-    if (checked) {
-      next.add(slug)
-    } else {
-      next.delete(slug)
-    }
-
-    router.replace(
-      updateParamUrl(pathname, searchParams, (params) => {
-        if (next.size > 0) {
-          params.set('tags', Array.from(next).join(','))
-        } else {
-          params.delete('tags')
-        }
-      }),
-      { scroll: false }
-    )
-  }
-
   function clearAll() {
     router.replace(
       updateParamUrl(pathname, searchParams, (params) => {
         params.delete('category')
         params.delete('verification')
-        params.delete('tags')
       }),
       { scroll: false }
     )
@@ -258,34 +226,6 @@ export function BrandFilterSidebar({
         </div>
       </FilterSection>
 
-      {valueTags.length > 0 && (
-        <>
-          <Separator />
-          <FilterSection title={t('brandValues')}>
-            <div className="space-y-2">
-              {valueTags.map((tag) => {
-                const checked = selectedTags.has(tag.slug)
-                return (
-                  <Label
-                    key={tag.slug}
-                    className={cn(
-                      'cursor-pointer justify-between gap-3 text-sm font-normal text-muted-foreground transition-colors hover:text-foreground',
-                      checked && 'text-primary'
-                    )}
-                  >
-                    <span>{tagLabel(tag)}</span>
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(value: boolean) => toggleTag(tag.slug, value)}
-                      aria-label={tagLabel(tag)}
-                    />
-                  </Label>
-                )
-              })}
-            </div>
-          </FilterSection>
-        </>
-      )}
     </div>
   )
 }
@@ -322,7 +262,6 @@ function FilterRadio({
 
 export function BrandFilterDrawer({
   categories,
-  valueTags,
   totalCount,
 }: BrandFilterDrawerProps) {
   const [open, setOpen] = useState(false)
@@ -330,11 +269,9 @@ export function BrandFilterDrawer({
   const searchParams = useSearchParams()
   const activeCategories = parseCommaParam(searchParams.get('category'))
   const activeVerification = searchParams.get('verification')
-  const activeTags = parseCommaParam(searchParams.get('tags'))
   const activeCount =
     activeCategories.length +
-    (activeVerification === 'mit-verified' || activeVerification === 'owned' ? 1 : 0) +
-    activeTags.length
+    (activeVerification === 'mit-verified' || activeVerification === 'owned' ? 1 : 0)
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -353,7 +290,6 @@ export function BrandFilterDrawer({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <BrandFilterSidebar
             categories={categories}
-            valueTags={valueTags}
             showSummary={false}
           />
         </div>
@@ -379,7 +315,6 @@ function MobileClearAll({ onClear }: { onClear: () => void }) {
       updateParamUrl(pathname, searchParams, (params) => {
         params.delete('category')
         params.delete('verification')
-        params.delete('tags')
       }),
       { scroll: false }
     )

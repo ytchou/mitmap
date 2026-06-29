@@ -1,10 +1,9 @@
 import type { Brand, BrandFilters, CustomerVoice, OtherUrl } from '@/lib/types'
 import type { SiteContent, SiteProduct, SiteTokens } from '@/lib/types/brand'
-import type { TaxonomyTag } from '@/lib/types'
 import type { Database } from '@/lib/supabase/database.types'
 import { NotFoundError, ValidationError } from '@/lib/errors'
 import { createServiceClient } from '@/lib/supabase/server'
-import { getActiveCategories, getTagBySlug } from '@/lib/services/taxonomy'
+import { getActiveCategories } from '@/lib/services/taxonomy'
 import { BRAND_SORT_CONFIG, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import { isNonImageHost } from '@/lib/images/allowed-image-hosts'
 import { RESERVED_ROUTES } from '@/middleware'
@@ -24,7 +23,6 @@ function shuffleArray<T>(arr: T[]): void {
 
 type BrandRow = Database['public']['Tables']['brands']['Row']
 type BrandDraftData = BrandRow['draft_data']
-type TaxonomyTagRow = Database['public']['Tables']['taxonomy_tags']['Row']
 type BrandSlugRedirectRow = { new_slug: string }
 type BrandSlugRedirectTable = {
   select: (columns: 'new_slug') => {
@@ -61,7 +59,6 @@ export type CuratedSubmissionInput = {
   socialLinks: { instagram: string; threads: string; facebook: string; website: string }
   retailLocations: Array<{ name: string; address: string }>
   region?: string | null
-  valueTags?: string[]
 }
 
 type CuratedBrand = Partial<Brand> &
@@ -82,18 +79,13 @@ type CuratedBrand = Partial<Brand> &
 
 type BrandWriteInput = Partial<Brand> & { productType?: string }
 
-/** Shape returned by: brand_taxonomy(taxonomy_tags(*)) — only the nested tag is used by the mapper */
-type BrandTaxonomyWithTag = {
-  taxonomy_tags: TaxonomyTagRow | null
-}
-
 /** Shape returned by: brand_owners(user_id) */
 type BrandOwnerRef = { user_id: string }
 
 /**
  * Full joined row from BRAND_SELECT. Extends Partial<BrandRow> so that
  * unit test fixtures can omit columns added in later migrations (is_demo,
- * tag_slugs, price_range, product_tags) without a cast — the mapper uses
+ * price_range, product_tags) without a cast — the mapper uses
  * ?? defaults for all optional fields.
  */
 export type BrandRowWithJoins = Partial<BrandRow> &
@@ -103,7 +95,6 @@ export type BrandRowWithJoins = Partial<BrandRow> &
     product_tags?: string[] | null
   } &
   Pick<BrandRow, 'id' | 'name' | 'slug' | 'status' | 'submitted_at' | 'created_at' | 'updated_at'> & {
-    brand_taxonomy?: BrandTaxonomyWithTag[] | null
     brand_owners?: BrandOwnerRef | BrandOwnerRef[] | null
   }
 
@@ -151,7 +142,6 @@ export type BrandEnrichment = {
   productType: string
   heroImageUrl: string | null
   productPhotos: string[]
-  tagSlugs: string[]
 }
 
 // ---------------------------------------------------------------------------
@@ -505,27 +495,11 @@ export function diffRemovedImageUrls(previous: string[], next: string[]): string
 }
 
 export function brandToDomain(row: BrandRowWithJoins): Brand {
-  const taxonomyJoin = row.brand_taxonomy ?? []
   const owners = Array.isArray(row.brand_owners)
     ? row.brand_owners
     : row.brand_owners
       ? [row.brand_owners]
       : []
-  const tags: TaxonomyTag[] = taxonomyJoin
-    .filter((bt) => bt.taxonomy_tags !== null)
-    .map((bt) => {
-      const t = bt.taxonomy_tags as TaxonomyTagRow
-      return {
-        id: t.id,
-        name: t.name,
-        nameZh: t.name_zh ?? null,
-        slug: t.slug,
-        // taxonomy_tags.category is text in the DB — cast to TagCategory at the boundary
-        category: t.category as TaxonomyTag['category'],
-        isActive: t.is_active ?? true,
-        createdAt: t.created_at ?? '',
-      }
-    })
 
   const brand = {
     id: row.id,
@@ -558,7 +532,6 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
     priceRange: row.price_range ?? null,
     productTags: Array.isArray(row.product_tags) ? row.product_tags : [],
     siteContent: normalizeSiteContent(row.site_content as Brand['siteContent']),
-    tags,
     submittedAt: row.submitted_at ?? '',
     approvedAt: row.approved_at ?? null,
     createdAt: row.created_at ?? '',
@@ -614,13 +587,13 @@ const BRAND_COLUMNS = [
   'draft_data', 'draft_updated_at', 'founding_year',
   'price_range', 'product_tags',
   'mit_status', 'mit_verified_at',
-  'mit_evidence', 'source', 'tag_slugs', 'is_demo',
+  'mit_evidence', 'source', 'is_demo',
 ].join(', ')
 
 export const BRAND_SELECT =
-  `${BRAND_COLUMNS}, brand_taxonomy(taxonomy_tags(*)), brand_owners(user_id)` as unknown as '*'
+  `${BRAND_COLUMNS}, brand_owners(user_id)` as unknown as '*'
 const VERIFIED_BRAND_SELECT =
-  `${BRAND_COLUMNS}, brand_taxonomy(taxonomy_tags(*)), brand_owners!inner(user_id)` as unknown as '*'
+  `${BRAND_COLUMNS}, brand_owners!inner(user_id)` as unknown as '*'
 
 export async function getBrandSlugsBatch(brandIds: string[]): Promise<Map<string, string>> {
   if (brandIds.length === 0) return new Map()
@@ -641,13 +614,13 @@ async function getBrandEnrichmentBatch(brandIds: string[]): Promise<Map<string, 
   const supabase = createServiceClient()
   const BATCH_SIZE = 100
   const uniqueIds = Array.from(new Set(brandIds))
-  const allRows: { id: string; product_type: string | null; hero_image_url: string | null; product_photos: unknown; tag_slugs: string[] | null }[] = []
+  const allRows: { id: string; product_type: string | null; hero_image_url: string | null; product_photos: unknown }[] = []
 
   for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
     const chunk = uniqueIds.slice(i, i + BATCH_SIZE)
     const { data, error } = await supabase
       .from('brands')
-      .select('id, product_type, hero_image_url, product_photos, tag_slugs')
+      .select('id, product_type, hero_image_url, product_photos')
       .in('id', chunk)
     if (error) throw error
     if (data) allRows.push(...data)
@@ -660,7 +633,6 @@ async function getBrandEnrichmentBatch(brandIds: string[]): Promise<Map<string, 
         productType: row.product_type ?? '',
         heroImageUrl: row.hero_image_url ?? null,
         productPhotos: parseStringArray(row.product_photos, 'product_photos'),
-        tagSlugs: row.tag_slugs ?? [],
       },
     ])
   )
@@ -709,7 +681,6 @@ export async function getBrands(
       result_limit: null,
       prefix_mode: false,
       filter_categories: filters.category?.length ? filters.category : null,
-      filter_tags: filters.tags?.length ? filters.tags : null,
       filter_verification: verificationFilter,
       filter_status: filters.status || 'approved',
       include_test_brands: filters.includeTestBrands ?? false,
@@ -808,10 +779,6 @@ export async function getBrands(
   if (filters?.category && filters.category.length > 0) {
     query = query.in('product_type', filters.category)
   }
-  if (filters?.tags && filters.tags.length > 0) {
-    // brand has at least one of these value tags
-    query = query.overlaps('tag_slugs', filters.tags)
-  }
 
   // Sorting
   const sortKey = filters?.sort ?? 'random'
@@ -899,7 +866,7 @@ export async function insertSlugRedirect(oldSlug: string, newSlug: string): Prom
 }
 
 async function createBrand(
-  data: Omit<Brand, 'id' | 'tags' | 'submittedAt' | 'approvedAt' | 'createdAt' | 'updatedAt'> & {
+  data: Omit<Brand, 'id' | 'submittedAt' | 'approvedAt' | 'createdAt' | 'updatedAt'> & {
     unifiedBusinessNumber?: string | null
     productType?: string
   }
@@ -1038,15 +1005,14 @@ export async function deleteBrand(id: string): Promise<void> {
 }
 
 export async function getRelatedBrands(
-  tagSlug: string,
+  categorySlug: string,
   excludeSlug: string,
   limit = 4,
 ): Promise<Brand[]> {
-  const tag = await getTagBySlug(tagSlug)
-  if (!tag) return []
+  if (!categorySlug) return []
 
   const { brands } = await getBrands({
-    category: [tag.slug],
+    category: [categorySlug],
     status: 'approved',
     sort: 'random',
     limit: limit + 1,
@@ -1056,18 +1022,17 @@ export async function getRelatedBrands(
 }
 
 export async function getBrandCountByCategory(
-  tagSlug: string,
+  categorySlug: string,
   excludeSlug: string,
 ): Promise<number> {
-  const tag = await getTagBySlug(tagSlug)
-  if (!tag) return 0
+  if (!categorySlug) return 0
 
   const supabase = createServiceClient()
   const { count, error } = await supabase
     .from('brands')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'approved')
-    .eq('product_type', tag.slug)
+    .eq('product_type', categorySlug)
     .neq('slug', excludeSlug)
 
   if (error) throw error

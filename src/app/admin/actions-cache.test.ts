@@ -69,10 +69,7 @@ vi.mock('@/lib/services/brands', () => ({
 }))
 
 vi.mock('@/lib/services/taxonomy', () => ({
-  createTag: vi.fn(),
-  updateTag: vi.fn(),
-  mergeTag: vi.fn(),
-  deactivateTag: vi.fn(),
+  getActiveCategories: vi.fn().mockResolvedValue([]),
 }))
 
 vi.mock('@/lib/email/resend-adapter', () => ({

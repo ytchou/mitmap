@@ -83,13 +83,13 @@ function makeSubmission(
 
 function renderReviewList() {
   return renderWithIntl(
-    <SubmissionsReviewList submissions={[makeSubmission()]} taxonomyTags={[]} />
+    <SubmissionsReviewList submissions={[makeSubmission()]} />
   )
 }
 
 function renderReviewListWithSubmissions(submissions: BrandSubmission[]) {
   return renderWithIntl(
-    <SubmissionsReviewList submissions={submissions} taxonomyTags={[]} />
+    <SubmissionsReviewList submissions={submissions} />
   )
 }
 
@@ -145,7 +145,6 @@ describe('getEnrichmentStatus from enriched_data', () => {
       heroImageUrl: 'https://example.com/hero.jpg',
       productPhotos: ['photo1.jpg'],
       productType: 'crafts',
-      tagSlugs: ['taiwan-crafts'],
     })
     expect(status).toBe('enriched')
   })

@@ -3,7 +3,6 @@ export type EnrichedData = {
   heroImageUrl?: string
   productPhotos?: string[]
   productType?: string
-  tagSlugs?: string[]
   priceRange?: number
   productTags?: string[]
   socialInstagram?: string
@@ -28,7 +27,6 @@ export function enrichedDataFromDb(json: Record<string, unknown>): EnrichedData 
     ...(typeof json.hero_image_url === 'string' ? { heroImageUrl: json.hero_image_url } : {}),
     ...(Array.isArray(json.product_photos) ? { productPhotos: json.product_photos as string[] } : {}),
     ...(typeof json.product_type === 'string' ? { productType: json.product_type } : {}),
-    ...(Array.isArray(json.tag_slugs) ? { tagSlugs: json.tag_slugs as string[] } : {}),
     ...(typeof json.price_range === 'number' ? { priceRange: json.price_range } : {}),
     ...(Array.isArray(json.product_tags) ? { productTags: json.product_tags as string[] } : {}),
     ...(typeof json.social_instagram === 'string' ? { socialInstagram: json.social_instagram } : {}),
@@ -48,7 +46,6 @@ export function enrichedDataToDb(data: EnrichedData): Record<string, unknown> {
   if (data.heroImageUrl !== undefined) result.hero_image_url = data.heroImageUrl
   if (data.productPhotos !== undefined) result.product_photos = data.productPhotos
   if (data.productType !== undefined) result.product_type = data.productType
-  if (data.tagSlugs !== undefined) result.tag_slugs = data.tagSlugs
   if (data.priceRange !== undefined) result.price_range = data.priceRange
   if (data.productTags !== undefined) result.product_tags = data.productTags
   if (data.socialInstagram !== undefined) result.social_instagram = data.socialInstagram

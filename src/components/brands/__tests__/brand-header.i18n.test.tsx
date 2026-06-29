@@ -29,7 +29,6 @@ const fixtureBrand: Brand = {
     siteContent: null,
     priceRange: null,
     productTags: [],
-  tags: [],
   foundingYear: 2010,
   contactEmail: null,
   submittedAt: '2026-01-01T00:00:00Z',

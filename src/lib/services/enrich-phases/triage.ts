@@ -55,10 +55,6 @@ function buildTriagePatch(
     patch.product_type = triageResult.productType
   }
 
-  if (phases.includes('tags') && triageResult.valueTags.length > 0) {
-    patch.tag_slugs = triageResult.valueTags
-  }
-
   return patch
 }
 

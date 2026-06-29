@@ -115,14 +115,7 @@ vi.mock('@/lib/services/mit-verification', () => ({
 }))
 
 vi.mock('@/lib/services/taxonomy', () => ({
-  createTag: vi.fn(),
-  updateTag: vi.fn(),
-  mergeTag: vi.fn(),
-  deactivateTag: vi.fn(),
-  setBrandTags: vi.fn().mockResolvedValue(undefined),
-  getBrandsForReview: vi.fn().mockResolvedValue([]),
-  getTagBySlug: vi.fn(),
-  addTagToBrand: vi.fn(),
+  getActiveCategories: vi.fn().mockResolvedValue([]),
 }))
 
 vi.mock('@/lib/services/reports', () => ({
@@ -188,10 +181,6 @@ describe('admin actions module', () => {
     expect(typeof mod.unhideBrandAction).toBe('function')
     expect(typeof mod.deleteBrandAction).toBe('function')
     expect(typeof mod.resyncBrandImagesAction).toBe('function')
-    expect(typeof mod.createTagAction).toBe('function')
-    expect(typeof mod.renameTagAction).toBe('function')
-    expect(typeof mod.mergeTagAction).toBe('function')
-    expect(typeof mod.deactivateTagAction).toBe('function')
     expect(typeof mod.approvePendingEditAction).toBe('function')
     expect(typeof mod.rejectPendingEditAction).toBe('function')
   })
@@ -316,16 +305,13 @@ describe('pending edit email templates', () => {
   })
 })
 
-describe('approveSubmissionAction - taxonomy tag application', () => {
+describe('approveSubmissionAction - approval flow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockCookie('god')
   })
 
   it('delegates tag application to approveSubmission service on approval', async () => {
-    // Tag application is now encapsulated in the approveSubmission service.
-    // This test verifies the action delegates correctly to the service,
-    // not that addTagToBrand is called directly from the action.
     const { getSubmission, approveSubmission } = await import('@/lib/services/submissions')
     const { updateBrand } = await import('@/lib/services/brands')
     const submission = {
@@ -358,49 +344,6 @@ describe('approveSubmissionAction - taxonomy tag application', () => {
 
     expect(result).toBeUndefined()
     expect(approveSubmission).toHaveBeenCalledWith('sub-1', 'admin-1', undefined)
-  })
-
-  it('skips old string[] suggestedTags gracefully', async () => {
-    const { getSubmission, approveSubmission } = await import('@/lib/services/submissions')
-    const { updateBrand } = await import('@/lib/services/brands')
-    const { addTagToBrand } = await import('@/lib/services/taxonomy')
-    const submission = {
-      id: 'sub-1',
-      brandId: 'brand-1',
-      brandName: 'Test Brand',
-      description: 'Test description',
-      submitterName: null,
-      submitterEmail: 'submitter@example.com',
-      websiteUrl: null,
-      isBrandOwner: false,
-      socialInstagram: null,
-      socialThreads: null,
-      socialFacebook: null,
-      purchaseWebsite: null,
-      purchasePinkoi: null,
-      purchaseShopee: null,
-      otherUrls: [],
-      suggestedTags: ['eco-friendly', 'handmade'],
-      status: 'pending',
-      reviewerNotes: null,
-      submittedAt: '2026-01-01T00:00:00Z',
-      reviewedAt: null,
-      reviewedBy: null,
-      pdpaConsentAt: null,
-      validationStatus: null,
-      validationErrors: null,
-      notifiedAt: null,
-    } as Awaited<ReturnType<typeof getSubmission>>
-    vi.mocked(getSubmission).mockResolvedValue(submission)
-    vi.mocked(updateBrand).mockResolvedValue({ id: 'brand-1', slug: 'test-brand' } as Awaited<ReturnType<typeof updateBrand>>)
-    vi.mocked(approveSubmission).mockResolvedValue({ brandId: 'brand-1', submitterEmail: 'submitter@example.com', brandName: 'Test Brand', submitterName: null, isBrandOwner: false })
-    vi.mocked(addTagToBrand).mockResolvedValue(undefined)
-
-    const { approveSubmissionAction } = await import('./actions')
-    const result = await approveSubmissionAction('sub-1')
-
-    expect(result).toBeUndefined()
-    expect(addTagToBrand).not.toHaveBeenCalled()
   })
 
   it('approveSubmissionAction calls markFlagsReviewed', async () => {
@@ -516,50 +459,6 @@ describe('resyncBrandImagesAction', () => {
     expect(syncBrandImages).toHaveBeenCalledWith('brand-1')
     expect(revalidatePath).toHaveBeenCalledWith('/admin/catalog/brands')
     expect(result).toEqual({ synced: 2, failed: 1 })
-  })
-})
-
-describe('setBrandTagsAction', () => {
-  it('calls setBrandTags with manual source', async () => {
-    const { setBrandTags } = await import('@/lib/services/taxonomy')
-    vi.mocked(setBrandTags).mockResolvedValue(undefined)
-
-    const { setBrandTagsAction } = await import('./actions')
-    const formData = new FormData()
-    formData.append('brandId', 'brand-123')
-    formData.append('tagIds', JSON.stringify(['tag-1', 'tag-2']))
-
-    const result = await setBrandTagsAction(formData)
-
-    expect(setBrandTags).toHaveBeenCalledWith('brand-123', ['tag-1', 'tag-2'])
-    expect(result).toEqual({ success: true })
-  })
-
-  it('returns error when brandId is missing', async () => {
-    const { setBrandTagsAction } = await import('./actions')
-    const formData = new FormData()
-    formData.append('tagIds', JSON.stringify(['tag-1']))
-
-    const result = await setBrandTagsAction(formData)
-
-    expect(result).toHaveProperty('error')
-  })
-})
-
-describe('confirmBrandTagsAction', () => {
-  it('calls setBrandTags to upgrade source from auto to manual', async () => {
-    const { setBrandTags } = await import('@/lib/services/taxonomy')
-    vi.mocked(setBrandTags).mockResolvedValue(undefined)
-
-    const { confirmBrandTagsAction } = await import('./actions')
-    const formData = new FormData()
-    formData.append('brandId', 'brand-123')
-    formData.append('tagIds', JSON.stringify(['tag-1']))
-
-    const result = await confirmBrandTagsAction(formData)
-
-    expect(setBrandTags).toHaveBeenCalledWith('brand-123', ['tag-1'])
-    expect(result).toEqual({ success: true })
   })
 })
 

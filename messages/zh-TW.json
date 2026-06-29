@@ -1270,12 +1270,6 @@
       "regionPlaceholder": "選擇地區",
       "regionHint": "品牌總部或主要營運的城市",
       "regionOptionalHint": "選填",
-      "valueTags": "品牌價值",
-      "valueTagsHint": "選擇最多 3 個品牌價值",
-      "valueTagsOptionalHint": "選填",
-      "valueTagsCounter": "{count} / {max}",
-      "valueTagsCounterLabel": "已選擇 {count} 個，最多 {max} 個",
-      "removeValue": "移除 {value}",
       "productTypes": "產品類型",
       "productTypesMultiSelect": "",
       "productTypesHint": "選擇最符合你品牌的產品類型",
@@ -1309,7 +1303,6 @@
       "photoCountSingular": "1 張照片已上傳",
       "brandLogoAlt": "品牌標誌",
       "pdpaConsent": "我同意依據<privacyPolicy>隱私權政策</privacyPolicy>收集和使用我的個人資料，並已了解依據《個人資料保護法》所賦予之各項權利。",
-      "valueTags": "品牌價值",
       "socialLinks": "社群連結",
       "purchaseLinks": "購買連結",
       "purchaseWebsite": "品牌官網",
@@ -1372,7 +1365,6 @@
       "pdpaRequired": "請同意隱私政策",
       "turnstileRequired": "請完成驗證",
       "ubn_format": "統一編號須為8位數字",
-      "valueTagsMax": "最多可選擇 3 個品牌價值",
       "regionRequired": "請選擇地區"
     },
     "errors": {

@@ -19,7 +19,6 @@ import { getSubscribers, getSubscriberStats } from '@/lib/services/newsletter'
 import { getPendingEdits } from '@/lib/services/pending-edits'
 import { getPendingReports } from '@/lib/services/reports'
 import { getSubmissions } from '@/lib/services/submissions'
-import { getTags } from '@/lib/services/taxonomy'
 import { createServiceClient } from '@/lib/supabase/server'
 
 type QueueItem = {
@@ -75,7 +74,6 @@ export default async function AdminPage() {
     feedbackItems,
     flaggedContentResult,
     brandResult,
-    tags,
     healthResults,
     newsletterData,
   ] = await Promise.all([
@@ -92,14 +90,12 @@ export default async function AdminPage() {
       brands: [],
       totalCount: 0,
     })),
-    getTags().catch(() => []),
     checkAllServices().catch((): ServiceHealthResult[] => []),
     getNewsletterDashboardData(),
   ])
 
   const flaggedContent = flaggedContentResult.items
   const { subscribers, subscriberStats } = newsletterData
-  const activeTagCount = tags.filter((tag) => tag.isActive).length
 
   const queues: ReviewQueue[] = [
     {
@@ -181,11 +177,6 @@ export default async function AdminPage() {
       label: '品牌總數',
       value: brandResult.totalCount,
       description: '資料庫中的品牌筆數',
-    },
-    {
-      label: '啟用標籤',
-      value: activeTagCount,
-      description: '目前可供分類使用',
     },
     {
       label: '待審核內容警示',

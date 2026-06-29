@@ -452,36 +452,6 @@ export type Database = {
           },
         ]
       }
-      brand_taxonomy: {
-        Row: {
-          brand_id: string
-          tag_id: string
-        }
-        Insert: {
-          brand_id: string
-          tag_id: string
-        }
-        Update: {
-          brand_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "brand_taxonomy_brand_id_fkey"
-            columns: ["brand_id"]
-            isOneToOne: false
-            referencedRelation: "brands"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "brand_taxonomy_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "taxonomy_tags"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       brands: {
         Row: {
           approved_at: string | null
@@ -521,7 +491,6 @@ export type Database = {
           source: string | null
           status: string
           submitted_at: string | null
-          tag_slugs: string[]
           unified_business_number: string | null
           updated_at: string | null
         }
@@ -563,7 +532,6 @@ export type Database = {
           source?: string | null
           status?: string
           submitted_at?: string | null
-          tag_slugs?: string[]
           unified_business_number?: string | null
           updated_at?: string | null
         }
@@ -605,7 +573,6 @@ export type Database = {
           source?: string | null
           status?: string
           submitted_at?: string | null
-          tag_slugs?: string[]
           unified_business_number?: string | null
           updated_at?: string | null
         }
@@ -968,47 +935,6 @@ export type Database = {
         }
         Relationships: []
       }
-      taxonomy_tags: {
-        Row: {
-          category: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          name_zh: string | null
-          slug: string
-          suggested_by: string | null
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          name_zh?: string | null
-          slug: string
-          suggested_by?: string | null
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          name_zh?: string | null
-          slug?: string
-          suggested_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_taxonomy_tags_suggested_by"
-            columns: ["suggested_by"]
-            isOneToOne: false
-            referencedRelation: "brand_submissions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -1044,10 +970,6 @@ export type Database = {
         Returns: undefined
       }
       profile_completeness: { Args: { p_brand_id: string }; Returns: number }
-      refresh_brand_tag_slugs: {
-        Args: { p_brand_id: string }
-        Returns: undefined
-      }
       search_brands: {
         Args: { result_limit?: number; search_query: string }
         Returns: {

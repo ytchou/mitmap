@@ -22,7 +22,6 @@ const brandTriage: TriageResult = {
   slug: 'test-brand',
   slugGenerated: 'better-brand',
   productType: 'skincare',
-  valueTags: ['vegan'],
   confidence: 'high',
 }
 
@@ -81,7 +80,6 @@ describe('applyTriageResult', () => {
     expect(result.patch).toEqual({
       slug: 'better-brand',
       product_type: 'skincare',
-      tag_slugs: ['vegan'],
     })
   })
 })

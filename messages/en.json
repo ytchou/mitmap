@@ -1269,12 +1269,6 @@
       "regionPlaceholder": "Select a region",
       "regionHint": "The brand's headquarters or main city of operations",
       "regionOptionalHint": "optional",
-      "valueTags": "Brand Values",
-      "valueTagsHint": "Select up to 3 values that describe the brand",
-      "valueTagsOptionalHint": "optional",
-      "valueTagsCounter": "{count} / {max}",
-      "valueTagsCounterLabel": "{count} of {max} selected",
-      "removeValue": "Remove {value}",
       "productTypes": "Product Type",
       "productTypesMultiSelect": "",
       "productTypesHint": "Select the product type that best describes your brand",
@@ -1308,7 +1302,6 @@
       "photoCountSingular": "1 photo uploaded",
       "brandLogoAlt": "Brand logo",
       "pdpaConsent": "I agree to the collection and use of my personal data in accordance with the <privacyPolicy>Privacy Policy</privacyPolicy>, and understand my rights under the Personal Data Protection Act.",
-      "valueTags": "Brand Values",
       "socialLinks": "Social links",
       "purchaseLinks": "Purchase links",
       "purchaseWebsite": "Official Website",
@@ -1371,7 +1364,6 @@
       "pdpaRequired": "Please agree to the privacy policy",
       "turnstileRequired": "Please complete verification",
       "ubn_format": "Business number must be 8 digits",
-      "valueTagsMax": "You can select up to 3 brand values",
       "regionRequired": "Please select a region"
     },
     "errors": {

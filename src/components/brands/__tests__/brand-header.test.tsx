@@ -30,7 +30,6 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
     siteContent: null,
     priceRange: null,
     productTags: [],
-    tags: [],
     foundingYear: null,
     contactEmail: null,
     submittedAt: '2026-01-01T00:00:00Z',

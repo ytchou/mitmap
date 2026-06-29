@@ -25,16 +25,6 @@ import {
 } from '@/lib/services/brands'
 import { getBrandOwnerEmail } from '@/lib/services/brand-owners'
 import { scanContent, saveModerationFlags, markFlagsReviewed } from '@/lib/services/moderation'
-import {
-  createTag,
-  updateTag,
-  mergeTag,
-  deactivateTag,
-  activateTag,
-  setBrandTags,
-  getTagBySlug,
-  addTagToBrand,
-} from '@/lib/services/taxonomy'
 import { sendEmail } from '@/lib/email/send'
 import {
   buildApprovalEmail,
@@ -51,8 +41,7 @@ import { updateReportStatus } from '@/lib/services/reports'
 import { updateFeedbackStatus, syncSentryFeedback } from '@/lib/services/feedback'
 import type { FeedbackStatus } from '@/lib/services/feedback'
 import { checkAllServices } from '@/lib/services/health-checks'
-import { DENIAL_REASONS, type DenialReason, type OtherUrl, type TagCategory } from '@/lib/types'
-import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
+import { DENIAL_REASONS, type DenialReason, type OtherUrl } from '@/lib/types'
 import { getSiteUrl } from '@/lib/site-url'
 
 async function requireAdmin(): Promise<{ userId: string; email: string } | { error: string }> {
@@ -439,14 +428,6 @@ export async function updateBrandAction(
 
     await updateBrand(brandId, data as Parameters<typeof updateBrand>[1])
 
-    if (data.category !== undefined) {
-      const category = PRODUCT_TYPE_CATEGORIES.find((c) => c.nameZh === data.category)
-      if (category) {
-        const tag = await getTagBySlug(category.slug)
-        if (tag) await addTagToBrand(brandId, tag.id)
-      }
-    }
-
     const {
       name,
       description,
@@ -582,173 +563,6 @@ export async function resyncBrandImagesAction(
   } catch (err) {
     console.error('[admin:resyncBrandImages]', err)
     return { error: err instanceof Error ? err.message : 'An unexpected error occurred' }
-  }
-}
-
-export async function createTagAction(
-  data: { name: string; category: string; nameZh?: string }
-): Promise<{ error: string } | undefined> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    await createTag({
-      name: data.name,
-      category: data.category as TagCategory,
-      nameZh: data.nameZh,
-    })
-
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return undefined
-  } catch (err) {
-    console.error('[admin:createTag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function renameTagAction(
-  tagId: string,
-  name: string,
-  nameZh?: string
-): Promise<{ error: string } | undefined> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    await updateTag(tagId, { name, nameZh })
-
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return undefined
-  } catch (err) {
-    console.error('[admin:renameTag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function mergeTagAction(
-  sourceId: string,
-  targetId: string
-): Promise<{ error: string } | undefined> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    await mergeTag(sourceId, targetId)
-
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return undefined
-  } catch (err) {
-    console.error('[admin:mergeTag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function deactivateTagAction(
-  tagId: string
-): Promise<{ error: string } | undefined> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    await deactivateTag(tagId)
-
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return undefined
-  } catch (err) {
-    console.error('[admin:deactivateTag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function approveSuggestedTagAction(
-  tagId: string
-): Promise<{ error: string } | undefined> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    await activateTag(tagId)
-
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return undefined
-  } catch (err) {
-    console.error('[admin:approveSuggestedTag]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function setBrandTagsAction(
-  formData: FormData
-): Promise<{ success: true } | { error: string }> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    const brandId = formData.get('brandId')
-    const tagIdsRaw = formData.get('tagIds')
-
-    if (!brandId || typeof brandId !== 'string') {
-      return { error: 'brandId is required' }
-    }
-
-    const tagIds: string[] = tagIdsRaw ? JSON.parse(tagIdsRaw as string) : []
-
-    await setBrandTags(brandId, tagIds)
-
-    revalidatePath('/admin/catalog/brands')
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin:setBrandTags]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
-  }
-}
-
-export async function confirmBrandTagsAction(
-  formData: FormData
-): Promise<{ success: true } | { error: string }> {
-  try {
-    const auth = await requireAdmin()
-    if ('error' in auth) return auth
-
-    const brandId = formData.get('brandId')
-    const tagIdsRaw = formData.get('tagIds')
-
-    if (!brandId || typeof brandId !== 'string') {
-      return { error: 'brandId is required' }
-    }
-
-    const tagIds: string[] = tagIdsRaw ? JSON.parse(tagIdsRaw as string) : []
-
-    await setBrandTags(brandId, tagIds)
-
-    revalidatePath('/admin/catalog/brands')
-    revalidatePath('/admin/catalog/taxonomy')
-    revalidatePath('/admin')
-    return { success: true }
-  } catch (err) {
-    console.error('[admin:confirmBrandTags]', err)
-    return {
-      error: err instanceof Error ? err.message : 'An unexpected error occurred',
-    }
   }
 }
 
