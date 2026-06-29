@@ -61,34 +61,20 @@ ${CATEGORY_LIST}
 - 範例：「小日子」→ "oneday"（取自官方英文名 One Day，單一單字不需連字號）
 - 範例：「Z研」→ null（無明確英文名，保留現有 slug）
 
-## 品牌標籤（valueTags）
-從以下 8 個標籤中選擇最多 3 個最符合品牌的 slug：
-- sustainability（永續）
-- handmade（手作）
-- organic（有機）
-- eco-friendly（環保）
-- fair-trade（公平貿易）
-- local-culture（在地文化）
-- social-enterprise（社會企業）
-- local-revitalization（地方創生）
-
-回傳 slug 陣列，例如：["handmade", "sustainability"]
-非品牌不需要標籤（回傳空陣列 []）。
-
 ## 搜尋摘要
 輸入可能包含 Google 搜尋結果摘要，供你判斷品牌性質與分類。
 
 ## 範例
 
 輸入：品牌名：好物嚴選 / 網站：goodstuff.tw
-輸出：{"isNonBrand":true,"nonBrandReason":"選物店，策展銷售多品牌商品，無自有產品","slug_generated":null,"productType":null,"confidence":"high","valueTags":[]}
+輸出：{"isNonBrand":true,"nonBrandReason":"選物店，策展銷售多品牌商品，無自有產品","slug_generated":null,"productType":null,"confidence":"high"}
 
 輸入：品牌名：印花樂 / 網站：inblooom.com
-輸出：{"isNonBrand":false,"nonBrandReason":null,"slug_generated":"inblooom","productType":"home","confidence":"high","valueTags":["handmade","local-culture"]}
+輸出：{"isNonBrand":false,"nonBrandReason":null,"slug_generated":"inblooom","productType":"home","confidence":"high"}
 
 回應格式（嚴格 JSON，不加任何其他文字）：
-單一品牌：{"isNonBrand":true|false,"nonBrandReason":"...或 null","slug_generated":"...","productType":"...或 null","confidence":"high|medium|low","valueTags":["slug1","slug2"]}
-多個品牌：[{"slug":"<原始 slug>","isNonBrand":...,"nonBrandReason":...,"slug_generated":"...","productType":...,"confidence":...,"valueTags":[...]}]`
+單一品牌：{"isNonBrand":true|false,"nonBrandReason":"...或 null","slug_generated":"...","productType":"...或 null","confidence":"high|medium|low"}
+多個品牌：[{"slug":"<原始 slug>","isNonBrand":...,"nonBrandReason":...,"slug_generated":"...","productType":...,"confidence":...}]`
 
 export const DESCRIPTION_SYSTEM_PROMPT = `你是台灣品牌文案撰寫者。請根據提供的資料，撰寫一段品牌簡介（繁體中文）。
 

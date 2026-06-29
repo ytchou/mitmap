@@ -1,4 +1,3 @@
-import type { TaxonomyTag } from './taxonomy'
 import type { BrandSortOption } from '@/lib/pagination'
 
 export type BrandStatus = 'approved' | 'hidden'
@@ -91,7 +90,6 @@ export type Brand = {
   priceRange: number | null
   productTags: string[]
   siteContent: SiteContent | null
-  tags: TaxonomyTag[]
   submittedAt: string
   approvedAt: string | null
   createdAt: string
@@ -103,7 +101,6 @@ export type BrandFilters = {
   category?: string[]
   verificationFilter?: 'all' | 'mit-verified' | 'owned'
   search?: string
-  tags?: string[]
   sort?: BrandSortOption
   limit?: number
   offset?: number

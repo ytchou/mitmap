@@ -45,9 +45,6 @@ export function buildBrandJsonLd(brand: Brand, locale: Locale = 'zh-TW'): JsonLd
   if (brand.foundingYear) jsonLd.foundingDate = String(brand.foundingYear)
   if (brand.contactEmail) jsonLd.email = brand.contactEmail
   if (allSameAs.length > 0) jsonLd.sameAs = allSameAs
-  if (brand.tags.length > 0) {
-    jsonLd.keywords = brand.tags.map((tag) => tag.name).join(', ')
-  }
   if (brand.retailLocations.length === 1) {
     jsonLd.address = {
       '@type': 'PostalAddress',

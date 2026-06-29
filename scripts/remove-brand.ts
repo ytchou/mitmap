@@ -9,12 +9,10 @@ import type { Database } from '@/lib/supabase/database.types'
 // ---------------------------------------------------------------------------
 
 type BrandRow = Database['public']['Tables']['brands']['Row']
-type BrandTaxonomyRow = Database['public']['Tables']['brand_taxonomy']['Row']
 type BrandSubmissionRow = Database['public']['Tables']['brand_submissions']['Row']
 
 type BackupEntry = {
   brand: BrandRow
-  taxonomy: BrandTaxonomyRow[]
   submissions: BrandSubmissionRow[]
   storagePaths: string[]
 }
@@ -192,7 +190,6 @@ async function deleteStorageObjects(
 
 type GatheredBrand = {
   row: BrandRow
-  taxonomy: BrandTaxonomyRow[]
   submissions: BrandSubmissionRow[]
   storagePaths: string[]
 }
@@ -212,20 +209,16 @@ async function gatherBrandData(
 
   const brandId = brandRow.id
 
-  const [taxonomyResult, submissionsResult, storagePaths] = await Promise.all([
-    supabase.from('brand_taxonomy').select('*').eq('brand_id', brandId),
+  const [submissionsResult, storagePaths] = await Promise.all([
     supabase.from('brand_submissions').select('*').eq('brand_id', brandId),
     listStorageObjects(supabase, brandId),
   ])
 
-  if (taxonomyResult.error)
-    throw new Error(`Taxonomy fetch failed for "${slug}": ${taxonomyResult.error.message}`)
   if (submissionsResult.error)
     throw new Error(`Submissions fetch failed for "${slug}": ${submissionsResult.error.message}`)
 
   return {
     row: brandRow,
-    taxonomy: taxonomyResult.data ?? [],
     submissions: submissionsResult.data ?? [],
     storagePaths,
   }
@@ -242,7 +235,6 @@ async function runDryRun(
   console.log('--- Dry Run Preview ---')
 
   let totalSubmissions = 0
-  let totalTaxonomy = 0
   let totalStorageObjects = 0
   let skipped = 0
 
@@ -261,15 +253,14 @@ async function runDryRun(
       continue
     }
 
-    const { row, taxonomy, submissions, storagePaths } = gathered
+    const { row, submissions, storagePaths } = gathered
     console.log(
       `[DRY RUN] ${slug} | ${row.name} | status:${row.status} | ` +
-        `submissions:${submissions.length} | taxonomy:${taxonomy.length} | ` +
+        `submissions:${submissions.length} | ` +
         `storageObjects:${storagePaths.length}`
     )
 
     totalSubmissions += submissions.length
-    totalTaxonomy += taxonomy.length
     totalStorageObjects += storagePaths.length
   }
 
@@ -277,7 +268,6 @@ async function runDryRun(
   console.log(`Brands to remove: ${slugs.length - skipped}`)
   console.log(`Brands not found: ${skipped}`)
   console.log(`Total brand_submissions rows: ${totalSubmissions}`)
-  console.log(`Total brand_taxonomy rows: ${totalTaxonomy}`)
   console.log(`Total Storage objects: ${totalStorageObjects}`)
   console.log('\nDry run complete. No changes made.')
 }
@@ -318,9 +308,8 @@ async function removeBrands(
   }
 
   // Phase 2: write backup BEFORE any mutations
-  const backupEntries: BackupEntry[] = gathered.map(({ row, taxonomy, submissions, storagePaths }) => ({
+  const backupEntries: BackupEntry[] = gathered.map(({ row, submissions, storagePaths }) => ({
     brand: row,
-    taxonomy,
     submissions,
     storagePaths,
   }))
@@ -427,7 +416,7 @@ async function restoreBackup(
   let restored = 0
   let skipped = 0
 
-  for (const { brand, taxonomy, submissions } of entries) {
+  for (const { brand, submissions } of entries) {
     const slug = brand.slug
 
     // Check if brand already exists
@@ -447,12 +436,6 @@ async function restoreBackup(
       // Insert brand row
       const { error: insertErr } = await supabase.from('brands').insert(brand)
       if (insertErr) throw new Error(`brands insert failed: ${insertErr.message}`)
-
-      // Insert taxonomy rows
-      if (taxonomy.length > 0) {
-        const { error: taxErr } = await supabase.from('brand_taxonomy').insert(taxonomy)
-        if (taxErr) throw new Error(`brand_taxonomy insert failed: ${taxErr.message}`)
-      }
 
       // Insert submissions rows
       if (submissions.length > 0) {

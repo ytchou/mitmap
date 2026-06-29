@@ -129,7 +129,7 @@ describe('useFilterParams', () => {
     })
 
     it('clearFilters removes search param', () => {
-      mockSearchParams = new URLSearchParams('search=test&tags=food')
+      mockSearchParams = new URLSearchParams('search=test')
       const { result } = renderHook(() => useFilterParams())
 
       act(() => {
@@ -144,22 +144,12 @@ describe('useFilterParams', () => {
   })
 
   describe('filter + page interaction', () => {
-    it('toggleSlug resets page to 1', () => {
-      mockSearchParams = new URLSearchParams('page=3&tags=food')
-      const { result } = renderHook(() => useFilterParams())
-      act(() => result.current.toggleSlug('textile'))
-      const pushArg = mockPush.mock.calls[0][0] as string
-      expect(pushArg).not.toContain('page=')
-      expect(pushArg).toContain('tags=food%2Ctextile')
-    })
-
     it('clearFilters resets page to 1', () => {
-      mockSearchParams = new URLSearchParams('page=3&tags=food')
+      mockSearchParams = new URLSearchParams('page=3')
       const { result } = renderHook(() => useFilterParams())
       act(() => result.current.clearFilters())
       const pushArg = mockPush.mock.calls[0][0] as string
       expect(pushArg).not.toContain('page=')
-      expect(pushArg).not.toContain('tags=')
     })
   })
 })

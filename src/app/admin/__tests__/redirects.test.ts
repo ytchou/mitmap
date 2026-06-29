@@ -51,9 +51,4 @@ describe('old route redirect stubs', () => {
     expect(mockRedirect).toHaveBeenCalledWith('/admin/catalog/brands')
   })
 
-  it('/admin/taxonomy redirects to /admin/catalog/taxonomy', async () => {
-    const { default: Page } = await import('../taxonomy/page')
-    expect(() => Page()).toThrow('REDIRECT')
-    expect(mockRedirect).toHaveBeenCalledWith('/admin/catalog/taxonomy')
-  })
 })

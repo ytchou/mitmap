@@ -62,7 +62,6 @@ type CurationBrand = {
   product_type?: string | null
   purchase_website?: string | null
   purchaseWebsite?: string | null
-  tag_slugs?: string[] | null
 }
 
 type SupabaseLike = Pick<SupabaseClient, 'from'>
@@ -714,7 +713,6 @@ export async function runEnrich(
               slugGenerated: triageResult?.slugGenerated ?? null,
               productType: triageResult?.productType ?? null,
               confidence: triageResult?.confidence ?? 'high',
-              valueTags: triageResult?.valueTags ?? [],
               rawResponse: triageResult,
             })
             await supabase.from('brands').update({
@@ -883,7 +881,6 @@ export async function runEnrich(
               slugGenerated: triageResult.slugGenerated,
               productType: triageResult.productType,
               confidence: triageResult.confidence,
-              valueTags: triageResult.valueTags,
               rawResponse: triageResult,
             })
           }

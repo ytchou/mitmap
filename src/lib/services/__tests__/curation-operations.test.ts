@@ -150,7 +150,6 @@ describe('runEnrich triage integration', () => {
       slug: 'some-brand',
       slugGenerated: null,
       productType: null,
-      valueTags: [],
       confidence: 'high' as const,
     }
 
@@ -166,7 +165,6 @@ describe('runEnrich triage integration', () => {
       slug: 'good-brand',
       slugGenerated: 'good-brand',
       productType: 'beauty',
-      valueTags: [],
       confidence: 'high' as const,
     }
 
@@ -182,7 +180,6 @@ describe('runEnrich triage integration', () => {
       slug: 'uncertain-brand',
       slugGenerated: null,
       productType: null,
-      valueTags: [],
       confidence: 'low' as const,
     }
 

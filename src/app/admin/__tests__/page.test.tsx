@@ -10,14 +10,13 @@ import { getFlaggedContent } from '@/lib/services/moderation'
 import { getPendingEdits } from '@/lib/services/pending-edits'
 import { getPendingReports } from '@/lib/services/reports'
 import { getSubmissions } from '@/lib/services/submissions'
-import { getTags } from '@/lib/services/taxonomy'
 import type { BrandReport } from '@/lib/services/reports'
 import type { FeedbackItem } from '@/lib/services/feedback'
 import type { FlaggedContentItem } from '@/lib/services/moderation'
 import type { BrandSubmission } from '@/lib/types'
 import type { PendingBrandEditWithBrand } from '@/lib/types/brand'
 import type { ClaimRequest } from '@/lib/services/claim-requests'
-import type { Brand, TaxonomyTag } from '@/lib/types'
+import type { Brand } from '@/lib/types'
 
 vi.mock('@/lib/services/submissions', () => ({
   getSubmissions: vi.fn(),
@@ -45,10 +44,6 @@ vi.mock('@/lib/services/moderation', () => ({
 
 vi.mock('@/lib/services/brands', () => ({
   getBrands: vi.fn(),
-}))
-
-vi.mock('@/lib/services/taxonomy', () => ({
-  getTags: vi.fn(),
 }))
 
 vi.mock('@/app/admin/actions', () => ({
@@ -227,25 +222,10 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
     siteContent: null,
     priceRange: null,
     productTags: [],
-    tags: [],
     submittedAt: '2026-06-01T00:00:00.000Z',
     approvedAt: null,
     createdAt: '2026-06-01T00:00:00.000Z',
     updatedAt: '2026-06-01T00:00:00.000Z',
-    ...overrides,
-  }
-}
-
-function makeTag(overrides: Partial<TaxonomyTag> = {}): TaxonomyTag {
-  return {
-    id: 'tag-1',
-    name: 'Tea',
-    nameZh: null,
-    slug: 'tea',
-    category: 'product_type',
-    isActive: true,
-    createdAt: '2026-06-01T00:00:00.000Z',
-    brandCount: 1,
     ...overrides,
   }
 }
@@ -261,7 +241,6 @@ beforeEach(() => {
     brands: [],
     totalCount: 0,
   })
-  vi.mocked(getTags).mockResolvedValue([])
 })
 
 describe('AdminPage', () => {
@@ -296,22 +275,16 @@ describe('AdminPage', () => {
     expect(within(cards[2]).getByText('2')).toBeInTheDocument()
   })
 
-  it('renders overview metrics for total brands and active tags', async () => {
+  it('renders overview metrics for total brands', async () => {
     vi.mocked(getBrands).mockResolvedValueOnce({
       brands: [makeBrand()],
       totalCount: 42,
     })
-    vi.mocked(getTags).mockResolvedValueOnce([
-      makeTag({ id: 'tag-1', isActive: true }),
-      makeTag({ id: 'tag-2', isActive: true }),
-    ])
 
     render(await AdminDashboardPage())
 
     expect(screen.getByText('品牌總數')).toBeInTheDocument()
     expect(screen.getByText('42')).toBeInTheDocument()
-    expect(screen.getByText('啟用標籤')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument()
   })
 
   it('shows empty collapsed state for zero-count queues', async () => {

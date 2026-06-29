@@ -11,11 +11,7 @@ type Props = {
   params: Promise<{ locale: string }>
 }
 
-type SavedBrandCardData = SavedBrand & {
-  category?: string | null
-}
-
-function BrandImage({ brand }: { brand: SavedBrandCardData }) {
+function BrandImage({ brand }: { brand: SavedBrand }) {
   if (!brand.heroImageUrl) {
     return (
       <div className="flex h-full items-center justify-center bg-secondary">
@@ -37,7 +33,7 @@ function BrandImage({ brand }: { brand: SavedBrandCardData }) {
   )
 }
 
-function SavedBrandCard({ brand }: { brand: SavedBrandCardData }) {
+function SavedBrandCard({ brand }: { brand: SavedBrand }) {
   return (
     <Link
       className="group block overflow-hidden rounded-xl border border-border bg-white transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -53,11 +49,6 @@ function SavedBrandCard({ brand }: { brand: SavedBrandCardData }) {
         <h2 className="truncate text-sm font-bold leading-snug text-foreground">
           {brand.brandName}
         </h2>
-        {brand.category ? (
-          <p className="mt-2 text-[13px] font-medium text-muted-foreground">
-            {brand.category}
-          </p>
-        ) : null}
       </div>
     </Link>
   )

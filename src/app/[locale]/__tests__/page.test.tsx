@@ -31,21 +31,12 @@ vi.mock('@/lib/services/brands', () => ({
   getRecentBrandCount: vi.fn(),
 }))
 
-vi.mock('@/lib/services/taxonomy', () => ({
-  getActiveCategories: vi.fn(),
-  getTags: vi.fn(),
-}))
-
 vi.mock('@/components/landing/hero-section', () => ({
   default: () => <div data-testid="hero-section" />,
 }))
 
 vi.mock('@/components/landing/manifesto', () => ({
   default: () => <div data-testid="manifesto" />,
-}))
-
-vi.mock('@/components/landing/value-chips', () => ({
-  default: () => <div data-testid="value-chips" />,
 }))
 
 vi.mock('@/components/landing/submit-band', () => ({
@@ -92,7 +83,6 @@ vi.mock('@/components/shared/brand-showcase', () => ({
 
 import { getTranslations } from 'next-intl/server'
 import { getBrands, getNewBrands, getRecentBrandCount } from '@/lib/services/brands'
-import { getActiveCategories, getTags } from '@/lib/services/taxonomy'
 import type { Brand } from '@/lib/types'
 import LandingPage from '../page'
 
@@ -140,7 +130,6 @@ function createBrand(overrides: Partial<Brand>): Brand {
     siteContent: null,
     priceRange: null,
     productTags: [],
-    tags: [],
     submittedAt: '2026-01-01T00:00:00.000Z',
     approvedAt: '2026-01-02T00:00:00.000Z',
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -157,7 +146,6 @@ describe('LandingPage', () => {
       async (namespace: Parameters<typeof getTranslations>[0]) =>
         makeT(zh as Messages, typeof namespace === 'string' ? namespace : '') as ReturnType<typeof makeT> as unknown as Awaited<ReturnType<typeof getTranslations>>
     )
-    vi.mocked(getActiveCategories).mockResolvedValue([])
     vi.mocked(getBrands).mockResolvedValue({
       brands: [
         createBrand({
@@ -174,7 +162,6 @@ describe('LandingPage', () => {
       totalCount: 2,
     })
     vi.mocked(getNewBrands).mockResolvedValue([])
-    vi.mocked(getTags).mockResolvedValue([])
     vi.mocked(getRecentBrandCount).mockResolvedValue({ count: 3, period: '7d' })
   })
 

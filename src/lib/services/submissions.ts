@@ -6,7 +6,6 @@ import { enrichedDataFromDb } from '@/lib/types/enriched-data'
 import { NotFoundError } from '@/lib/errors'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { generateSlug, isReservedSlug } from '@/lib/services/brands'
-import { addTagToBrand, getTagBySlug } from '@/lib/services/taxonomy'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ---------------------------------------------------------------------------
@@ -339,33 +338,6 @@ function approvalOverridesToBrandInsert(
   })
 }
 
-async function applySuggestedTags(
-  supabase: ServiceClient,
-  brandId: string,
-  suggestedTags: SubmissionRow['suggested_tags'],
-  options?: { enrichedTagSlugs?: string[]; applyProductType?: boolean }
-): Promise<void> {
-  const tagSlugs = [
-    ...(isStructuredTags(suggestedTags) && Array.isArray(suggestedTags.values) ? suggestedTags.values : []),
-    ...(options?.enrichedTagSlugs ?? []),
-  ].filter((slug): slug is string => Boolean(slug))
-
-  await Promise.all(
-    [...new Set(tagSlugs)].map(async (slug) => {
-      const tag = await getTagBySlug(slug)
-      if (tag) await addTagToBrand(brandId, tag.id)
-    })
-  )
-
-  if (isStructuredTags(suggestedTags) && suggestedTags.productType && options?.applyProductType !== false) {
-    const { error } = await supabase
-      .from('brands')
-      .update({ product_type: suggestedTags.productType })
-      .eq('id', brandId)
-    if (error) throw error
-  }
-}
-
 async function resolveUniqueSlug(supabase: ServiceClient, slug: string): Promise<string> {
   let candidate = slug
   let suffix = 2
@@ -616,10 +588,14 @@ export async function approveSubmission(
     .single()
 
   if (error || !data) throw new NotFoundError('BrandSubmission', id, { cause: error })
-  await applySuggestedTags(supabase, brand.id, submission.suggested_tags, {
-    enrichedTagSlugs: enrichedData?.tagSlugs,
-    applyProductType: !Object.prototype.hasOwnProperty.call(overrides ?? {}, 'productType'),
-  })
+  if (isStructuredTags(submission.suggested_tags) && submission.suggested_tags.productType && !Object.prototype.hasOwnProperty.call(overrides ?? {}, 'productType')) {
+    const { error: updateError } = await supabase
+      .from('brands')
+      .update({ product_type: submission.suggested_tags.productType })
+      .eq('id', brand.id)
+
+    if (updateError) throw updateError
+  }
   return {
     brandId: brand.id,
     submitterEmail: submission.submitter_email,

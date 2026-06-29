@@ -32,7 +32,6 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
     priceRange: null,
     productTags: [],
     contactEmail: 'hello@chatzutang.com',
-    tags: [],
     submittedAt: '2026-01-01T00:00:00Z', approvedAt: '2026-01-02T00:00:00Z',
     createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z',
     ...overrides,
@@ -56,34 +55,8 @@ describe('buildBrandJsonLd', () => {
     expect(jsonLd.sameAs).toContain('https://facebook.com/chatzutang')
   })
 
-  it('includes keywords from tags', () => {
-    const jsonLd = buildBrandJsonLd(makeBrand({
-      tags: [
-        {
-          id: 'tag-1',
-          name: 'Beauty',
-          nameZh: '美妝',
-          slug: 'beauty',
-          category: 'product_type',
-          isActive: true,
-          createdAt: '2026-01-01T00:00:00Z',
-        },
-        {
-          id: 'tag-2',
-          name: 'Handmade',
-          nameZh: '手作',
-          slug: 'handmade',
-          category: 'value',
-          isActive: true,
-          createdAt: '2026-01-01T00:00:00Z',
-        },
-      ],
-    }))
-    expect(jsonLd.keywords).toBe('Beauty, Handmade')
-  })
-
-  it('omits keywords when tags is empty', () => {
-    const jsonLd = buildBrandJsonLd(makeBrand({ tags: [] }))
+  it('omits keywords field', () => {
+    const jsonLd = buildBrandJsonLd(makeBrand())
     expect(jsonLd.keywords).toBeUndefined()
   })
 

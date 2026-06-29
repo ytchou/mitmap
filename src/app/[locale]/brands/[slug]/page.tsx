@@ -209,8 +209,8 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
       : Promise.resolve(0),
   ])
 
-  // Visit Website URL
-  const visitUrl = displayBrand.purchaseWebsite || displayBrand.purchasePinkoi || displayBrand.purchaseShopee || null
+  // Visit Website URL — fallback: purchaseWebsite → facebook → pinkoi → shopee
+  const visitUrl = displayBrand.purchaseWebsite || displayBrand.socialFacebook || displayBrand.purchasePinkoi || displayBrand.purchaseShopee || null
 
   // Breadcrumb items for JSON-LD
   const tBrandDetail = await getTranslations('brandDetail')
@@ -266,6 +266,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
             <BrandHeader
               brand={displayBrand}
               categoryLabel={categoryLabel || null}
+              adminSlot={isAdmin ? <AdminBrandMenu brandSlug={displayBrand.slug} /> : undefined}
               actionsSlot={
                 <SavedBrandsProvider>
                   <BrandActions
@@ -274,7 +275,6 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
                     brandId={displayBrand.id}
                     brandName={displayBrand.name}
                   />
-                  {isAdmin && <AdminBrandMenu brandSlug={displayBrand.slug} />}
                 </SavedBrandsProvider>
               }
             />

@@ -56,12 +56,6 @@ export function BrandCard({ brand, position = 0, priority = false }: BrandCardPr
   ].filter((badge): badge is BrandCardBadge => badge !== null)
 
   const categoryLabel = getBrandCategoryLabel(brand)
-  const primaryCategoryTag = brand.tags.find((tag) => tag.category === 'product_type' && (
-    tag.name === brand.category || tag.nameZh === brand.category
-  )) ?? brand.tags.find((tag) => tag.category === 'product_type')
-  const valueTags = brand.tags
-    .filter((tag) => tag.id !== primaryCategoryTag?.id)
-    .slice(0, 3)
 
   return (
     <Link
@@ -131,15 +125,6 @@ export function BrandCard({ brand, position = 0, priority = false }: BrandCardPr
               {categoryLabel}
             </span>
           )}
-          {/* Tags — value classification (outlined) */}
-          {valueTags.map((tag) => (
-            <span
-              key={tag.id}
-              className="shrink-0 rounded-full border border-border bg-transparent px-3 py-1 text-[11px] font-medium text-warm-caption whitespace-nowrap"
-            >
-              {tag.nameZh ?? tag.name}
-            </span>
-          ))}
         </div>
       </div>
     </Link>

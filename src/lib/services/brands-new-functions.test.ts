@@ -2,14 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/supabase/server')
 
-vi.mock('@/lib/services/taxonomy', () => ({
-  getActiveCategories: vi.fn().mockResolvedValue([
-    { slug: 'food', name: 'Food', nameZh: '食品' },
-    { slug: 'beauty', name: 'Beauty', nameZh: '美妝' },
-    { slug: 'design', name: 'Design', nameZh: '設計' },
-  ]),
-}))
-
 import { createServiceClient } from '@/lib/supabase/server'
 import { getRandomBrands, getNewBrands, getBrandStats, getPopularCategories, getFeaturedBrands } from './brands'
 
@@ -18,7 +10,7 @@ const mockBrandRows = [
     id: '1', name: '茶籽堂', slug: 'cha-zi-tang', description: '苦茶籽品牌',
     status: 'approved', founding_year: 2004, approved_at: '2026-01-15T00:00:00Z',
     submitted_at: '2026-01-01T00:00:00Z',
-    social_links: {}, brand_taxonomy: [], brand_owners: [],
+    social_links: {}, brand_owners: [],
     created_at: '2026-01-01', updated_at: '2026-01-01',
     purchase_links: [], retail_locations: [], product_photos: [],
     contact_email: null,
@@ -27,7 +19,7 @@ const mockBrandRows = [
     id: '2', name: '春一枝', slug: 'chun-yi-zhi', description: '天然水果冰棒',
     status: 'approved', founding_year: 2008, approved_at: '2026-02-20T00:00:00Z',
     submitted_at: '2026-01-02T00:00:00Z',
-    social_links: {}, brand_taxonomy: [], brand_owners: [],
+    social_links: {}, brand_owners: [],
     created_at: '2026-01-02', updated_at: '2026-01-02',
     purchase_links: [], retail_locations: [], product_photos: [],
     contact_email: null,
@@ -36,7 +28,7 @@ const mockBrandRows = [
     id: '3', name: '印花樂', slug: 'inblooom', description: '台灣花布設計',
     status: 'approved', founding_year: 2008, approved_at: '2026-03-10T00:00:00Z',
     submitted_at: '2026-01-03T00:00:00Z',
-    social_links: {}, brand_taxonomy: [], brand_owners: [],
+    social_links: {}, brand_owners: [],
     created_at: '2026-01-03', updated_at: '2026-01-03',
     purchase_links: [], retail_locations: [], product_photos: [],
     contact_email: null,
@@ -128,8 +120,18 @@ describe('getBrandStats', () => {
   })
 
   it('returns brandCount and categoryCount', async () => {
-    const chain = createMockChain(null, { count: 42 })
-    vi.mocked(createServiceClient).mockReturnValue({ from: vi.fn(() => chain) } as unknown as ReturnType<typeof createServiceClient>)
+    const countChain = createMockChain(null, { count: 42 })
+    const categoryChain = createMockChain([
+      { product_type: 'food' },
+      { product_type: 'beauty' },
+      { product_type: 'food' },
+      { product_type: 'design' },
+    ])
+    vi.mocked(createServiceClient).mockReturnValue({
+      from: vi.fn()
+        .mockReturnValueOnce(countChain)
+        .mockReturnValueOnce(categoryChain),
+    } as unknown as ReturnType<typeof createServiceClient>)
 
     const stats = await getBrandStats()
 

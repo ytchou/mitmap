@@ -50,6 +50,7 @@ const PUBLIC_INTL_SEGMENTS = new Set([
   'my-submissions',
   'dashboard',
   'settings',
+  'favorites',
 ])
 const SOFT_LIMIT_PREFIXES = ['/brands/']
 
@@ -206,7 +207,7 @@ export async function middleware(request: NextRequest) {
     const segment = segments.length > 0 && KNOWN_LOCALES.has(segments[0])
       ? segments[1]
       : segments[0]
-    const AUTH_REQUIRED_SEGMENTS = new Set(['dashboard', 'settings', 'my-submissions', 'submit', 'admin'])
+    const AUTH_REQUIRED_SEGMENTS = new Set(['dashboard', 'settings', 'my-submissions', 'submit', 'admin', 'favorites'])
     if (!AUTH_REQUIRED_SEGMENTS.has(segment)) {
       return response
     }

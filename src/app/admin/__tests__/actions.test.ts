@@ -77,7 +77,6 @@ describe('rejectSubmissionAction', () => {
     '@/lib/services/brands',
     '@/lib/services/brand-owners',
     '@/lib/services/moderation',
-    '@/lib/services/taxonomy',
     '@/lib/email/send',
     '@/lib/email/templates',
     '@/lib/services/email-lifecycle',
@@ -151,17 +150,6 @@ describe('rejectSubmissionAction', () => {
       scanContent: vi.fn(),
       saveModerationFlags: vi.fn(),
       markFlagsReviewed: vi.fn(),
-    }))
-
-    vi.doMock('@/lib/services/taxonomy', () => ({
-      createTag: vi.fn(),
-      updateTag: vi.fn(),
-      mergeTag: vi.fn(),
-      deactivateTag: vi.fn(),
-      activateTag: vi.fn(),
-      setBrandTags: vi.fn(),
-      getTagBySlug: vi.fn(),
-      addTagToBrand: vi.fn(),
     }))
 
     vi.doMock('@/lib/email/send', () => ({
@@ -335,7 +323,6 @@ describeWithDb('approveSubmissionAction (submission-first)', () => {
     }
 
     if (brandIds.length > 0) {
-      await supabase!.from('brand_taxonomy').delete().in('brand_id', brandIds)
       await supabase!.from('brands').delete().in('id', brandIds)
       brandIds.length = 0
     }
@@ -347,7 +334,6 @@ describeWithDb('approveSubmissionAction (submission-first)', () => {
 
     const leftoverBrandIds = (leftoverBrands ?? []).map((brand) => brand.id)
     if (leftoverBrandIds.length > 0) {
-      await supabase!.from('brand_taxonomy').delete().in('brand_id', leftoverBrandIds)
       await supabase!.from('brands').delete().in('id', leftoverBrandIds)
     }
 

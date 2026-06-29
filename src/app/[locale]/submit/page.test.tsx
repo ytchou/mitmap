@@ -16,20 +16,6 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
-vi.mock('@/lib/services/taxonomy', () => ({
-  getTags: vi.fn().mockResolvedValue([
-    {
-      id: '1',
-      slug: 'fashion',
-      name: 'Fashion',
-      nameZh: '時尚',
-      category: 'product_type',
-      isActive: true,
-      createdAt: '2026-01-01',
-    },
-  ]),
-}))
-
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
   permanentRedirect: vi.fn(),

@@ -8,9 +8,7 @@ import { NewsletterSection } from '@/components/landing/newsletter-section'
 import BrandShowcase from '@/components/shared/brand-showcase'
 import FilterableBrandShowcase from '@/components/landing/filterable-brand-showcase'
 import SubmitBand from '@/components/landing/submit-band'
-import ValueChips from '@/components/landing/value-chips'
 import { getBrands, getNewBrands, getRecentBrandCount } from '@/lib/services/brands'
-import { getActiveCategories, getTags } from '@/lib/services/taxonomy'
 import { SavedBrandsProvider } from '@/hooks/use-saved-brands'
 import { buildAlternates } from '@/lib/seo/alternates'
 import type { Locale } from '@/lib/seo/alternates'
@@ -66,17 +64,14 @@ export default async function LandingPage({ params }: PageProps) {
   const jsonLd = buildWebSiteJsonLd(safeLocale)
   const organizationJsonLd = buildOrganizationJsonLd(safeLocale)
 
-  const [categories, { brands: fetchedBrands, totalCount: totalBrandCount }, newBrands, valueTags, recentBrands, messages] = await Promise.all([
-    getActiveCategories(),
+  const [{ brands: fetchedBrands, totalCount: totalBrandCount }, newBrands, recentBrands, messages] = await Promise.all([
     getBrands({ status: 'approved', limit: 60 }),
     getNewBrands(4),
-    getTags('value'),
     getRecentBrandCount(),
     getMessages(),
   ])
 
   const allBrands = shuffle(fetchedBrands)
-  const valueBrands = shuffle(fetchedBrands)
 
   return (
     <>
@@ -89,24 +84,18 @@ export default async function LandingPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <main>
-        <HeroSection brandCount={totalBrandCount} categoryCount={categories.length} recentBrands={recentBrands} />
+        <HeroSection brandCount={totalBrandCount} categoryCount={0} recentBrands={recentBrands} />
 
         <SavedBrandsProvider>
           <div className="py-6 md:py-8">
             <div className="max-w-6xl mx-auto px-4 sm:px-6">
               <NextIntlClientProvider messages={messages}>
-                <FilterableBrandShowcase brands={allBrands} categories={categories} />
+                <FilterableBrandShowcase brands={allBrands} categories={[]} />
               </NextIntlClientProvider>
             </div>
           </div>
 
           <Manifesto />
-
-          <div className="py-6 md:py-8">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6">
-              <ValueChips brands={valueBrands} tags={valueTags} />
-            </div>
-          </div>
 
           <SubmitBand />
 

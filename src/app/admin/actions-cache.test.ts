@@ -68,13 +68,6 @@ vi.mock('@/lib/services/brands', () => ({
   syncBrandImages: vi.fn().mockResolvedValue({ synced: 0, failed: 0 }),
 }))
 
-vi.mock('@/lib/services/taxonomy', () => ({
-  createTag: vi.fn(),
-  updateTag: vi.fn(),
-  mergeTag: vi.fn(),
-  deactivateTag: vi.fn(),
-}))
-
 vi.mock('@/lib/email/resend-adapter', () => ({
   createResendProvider: vi.fn(() => ({
     send: vi.fn().mockResolvedValue(undefined),

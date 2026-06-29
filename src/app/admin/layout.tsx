@@ -71,7 +71,6 @@ export default async function AdminLayout({
       href: "/admin/catalog",
       children: [
         { label: "品牌", href: "/admin/catalog/brands" },
-        { label: "分類管理", href: "/admin/catalog/taxonomy" },
       ],
     },
     { label: "品質儀表板", href: "/admin/quality" },

@@ -3,7 +3,6 @@ import { getSubmissionsForReview } from '@/lib/services/submissions'
 import { getModerationFlagsBatch } from '@/lib/services/moderation'
 import type { ModerationFlag, RiskLevel } from '@/lib/services/moderation'
 import { getBrandSlugsBatch } from '@/lib/services/brands'
-import { getTags } from '@/lib/services/taxonomy'
 import { SubmissionsReviewList } from './submissions-review-list'
 
 export const metadata: Metadata = {
@@ -23,10 +22,7 @@ export default async function ReviewQueueSubmissionsPage() {
     .filter((brandId): brandId is string => Boolean(brandId))
 
   const moderationFlagsByBrandId = await getModerationFlagsBatch(brandIds)
-  const [taxonomyTags, slugMap] = await Promise.all([
-    getTags(),
-    getBrandSlugsBatch(brandIds),
-  ])
+  const slugMap = await getBrandSlugsBatch(brandIds)
 
   const submissionsWithRisk = submissions.map((submission) => ({
     ...submission,
@@ -49,7 +45,6 @@ export default async function ReviewQueueSubmissionsPage() {
       <div className="mt-8">
         <SubmissionsReviewList
           submissions={submissionsWithRisk}
-          taxonomyTags={taxonomyTags}
         />
       </div>
     </div>

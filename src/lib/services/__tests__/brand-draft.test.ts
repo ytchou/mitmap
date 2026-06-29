@@ -36,7 +36,6 @@ const liveBrand: Brand = {
     siteContent: null,
     priceRange: null,
     productTags: [],
-  tags: [{ id: 't1', name: 'Apparel', nameZh: '服飾', productType: true } as never],
   submittedAt: '2026-01-01T00:00:00Z',
   approvedAt: '2026-01-02T00:00:00Z',
   createdAt: '2026-01-01T00:00:00Z',
@@ -59,7 +58,7 @@ describe('brandToDraftSnapshot', () => {
 });
 
 describe('mergeDraftOverBrand', () => {
-  it('overlays editable fields, preserves identity/status/mit/tags', () => {
+  it('overlays editable fields, preserves identity/status/mit', () => {
     const snap = brandToDraftSnapshot({ name: 'Draft Name' } as Partial<Brand>);
     const merged = mergeDraftOverBrand(liveBrand, snap);
     expect(merged.name).toBe('Draft Name');
@@ -67,7 +66,6 @@ describe('mergeDraftOverBrand', () => {
     expect(merged.slug).toBe('live-name');
     expect(merged.status).toBe('approved');
     expect(merged.mitStatus).toBe('verified');
-    expect(merged.tags).toEqual(liveBrand.tags);
   });
 
   it('returns the live brand unchanged when snapshot is null', () => {

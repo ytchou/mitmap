@@ -9,7 +9,6 @@ export type AiTriageInput = {
   slugGenerated: string | null
   productType: string | null
   confidence: 'high' | 'medium' | 'low'
-  valueTags: string[]
   rawResponse?: unknown
 }
 
@@ -33,7 +32,6 @@ export async function insertTriageResult(input: AiTriageInput): Promise<void> {
     slug_generated: input.slugGenerated,
     product_type: input.productType,
     confidence: input.confidence,
-    value_tags: input.valueTags,
     model: DEEPSEEK_MODEL,
     raw_response: input.rawResponse ?? null,
   } as never)

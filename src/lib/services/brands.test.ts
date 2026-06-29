@@ -65,9 +65,6 @@ describe('brandToDomain', () => {
       approved_at: '2026-01-02T00:00:00Z',
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-02T00:00:00Z',
-      brand_taxonomy: [
-        { taxonomy_tags: { id: 'tag1', name: 'Food', name_zh: '食品', slug: 'food', category: 'product_type', is_active: true, suggested_by: null, created_at: '2026-01-01T00:00:00Z' } }
-      ],
     }
 
     const brand = brandToDomain(dbRow)
@@ -82,24 +79,6 @@ describe('brandToDomain', () => {
     expect(brand.contactEmail).toBe('test@example.com')
     expect(brand.submittedAt).toBe('2026-01-01T00:00:00Z')
     expect(brand.approvedAt).toBe('2026-01-02T00:00:00Z')
-    expect(brand.tags).toHaveLength(1)
-    expect(brand.tags[0].name).toBe('Food')
-    expect(brand.tags[0].nameZh).toBe('食品')
-  })
-
-  it('handles missing nested tags gracefully', () => {
-    const dbRow = {
-      id: '123', name: 'Test', slug: 'test', description: null,
-      hero_image_url: null, status: 'hidden' as const,
-      category: null, founding_year: null,
-      retail_locations: [], product_photos: [],
-      contact_email: null, submitted_at: '2026-01-01T00:00:00Z',
-      approved_at: null, created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-    }
-
-    const brand = brandToDomain(dbRow)
-    expect(brand.tags).toEqual([])
   })
 })
 
@@ -132,7 +111,7 @@ describe('brandToDomain — basic fields', () => {
     description: 'A test brand', hero_image_url: null,
     status: 'approved' as const, category: 'Food & Beverage', founding_year: 2004,
     retail_locations: [],
-    product_photos: [], contact_email: null, brand_taxonomy: [],
+    product_photos: [], contact_email: null,
     submitted_at: '2026-01-01T00:00:00Z', approved_at: null,
     created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
   }
@@ -279,7 +258,6 @@ describe('getBrands — search uses search_brands RPC', () => {
       retail_locations: [],
       product_photos: [],
       contact_email: null,
-      brand_taxonomy: [],
       brand_owners: [],
       submitted_at: '2026-01-01T00:00:00Z',
       approved_at: '2026-01-02T00:00:00Z',

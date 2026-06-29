@@ -20,6 +20,7 @@ import {
   type SubmissionApprovalOverrides,
 } from './actions'
 import { startCurationJobAction } from '@/app/admin/operations/actions'
+import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -50,13 +51,6 @@ type BrandSubmissionWithRisk = BrandSubmission & {
   productTypeNote?: string | null
   enriched_data?: EnrichedData | null
   brandSlug?: string | null
-}
-
-type ReviewTaxonomyTag = {
-  name: string
-  nameZh: string | null
-  slug: string
-  category: string
 }
 
 type OverrideForm = Required<Omit<SubmissionApprovalOverrides, 'otherUrls'>> & {
@@ -168,8 +162,7 @@ export function getEnrichmentStatus(
     hasText(enriched_data.description) &&
     (hasText(enriched_data.heroImageUrl) || hasText(heroImageUrl ?? undefined)) &&
     hasItems(enriched_data.productPhotos) &&
-    hasText(enriched_data.productType) &&
-    hasItems(enriched_data.tagSlugs)
+    hasText(enriched_data.productType)
 
   return hasAllKeyFields ? 'enriched' : 'partially_enriched'
 }
@@ -218,10 +211,8 @@ function getStructuredSuggestedTagSections(tags: StructuredSuggestedTags) {
 
 export function SubmissionsReviewList({
   submissions,
-  taxonomyTags,
 }: {
   submissions: BrandSubmissionWithRisk[]
-  taxonomyTags: ReviewTaxonomyTag[]
 }) {
   const moderationT = useTranslations('admin.moderation')
   const denialReasonsT = useTranslations('admin.submissions.denialReasons')
@@ -240,11 +231,6 @@ export function SubmissionsReviewList({
   const [isEnriching, startEnrichTransition] = useTransition()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const router = useRouter()
-
-  const productTypeTags = useMemo(
-    () => taxonomyTags.filter((tag) => tag.category === 'product_type'),
-    [taxonomyTags]
-  )
 
   const filtered =
     activeTab === 'all'
@@ -577,7 +563,6 @@ export function SubmissionsReviewList({
               <TableHead>品牌</TableHead>
               <TableHead className="w-16">分類</TableHead>
               <TableHead className="w-16">圖片</TableHead>
-              <TableHead className="w-16">標籤</TableHead>
               <TableHead>來源</TableHead>
               <TableHead>狀態</TableHead>
               <TableHead>資料充實</TableHead>
@@ -638,18 +623,6 @@ export function SubmissionsReviewList({
 
                         return <ReadinessBadge tone={tone}>{submission.enriched_data || count > 0 ? count : '-'}</ReadinessBadge>
                       })()}
-                    </TableCell>
-                    <TableCell>
-                      {submission.enriched_data ? (
-                        (() => {
-                          const count = submission.enriched_data?.tagSlugs?.length ?? 0
-                          const tone = count >= 3 ? 'green' : count >= 1 ? 'amber' : 'red'
-
-                          return <ReadinessBadge tone={tone}>{count}</ReadinessBadge>
-                        })()
-                      ) : (
-                        <ReadinessBadge tone="grey">-</ReadinessBadge>
-                      )}
                     </TableCell>
                     <TableCell>
                       {submission.isBrandOwner ? (
@@ -750,14 +723,14 @@ export function SubmissionsReviewList({
                                 <SelectContent>
                                   <SelectItem value={PRODUCT_TYPE_EMPTY}>未設定</SelectItem>
                                   {form.productType &&
-                                    !productTypeTags.some((tag) => tag.slug === form.productType) && (
+                                    !PRODUCT_TYPE_CATEGORIES.some((c) => c.slug === form.productType) && (
                                       <SelectItem value={form.productType}>
                                         {form.productType}
                                       </SelectItem>
                                     )}
-                                  {productTypeTags.map((tag) => (
-                                    <SelectItem key={tag.slug} value={tag.slug}>
-                                      {tag.nameZh ? `${tag.nameZh} (${tag.name})` : tag.name}
+                                  {PRODUCT_TYPE_CATEGORIES.map((category) => (
+                                    <SelectItem key={category.slug} value={category.slug}>
+                                      {`${category.nameZh} (${category.name})`}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

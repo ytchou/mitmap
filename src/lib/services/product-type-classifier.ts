@@ -10,7 +10,6 @@ export type TriageResult = {
   slug: string
   slugGenerated: string | null
   productType: string | null
-  valueTags: string[]
   confidence: 'high' | 'medium' | 'low'
 }
 
@@ -82,7 +81,6 @@ function parseTriageEntry(entry: UnknownRecord, slug: string): TriageResult | nu
   const slugGenerated = entry.slug_generated
   const productType = entry.productType
   const confidence = entry.confidence
-  const valueTags = entry.valueTags
 
   if (typeof isNonBrand !== 'boolean' || !isConfidence(confidence)) {
     return null
@@ -98,7 +96,6 @@ function parseTriageEntry(entry: UnknownRecord, slug: string): TriageResult | nu
     slug,
     slugGenerated: typeof slugGenerated === 'string' ? slugGenerated : null,
     productType,
-    valueTags: Array.isArray(valueTags) ? valueTags.filter((tag): tag is string => typeof tag === 'string') : [],
     confidence,
   }
 }

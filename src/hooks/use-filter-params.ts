@@ -9,23 +9,13 @@ import {
 } from '@/lib/pagination'
 
 /**
- * Manages taxonomy filter, page, and sort state via URL search params.
- * Filters are serialized as comma-separated tag slugs in ?tags=slug1,slug2
- * Page is stored in ?page=N, sort in ?sort=name|newest|year
+ * Manages search, page, and sort state via URL search params.
+ * Search is stored in ?search=term, page in ?page=N, sort in ?sort=name|newest|year
  */
 export function useFilterParams() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
-  const selectedSlugs = useMemo<string[]>(() => {
-    const raw = searchParams.get('tags')
-    if (!raw) return []
-    return raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-  }, [searchParams])
 
   const currentPage = useMemo(
     () => parsePageParam(searchParams.get('page') ?? undefined),
@@ -59,37 +49,8 @@ export function useFilterParams() {
     [pathname]
   )
 
-  const setFilters = useCallback(
-    (slugs: string[]) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (slugs.length === 0) {
-        params.delete('tags')
-      } else {
-        params.set('tags', slugs.join(','))
-      }
-      // Reset page when filters change
-      params.delete('page')
-      router.push(buildUrl(params), { scroll: false })
-    },
-    [router, buildUrl, searchParams]
-  )
-
-  const toggleSlug = useCallback(
-    (slug: string) => {
-      const current = new Set(selectedSlugs)
-      if (current.has(slug)) {
-        current.delete(slug)
-      } else {
-        current.add(slug)
-      }
-      setFilters(Array.from(current))
-    },
-    [selectedSlugs, setFilters]
-  )
-
   const clearFilters = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
-    params.delete('tags')
     params.delete('search')
     params.delete('page')
     router.push(buildUrl(params), { scroll: false })
@@ -142,10 +103,7 @@ export function useFilterParams() {
   )
 
   return {
-    selectedSlugs,
-    toggleSlug,
     clearFilters,
-    activeCount: selectedSlugs.length,
     currentPage,
     currentSort,
     filters: { search: currentSearch },

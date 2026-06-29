@@ -12,8 +12,6 @@ export type {
   SiteTokens,
 } from './brand'
 
-export type { TagCategory, TaxonomyTag } from './taxonomy'
-
 export type {
   BrandSubmission,
   DenialReason,

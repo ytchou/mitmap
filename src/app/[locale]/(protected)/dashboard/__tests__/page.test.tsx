@@ -21,7 +21,7 @@ beforeEach(() => {
     socialInstagram: '@test', socialThreads: null, socialFacebook: null,
     purchaseWebsite: 'https://test.com', purchasePinkoi: null, purchaseShopee: null,
     otherUrls: [], retailLocations: [], customerVoices: [], productPhotos: [],
-    contactEmail: null, priceRange: 2, productTags: ['tea', 'organic'], tags: [],
+    contactEmail: null, priceRange: 2, productTags: ['tea', 'organic'],
     siteContent: null, submittedAt: '2026-01-01', approvedAt: null, createdAt: '2026-01-01', updatedAt: '2026-01-01',
   } as Brand)
 })

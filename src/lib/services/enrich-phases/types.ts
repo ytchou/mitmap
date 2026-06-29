@@ -16,7 +16,6 @@ export type EnrichBrand = {
   product_type?: string | null
   purchase_website?: string | null
   purchaseWebsite?: string | null
-  tag_slugs?: string[] | null
   hero_image_url?: string | null
   product_images?: string[] | null
   product_photos?: string[] | null
@@ -44,7 +43,6 @@ export type EnrichPatch = Partial<BrandFlatLinkColumns> &
     product_tags: string[] | null
     product_type: string | null
     slug: string
-    tag_slugs: string[]
   }>
 
 export type BatchPhaseContext = {
