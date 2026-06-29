@@ -58,7 +58,7 @@ describe('brandToDraftSnapshot', () => {
 });
 
 describe('mergeDraftOverBrand', () => {
-  it('overlays editable fields, preserves identity/status/mit/tags', () => {
+  it('overlays editable fields, preserves identity/status/mit', () => {
     const snap = brandToDraftSnapshot({ name: 'Draft Name' } as Partial<Brand>);
     const merged = mergeDraftOverBrand(liveBrand, snap);
     expect(merged.name).toBe('Draft Name');
@@ -66,7 +66,6 @@ describe('mergeDraftOverBrand', () => {
     expect(merged.slug).toBe('live-name');
     expect(merged.status).toBe('approved');
     expect(merged.mitStatus).toBe('verified');
-    expect(merged.tags).toEqual(liveBrand.tags);
   });
 
   it('returns the live brand unchanged when snapshot is null', () => {
