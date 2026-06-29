@@ -44,7 +44,7 @@ export function BrandSelector({ brands, selectedSlug }: BrandSelectorProps) {
     <label className="inline-flex flex-col gap-2">
       <span className="sr-only">{t('label')}</span>
       <select
-        className="min-h-12 rounded-lg border border-border bg-background px-3 py-2 font-heading text-[22px] font-bold leading-tight text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cta"
+        className="min-h-12 rounded-lg border border-border bg-background px-3 py-2 font-heading text-[22px] font-bold leading-tight text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         value={currentSlug}
         onChange={handleChange}
       >

@@ -115,7 +115,7 @@ export default async function FavoritesPage({ params }: Props) {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="flex h-16 items-center justify-between gap-4 px-5 lg:px-20">
-          <h1 className="font-heading text-xl font-bold text-foreground">
+          <h1 className="font-heading text-[22px] font-bold text-foreground">
             {t('heading')}
           </h1>
           <p className="text-sm font-medium text-muted-foreground">

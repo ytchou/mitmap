@@ -33,7 +33,7 @@ export function DashboardTabNav({ brandSlug }: DashboardTabNavProps) {
             className={cn(
               'inline-flex min-h-12 items-center border-b-2 px-1 text-sm font-medium transition-colors',
               isActive
-                ? 'border-cta text-foreground font-semibold'
+                ? 'border-primary text-foreground font-semibold'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
             href={`${tab.href}?brand=${brandSlug}`}
