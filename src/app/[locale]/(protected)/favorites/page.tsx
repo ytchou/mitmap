@@ -116,7 +116,7 @@ export default async function FavoritesPage({ params }: Props) {
       <header className="border-b border-border bg-card">
         <div className="flex h-16 items-center justify-between gap-4 px-5 lg:px-20">
           <h1 className="font-heading text-xl font-bold text-foreground">
-            {t('title')}
+            {t('heading')}
           </h1>
           <p className="text-sm font-medium text-muted-foreground">
             {t('count', { count: brands.length })}
