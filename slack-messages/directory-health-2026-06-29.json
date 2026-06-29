@@ -1,0 +1,48 @@
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Directory Health — Week of 2026-06-29"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*355 brands total* (+0 this week)\n96.9% have complete profiles (description + image) — 344 of 355"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Link Check Skipped:*\n167 brands have purchase website URLs, but outbound HTTP is blocked by the execution environment's network policy. Link reachability could not be verified this run.\n_Action: Run link check from an environment with unrestricted outbound access, or configure the policy to allow brand domain requests._"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Zero Content (0):*\nAll approved brands have at least a description or image. No zero-content brands detected."
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Missing Images (11):*\n11 brands have descriptions but no hero image. Run the completeness report for the full list."
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "No Linear ticket created (no confirmed broken links or zero-content brands) | Link check skipped — network policy blocked outbound HTTP | Directory Health v1"
+        }
+      ]
+    }
+  ]
+}
