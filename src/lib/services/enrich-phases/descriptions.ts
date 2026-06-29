@@ -1,4 +1,4 @@
-import { rewriteBrandDescription } from '../description-rewrite'
+import { rewriteBrandDescription, type DescriptionRewriteResult } from '../description-rewrite'
 import { buildTextEnrichPatch } from '../link-enrichment'
 import type { PhaseResult } from '@/lib/types/curation'
 import type { EnrichScrapedData } from './types'
@@ -14,7 +14,7 @@ type DescriptionsPhaseOptions = {
 type DescriptionsPhaseOutput = {
   phaseResult: PhaseResult
   patch: Record<string, unknown>
-  descriptionRewrite: string | null
+  descriptionRewrite: DescriptionRewriteResult | null
 }
 
 function hasScrapedText(scrapedData: EnrichScrapedData | null): boolean {
@@ -84,7 +84,7 @@ export async function runDescriptionsPhase({
         ...textPatch,
         ...descriptionPatch,
       },
-      descriptionRewrite: descriptionRewrite?.description ?? null,
+      descriptionRewrite: descriptionRewrite ?? null,
     }
   })
 
