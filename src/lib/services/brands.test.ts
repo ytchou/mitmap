@@ -178,6 +178,25 @@ describe('getBrands — PGRST103 offset overflow', () => {
     expect(result.totalCount).toBe(90)
   })
 
+  it('filters the normal browse query by price range', async () => {
+    const { getBrands } = await import('./brands')
+    const resolvedData = { data: [], error: null, count: 0 }
+    const chainable: Record<string, unknown> = {}
+    const chainFn = vi.fn(() => chainable)
+    chainable.select = chainFn
+    chainable.in = chainFn
+    chainable.not = chainFn
+    chainable.eq = chainFn
+    chainable.order = chainFn
+    chainable.range = chainFn
+    chainable.then = (resolve: (v: unknown) => void) => Promise.resolve(resolvedData).then(resolve)
+    mockFrom.mockReturnValue(chainable)
+
+    await getBrands({ priceRanges: [1, 3] })
+
+    expect(chainFn).toHaveBeenCalledWith('price_range', [1, 3])
+  })
+
   it('returns empty brands array (not throw) when offset exceeds search result count', async () => {
     // The search path uses in-memory slicing (not .range()), so PGRST103 cannot naturally
     // occur in hydration. This test verifies that out-of-bounds offset is handled gracefully.

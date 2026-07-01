@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import createMiddleware from 'next-intl/middleware'
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from '@/i18n/routing'
-import { ADMIN_MODE_COOKIE_OPTIONS, resolveAdminModeCookie, VIEWER_MODE_COOKIE } from '@/lib/auth/admin-mode-cookie'
 import { IMPERSONATE_COOKIE, resolveImpersonationCookie } from '@/lib/auth/impersonation'
 import { verifyChallengeToken, CHALLENGE_COOKIE_NAME } from '@/lib/security/challenge'
 import { checkRateLimit, checkSoftRateLimit, getClientIp } from "@/lib/security/rate-limiter";
@@ -117,19 +116,10 @@ async function refreshSupabaseSession(request: NextRequest, response: NextRespon
     // Auth timeout or network error — continue as unauthenticated
   }
 
-  const currentCookie = request.cookies.get(VIEWER_MODE_COOKIE)?.value
-  const decision = await resolveAdminModeCookie({ email: user?.email ?? null, currentCookie })
-  if (decision.action === 'set') {
-    response.cookies.set(VIEWER_MODE_COOKIE, decision.value, ADMIN_MODE_COOKIE_OPTIONS)
-  } else if (decision.action === 'delete') {
-    response.cookies.delete(VIEWER_MODE_COOKIE)
-  }
-
   const impersonateCookie = request.cookies.get(IMPERSONATE_COOKIE)?.value
   const impersonateDecision = await resolveImpersonationCookie({
     email: user?.email ?? null,
     currentCookie: impersonateCookie,
-    adminModeCookie: currentCookie,
   })
   if (impersonateDecision.action === 'delete') {
     response.cookies.delete(IMPERSONATE_COOKIE)

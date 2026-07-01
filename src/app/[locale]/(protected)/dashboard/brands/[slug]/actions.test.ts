@@ -30,17 +30,11 @@ const publishDraft = vi.fn().mockResolvedValue({ slug: 'test-brand' })
 const discardDraft = vi.fn().mockResolvedValue({ snapshot: null })
 const diffRemovedImageUrls = vi.fn((): string[] => [])
 const deleteBrandImages = vi.fn().mockResolvedValue(undefined)
-const cookieGet = vi.fn()
 const isActingAsAdmin = vi.fn().mockResolvedValue(false)
+const getImpersonatedBrandSlug = vi.fn().mockResolvedValue('test-brand')
 const scanContent = vi.fn()
 const shouldAutoApprove = vi.fn()
 const saveModerationFlags = vi.fn().mockResolvedValue(undefined)
-
-vi.mock('next/headers', () => ({
-  cookies: vi.fn(async () => ({
-    get: cookieGet,
-  })),
-}))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => ({
@@ -61,6 +55,9 @@ vi.mock('@/lib/services/brand-owners', () => ({
 
 vi.mock('@/lib/auth/admin-mode', () => ({
   isActingAsAdmin,
+}))
+vi.mock('@/lib/auth/impersonation', () => ({
+  getImpersonatedBrandSlug,
 }))
 
 vi.mock('@/lib/services/brands', () => ({
@@ -121,25 +118,23 @@ function form(fields: Record<string, string>) {
   return formData
 }
 
-function mockCookie(value: 'god' | 'viewer') {
-  cookieGet.mockImplementation((name: string) => (
-    name === 'fm_mode' ? { value } : undefined
-  ))
-}
-
 function mockUser(email: string, id = 'user-1') {
   getUser.mockResolvedValue({
     data: { user: { id, email } },
   })
 }
 
+beforeEach(() => {
+  getImpersonatedBrandSlug.mockResolvedValue('test-brand')
+})
+
 describe('updateBrandAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.ADMIN_EMAILS = 'admin@formoria.com'
-    mockCookie('god')
     mockUser('owner@example.com')
     isActingAsAdmin.mockResolvedValue(true)
+    getImpersonatedBrandSlug.mockResolvedValue('test-brand')
     getBrandBySlug.mockResolvedValue({
       id: 'brand-1',
       slug: 'test-brand',
@@ -169,6 +164,27 @@ describe('updateBrandAction', () => {
     }
 
     expect(updateBrand).toHaveBeenCalled()
+  })
+
+  it('updates the public product category', async () => {
+    const { updateBrandAction } = await import('./actions')
+
+    const formData = form({
+      brandSlug: 'test-brand',
+      name: 'Updated Name',
+      productType: 'home',
+    })
+
+    try {
+      await updateBrandAction(undefined, formData)
+    } catch {
+      // redirect throws
+    }
+
+    expect(updateBrand).toHaveBeenCalledWith(
+      'brand-1',
+      expect.objectContaining({ productType: 'home' })
+    )
   })
 
   it('rejects update when user is not owner', async () => {
@@ -366,7 +382,6 @@ describe('updateBrandAction — admin bypass', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.ADMIN_EMAILS = 'admin@formoria.com'
-    mockCookie('god')
     mockUser('owner@example.com')
     isActingAsAdmin.mockResolvedValue(true)
     getBrandBySlug.mockResolvedValue({
@@ -382,11 +397,10 @@ describe('updateBrandAction — admin bypass', () => {
     scanContent.mockReturnValue({ riskLevel: 'clean', flags: [] })
   })
 
-  it('lets a god-mode admin edit a brand they do not own', async () => {
+  it('lets an admin edit a brand they do not own', async () => {
     const { isOwnerOf } = await import('@/lib/services/brand-owners')
     vi.mocked(isOwnerOf).mockResolvedValueOnce(false)
     isActingAsAdmin.mockResolvedValue(true)
-    mockCookie('god')
     mockUser('admin@formoria.com', 'admin-1')
 
     const { updateBrandAction } = await import('./actions')
@@ -403,18 +417,34 @@ describe('updateBrandAction — admin bypass', () => {
     expect(updateBrand).toHaveBeenCalled()
   })
 
-  it('forbids an admin in viewer mode from editing an un-owned brand', async () => {
+  it('forbids a non-owner without admin access from editing a brand', async () => {
     const { isOwnerOf } = await import('@/lib/services/brand-owners')
     vi.mocked(isOwnerOf).mockResolvedValueOnce(false)
     isActingAsAdmin.mockResolvedValueOnce(false)
-    mockCookie('viewer')
-    mockUser('admin@formoria.com', 'admin-1')
+    mockUser('user@formoria.com', 'user-1')
 
     const { updateBrandAction } = await import('./actions')
 
     const result = await updateBrandAction(undefined, form({
       brandSlug: 'test-brand',
-      description: 'Viewer mode edit',
+      description: 'Unauthorized edit',
+    }))
+
+    expect(result).toMatchObject({ error: expect.any(String) })
+    expect(updateBrand).not.toHaveBeenCalled()
+  })
+
+  it('forbids an admin whose impersonation does not match the brand', async () => {
+    const { isOwnerOf } = await import('@/lib/services/brand-owners')
+    vi.mocked(isOwnerOf).mockResolvedValueOnce(false)
+    isActingAsAdmin.mockResolvedValue(true)
+    getImpersonatedBrandSlug.mockResolvedValue('different-brand')
+    mockUser('admin@formoria.com', 'admin-1')
+
+    const { updateBrandAction } = await import('./actions')
+    const result = await updateBrandAction(undefined, form({
+      brandSlug: 'test-brand',
+      description: 'Unauthorized admin edit',
     }))
 
     expect(result).toMatchObject({ error: expect.any(String) })
@@ -426,7 +456,6 @@ describe('updateBrandAction — edit gating', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.ADMIN_EMAILS = 'admin@formoria.com'
-    mockCookie('god')
     mockUser('owner@example.com')
     getBrandBySlug.mockResolvedValue({
       id: 'brand-1',
@@ -600,7 +629,6 @@ describe('publishDraftAction — edit gating', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.ADMIN_EMAILS = 'admin@formoria.com'
-    mockCookie('god')
     mockUser('owner@example.com')
     getBrandBySlug.mockResolvedValue({
       id: 'brand-1',

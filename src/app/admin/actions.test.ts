@@ -1,6 +1,5 @@
-import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { refreshHealthChecks } from './actions'
 import { checkAllServices } from '@/lib/services/health-checks'
 
@@ -62,10 +61,6 @@ vi.mock('@/lib/auth/admin-mode', () => ({
 
 vi.mock('@/lib/security/rate-limiter', () => ({
   rateLimit: vi.fn().mockResolvedValue({ success: true, remaining: 10 }),
-}))
-
-vi.mock('next/headers', () => ({
-  cookies: vi.fn(),
 }))
 
 vi.mock('@/lib/services/brands', () => ({
@@ -157,15 +152,6 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-const mockCookie = (value?: string | null) =>
-  (cookies as Mock).mockResolvedValue({
-    get: (name: string) => (name === 'fm_mode' && value ? { value } : undefined),
-  })
-
-beforeEach(() => {
-  mockCookie('god')
-})
-
 describe('admin actions module', () => {
   it('exports all required action functions', async () => {
     const mod = await import('./actions')
@@ -185,7 +171,6 @@ describe('admin actions module', () => {
 describe('approveClaimAction', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
   it('creates email preferences after approving a claim', async () => {
@@ -222,7 +207,6 @@ describe('approveClaimAction', () => {
 describe('pending edit admin actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
   it('approves a pending edit with the admin id', async () => {
@@ -304,7 +288,6 @@ describe('pending edit email templates', () => {
 describe('approveSubmissionAction - approval flow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
   it('delegates tag application to approveSubmission service on approval', async () => {
@@ -382,10 +365,9 @@ describe('approveSubmissionAction - approval flow', () => {
 describe('updateBrandAction moderation audit', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
-  it('updateBrandAction (god-mode admin edit) calls scanContent and saveModerationFlags when flags exist, then markFlagsReviewed', async () => {
+  it('updateBrandAction (admin edit) calls scanContent and saveModerationFlags when flags exist, then markFlagsReviewed', async () => {
     const { updateBrand } = await import('@/lib/services/brands')
     const { scanContent, saveModerationFlags, markFlagsReviewed } = await import('@/lib/services/moderation')
     const flags = [
@@ -423,7 +405,6 @@ describe('updateBrandAction moderation audit', () => {
 describe('MIT verification actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
   it('verifies MIT status by cert number', async () => {
@@ -477,7 +458,7 @@ describe('reviewReportAction', () => {
     expect(result?.error).toBeTruthy()
   })
 
-  it('requireAdmin denies an admin in viewer mode', async () => {
+  it('requireAdmin denies a user without admin access', async () => {
     const { isActingAsAdmin } = await import('@/lib/auth/admin-mode')
     vi.mocked(isActingAsAdmin).mockResolvedValueOnce(false)
     const { reviewReportAction } = await import('./actions')
@@ -585,7 +566,6 @@ describe('refreshHealthChecks', () => {
 describe('approveSubmissionAction - MIT auto-verify', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
   it('calls verifyMitByCert when overrides include mitSmileCert', async () => {
@@ -657,7 +637,6 @@ describe('approveSubmissionAction - MIT auto-verify', () => {
 describe('approveClaimAction - MIT auto-verify', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCookie('god')
   })
 
   it('calls verifyMitByCert when claim has mitSmileCert', async () => {

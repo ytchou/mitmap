@@ -461,7 +461,7 @@ export async function updateBrandAction(
         await saveModerationFlags(brandId, auth.userId, moderationResult.flags)
         await markFlagsReviewed(brandId)
       } catch (err) {
-        console.error('[admin] god-mode moderation audit failed:', err)
+        console.error('[admin] moderation audit failed:', err)
       }
     }
 

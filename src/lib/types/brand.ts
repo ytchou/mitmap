@@ -68,6 +68,7 @@ export type Brand = {
   description: string | null
   heroImageUrl: string | null
   status: BrandStatus
+  productType?: string | null
   category: string | null
   isVerified: boolean
   mitStatus?: 'unverified' | 'verified'
@@ -99,6 +100,7 @@ export type Brand = {
 export type BrandFilters = {
   status?: BrandStatus
   category?: string[]
+  priceRanges?: (1 | 2 | 3)[]
   verificationFilter?: 'all' | 'mit-verified' | 'owned'
   search?: string
   sort?: BrandSortOption

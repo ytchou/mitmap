@@ -132,6 +132,7 @@
       "trigger": "Filters ({count})",
       "all": "All",
       "category": "Category",
+      "priceRange": "Price range",
       "brandStatus": "Brand status",
       "brandValues": "Brand values",
       "appliedCount": "{count} filters applied",
@@ -293,8 +294,7 @@
     },
     "adminMenu": {
       "label": "Admin menu",
-      "viewAsOwner": "View as owner",
-      "editBrand": "Edit brand"
+      "viewAsOwner": "Brand view"
     },
     "breadcrumb": {
       "directory": "Brands"
@@ -851,8 +851,10 @@
       "submissions": "Submissions"
     },
     "brandSelector": {
+      "title": "Viewing as",
       "label": "Select brand",
-      "placeholder": "Choose a brand"
+      "placeholder": "Choose a brand",
+      "description": "Shown when this account can manage {count} brands."
     },
     "emptyState": {
       "title": "This page is for brand owners only",
@@ -892,18 +894,35 @@
       }
     },
     "onboarding": {
-      "banner": {
-        "title": "Welcome to Formoria!",
-        "description": "Let's help your brand get discovered. Complete these 3 things to put your brand page in its best shape:",
-        "action1": "Upload a hero image",
-        "action1Hint": "The first visual impression visitors see",
-        "action2": "Write a brand description",
-        "action2Hint": "Help shoppers discover your brand story",
-        "action3": "Add purchase links",
-        "action3Hint": "Let interested shoppers buy directly",
-        "topPick": "Top pick",
-        "cta": "Start editing",
-        "dismiss": "Maybe later"
+      "progress": "{completed} of {total} reviewed",
+      "card": {
+        "title": "Review your brand profile",
+        "progressLabel": "Onboarding progress",
+        "next": "Next step",
+        "continue": "Continue review",
+        "viewAll": "View checklist"
+      },
+      "page": {
+        "title": "Review your brand",
+        "description": "Check each section even when information was pre-filled. A step is complete only after you save or explicitly confirm it."
+      },
+      "status": {
+        "not_started": "Not started",
+        "in_progress": "In progress",
+        "complete": "Reviewed"
+      },
+      "review": {
+        "title": "Onboarding review",
+        "description": "Review this section. Save any changes, or confirm it if everything is already correct.",
+        "confirm": "Everything is correct",
+        "back": "Back to checklist"
+      },
+      "steps": {
+        "basics": { "title": "Confirm brand basics", "description": "Review the brand name, founding year, and price range." },
+        "products": { "title": "Confirm products", "description": "Review the specific product tags that help people discover the brand." },
+        "story_media": { "title": "Review story and visuals", "description": "Check the brand description, hero image, and product photos." },
+        "purchase": { "title": "Confirm purchase channels", "description": "Review marketplace links, other URLs, and retail locations." },
+        "social_proof": { "title": "Confirm social presence", "description": "Review social accounts and customer voices." }
       },
       "milestone": {
         "gettingStarted": "Great start! Keep improving your brand page.",
@@ -1066,16 +1085,27 @@
       "metaTitle": "Edit brand",
       "pageHeading": "Edit {name}",
       "pageSubheading": "Update your brand listing details",
+      "onboardingReviewTitle": "Onboarding review",
+      "onboardingReviewDescription": "Review this section. Save any changes, or confirm it if everything is already correct.",
+      "onboardingConfirm": "Everything is correct",
+      "onboardingBack": "Back to checklist",
       "sectionBasicInfo": "Basic Info",
       "sectionMedia": "Media",
       "sectionLinks": "Links",
       "sectionCustomerVoices": "Customer Voices",
       "sectionLocations": "Locations",
       "fieldBrandName": "Brand name",
+      "fieldCategory": "Category",
       "fieldDescription": "Description",
+      "fieldProductTags": "Product tags",
+      "fieldProductTagsPlaceholder": "Add a specific product type",
+      "removeProductTag": "Remove tag",
+      "productTagsMax": "Up to 5 tags. Describe products, not promotional claims.",
       "fieldBrandHighlights": "Brand highlights",
       "fieldHighlightsHint": "Max 300 characters",
       "fieldFoundingYear": "Founding Year",
+      "fieldPriceRange": "Price Range",
+      "fieldPriceRangeUnset": "Unset",
       "fieldLogo": "Logo",
       "fieldHeroImage": "Hero Image",
       "fieldProductPhotos": "Product photos",
@@ -1544,13 +1574,6 @@
         "other": "Other"
       }
     }
-  },
-  "adminMode": {
-    "god": "God mode",
-    "viewer": "Viewer mode",
-    "enter": "Switch to viewer",
-    "exit": "Exit viewer mode",
-    "banner": "plain-user view"
   },
   "saveBrand": {
     "save": "Save",

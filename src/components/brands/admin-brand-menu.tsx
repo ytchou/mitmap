@@ -1,9 +1,9 @@
 'use client'
 
 import { useTransition } from 'react'
-import { Eye, Pencil, Settings } from 'lucide-react'
+import { Eye, Settings } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { Link, useRouter } from '@/i18n/navigation'
+import { useRouter } from '@/i18n/navigation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,10 +42,6 @@ export function AdminBrandMenu({ brandSlug }: AdminBrandMenuProps) {
         <DropdownMenuItem disabled={isPending} onClick={handleViewAsOwner}>
           <Eye className="size-4" />
           {t('viewAsOwner')}
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href={`/dashboard/brands/${brandSlug}/edit`} />}>
-          <Pencil className="size-4" />
-          {t('editBrand')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

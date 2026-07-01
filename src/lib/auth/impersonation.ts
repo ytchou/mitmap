@@ -1,7 +1,5 @@
-import { createHmac } from 'crypto'
 import { cookies } from 'next/headers'
 import { isAdmin } from './admin'
-import { readAdminModeCookie } from './admin-mode-cookie'
 import { signCookieValue, verifyCookieValue } from '../security/cookie-signing'
 
 export const IMPERSONATE_COOKIE = 'fm_impersonate'
@@ -15,14 +13,28 @@ export const IMPERSONATE_COOKIE_OPTIONS = {
 
 const IMPERSONATE_TTL_SECONDS = 3600
 
-function getSecret(): string | null {
+async function getSecret(): Promise<string | null> {
   const raw = process.env.CHALLENGE_SECRET
   if (!raw) return null
-  return createHmac('sha256', raw).update('impersonation').digest('hex')
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(raw),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const digest = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode('impersonation')
+  )
+
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 export async function signImpersonationValue(slug: string): Promise<string> {
-  const secret = getSecret()
+  const secret = await getSecret()
   if (!secret) throw new Error('CHALLENGE_SECRET is required')
 
   const expiresAt = Math.floor(Date.now() / 1000) + IMPERSONATE_TTL_SECONDS
@@ -32,7 +44,7 @@ export async function signImpersonationValue(slug: string): Promise<string> {
 async function readImpersonationCookie(
   value: string | null | undefined
 ): Promise<{ slug: string; expiresAt: number } | null> {
-  const secret = getSecret()
+  const secret = await getSecret()
   if (!value || !secret) return null
 
   const verified = await verifyCookieValue(value, secret)
@@ -73,18 +85,13 @@ export async function getImpersonationExpiresAt(): Promise<number | null> {
 export async function resolveImpersonationCookie({
   email,
   currentCookie,
-  adminModeCookie,
 }: {
   email: string | null
   currentCookie: string | undefined
-  adminModeCookie: string | undefined
 }): Promise<{ action: 'delete' } | { action: 'none' }> {
   if (!currentCookie) return { action: 'none' }
 
   if (!email || !isAdmin(email)) return { action: 'delete' }
-
-  const adminMode = await readAdminModeCookie(adminModeCookie)
-  if (adminMode === 'viewer') return { action: 'delete' }
 
   const parsed = await readImpersonationCookie(currentCookie)
   if (!parsed) return { action: 'delete' }

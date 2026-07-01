@@ -1,120 +1,118 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { ArrowRight, Check, Circle, ListChecks } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import {
-  trackOnboardingBannerCtaClick,
-  trackOnboardingBannerDismiss,
-  trackOnboardingBannerShown,
-} from '@/lib/analytics'
-import type { ActionNudge } from '@/lib/services/brand-health'
+import { startOnboardingStepAction } from '@/lib/actions/brand-onboarding'
+import { ONBOARDING_STEPS, type OnboardingStep, type OnboardingStepKey } from '@/lib/services/brand-onboarding'
 
 type WelcomeBannerProps = {
-  claimedAt: string | null
-  completionFraction: number
+  completedCount: number
+  nextStep: OnboardingStepKey | null
   slug: string
-  topAction?: Pick<ActionNudge, 'labelKey' | 'anchor' | 'points'>
+  steps: OnboardingStep[]
 }
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
-
 export function WelcomeBanner({
-  claimedAt,
-  completionFraction,
+  completedCount,
+  nextStep,
   slug,
-  topAction,
+  steps,
 }: WelcomeBannerProps) {
-  const t = useTranslations('dashboard.onboarding.banner')
-  const tHealth = useTranslations('dashboard.health')
-  const [dismissed, setDismissed] = useState(false)
-  const [mountedAt] = useState(() => Date.now())
-  const claimedAtTime = claimedAt === null ? null : new Date(claimedAt).getTime()
-  const isWithinClaimWindow =
-    claimedAtTime !== null && mountedAt - claimedAtTime <= SEVEN_DAYS_MS
-  const shouldShow =
-    claimedAt !== null && isWithinClaimWindow && completionFraction < 1
-  const shouldTrackShownRef = useRef(shouldShow)
+  const t = useTranslations('dashboard.onboarding')
 
-  useEffect(() => {
-    if (shouldTrackShownRef.current) {
-      trackOnboardingBannerShown(slug)
-    }
-  }, [slug])
-
-  if (!shouldShow || dismissed) {
-    return null
-  }
-
-  const actions = [
-    { label: t('action1'), hint: t('action1Hint') },
-    { label: t('action2'), hint: t('action2Hint') },
-    { label: t('action3'), hint: t('action3Hint') },
-  ]
+  const percentage = (completedCount / ONBOARDING_STEPS.length) * 100
 
   return (
-    <section className="rounded-lg border border-[#E5E0D8] bg-white p-6">
-      <div className="space-y-1">
-        <h2 className="text-base font-bold text-[#1C1C1C]">{t('title')}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
+    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <ListChecks className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-heading text-lg font-bold text-foreground">
+            {t('card.title')}
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {t('progress', { completed: completedCount, total: ONBOARDING_STEPS.length })}
+          </p>
+        </div>
       </div>
 
-      <ol className="mt-4 space-y-4">
-        {actions.map((action, index) => (
-          <li key={action.label} className="flex items-start gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F5F4F1] text-xs font-semibold text-[#2F5D50]">
-              {index + 1}
-            </span>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-[#1C1C1C]">{action.label}</p>
-              <p className="text-xs text-muted-foreground">{action.hint}</p>
-            </div>
-          </li>
-        ))}
-        {topAction ? (
-          <li className="flex items-start gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2F5D50] text-xs font-semibold text-white">
-              &gt;
-            </span>
-            <Link
-              className="flex min-w-0 flex-1 items-start justify-between gap-3 rounded-md border border-[#2F5D50] bg-[#F5F4F1] px-3 py-2 hover:bg-[#F5F4F1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5D50] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              href={`/dashboard/brands/${slug}/edit${topAction.anchor}`}
-            >
-              <span className="min-w-0 space-y-1">
-                <span className="inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-[#2F5D50]">
-                  {t('topPick')}
-                </span>
-                <span className="block text-sm font-medium text-[#1C1C1C]">
-                  {tHealth(`actionQueue.label.${topAction.labelKey}`)}
-                </span>
-              </span>
-              <span className="shrink-0 text-xs font-semibold text-[#2F5D50]">
-                +{topAction.points}
-              </span>
-            </Link>
-          </li>
-        ) : null}
+      <div
+        className="mt-4 h-2 overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-label={t('card.progressLabel')}
+        aria-valuemin={0}
+        aria-valuemax={ONBOARDING_STEPS.length}
+        aria-valuenow={completedCount}
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-[width]"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+
+      <ol className="mt-5 space-y-2">
+        {steps.map((step, index) => {
+          const isNext = step.key === nextStep
+          const startAction = startOnboardingStepAction.bind(null, slug, step.key)
+
+          return (
+            <li key={step.key}>
+              <form action={startAction}>
+                <button
+                  type="submit"
+                  className={`group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    isNext
+                      ? 'border-primary/30 bg-primary/5 hover:bg-primary/10'
+                      : 'border-transparent hover:bg-muted'
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${
+                      step.status === 'complete'
+                        ? 'bg-primary text-primary-foreground'
+                        : isNext
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {step.status === 'complete' ? (
+                      <Check className="size-3.5" />
+                    ) : isNext ? (
+                      <span className="text-xs font-bold">{index + 1}</span>
+                    ) : (
+                      <Circle className="size-3" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-foreground">
+                      {t(`steps.${step.key}.title`)}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                      {t(`steps.${step.key}.description`)}
+                    </span>
+                    <span className="mt-1.5 block text-xs font-medium text-primary">
+                      {t(`status.${step.status}`)}
+                    </span>
+                  </span>
+                  {isNext ? (
+                    <ArrowRight className="mt-1 size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+                  ) : null}
+                </button>
+              </form>
+            </li>
+          )
+        })}
       </ol>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Link
-          className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#2F5D50] px-6 py-3 text-sm font-medium text-white hover:bg-[#1F3F36] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5D50] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          href={`/dashboard/brands/${slug}/edit#media`}
-          onClick={() => trackOnboardingBannerCtaClick(slug)}
-        >
-          {t('cta')}
-        </Link>
-        <button
-          className="min-h-[48px] text-sm text-muted-foreground underline hover:text-[#1C1C1C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5D50] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          type="button"
-          onClick={() => {
-            trackOnboardingBannerDismiss(slug)
-            setDismissed(true)
-          }}
-        >
-          {t('dismiss')}
-        </button>
-      </div>
+      <Link
+        href={`/dashboard/onboarding?brand=${slug}`}
+        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        {t('card.viewAll')}
+      </Link>
     </section>
   )
 }

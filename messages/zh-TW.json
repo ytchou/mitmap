@@ -133,6 +133,7 @@
       "trigger": "篩選（{count}）",
       "all": "全部",
       "category": "分類",
+      "priceRange": "價格區間",
       "brandStatus": "品牌狀態",
       "brandValues": "品牌價值",
       "appliedCount": "已套用 {count} 個篩選",
@@ -294,8 +295,7 @@
     },
     "adminMenu": {
       "label": "管理選單",
-      "viewAsOwner": "以品牌主身份檢視",
-      "editBrand": "編輯品牌"
+      "viewAsOwner": "品牌主檢視"
     },
     "breadcrumb": {
       "directory": "品牌目錄"
@@ -852,8 +852,10 @@
       "submissions": "提交紀錄"
     },
     "brandSelector": {
+      "title": "目前查看品牌",
       "label": "選擇品牌",
-      "placeholder": "選擇品牌"
+      "placeholder": "選擇品牌",
+      "description": "當此帳號可管理 {count} 個品牌時，會顯示這個切換選單。"
     },
     "emptyState": {
       "title": "此頁面為品牌經營者專屬主控台",
@@ -893,18 +895,35 @@
       }
     },
     "onboarding": {
-      "banner": {
-        "title": "歡迎加入 Formoria！",
-        "description": "讓我們一起讓你的品牌被更多人看見。完成以下 3 件事，你的品牌頁面就能展現最佳狀態：",
-        "action1": "上傳品牌封面照",
-        "action1Hint": "訪客第一眼看到的視覺印象",
-        "action2": "撰寫品牌介紹",
-        "action2Hint": "幫助消費者認識你的品牌故事",
-        "action3": "新增購買連結",
-        "action3Hint": "讓有興趣的人直接下單",
-        "topPick": "首選",
-        "cta": "開始編輯",
-        "dismiss": "稍後再說"
+      "progress": "已檢視 {completed}/{total}",
+      "card": {
+        "title": "檢視你的品牌資料",
+        "progressLabel": "新手任務進度",
+        "next": "下一步",
+        "continue": "繼續檢視",
+        "viewAll": "查看檢查清單"
+      },
+      "page": {
+        "title": "檢視你的品牌",
+        "description": "即使資料已預先填入，也請逐項確認。儲存變更或主動確認後，該步驟才會完成。"
+      },
+      "status": {
+        "not_started": "尚未開始",
+        "in_progress": "進行中",
+        "complete": "已檢視"
+      },
+      "review": {
+        "title": "新手任務檢視",
+        "description": "請檢視此區段的資料。若有修改請儲存；若內容已正確，可直接確認。",
+        "confirm": "內容皆正確",
+        "back": "返回檢查清單"
+      },
+      "steps": {
+        "basics": { "title": "確認品牌基本資料", "description": "檢視品牌名稱、創立年份與價格範圍。" },
+        "products": { "title": "確認產品內容", "description": "檢視協助使用者找到品牌的具體產品標籤。" },
+        "story_media": { "title": "檢視品牌故事與圖片", "description": "確認品牌介紹、主視覺與產品照片。" },
+        "purchase": { "title": "確認購買管道", "description": "檢視購物平台、其他連結與實體通路。" },
+        "social_proof": { "title": "確認社群資訊", "description": "檢視社群帳號與顧客評價。" }
       },
       "milestone": {
         "gettingStarted": "好的開始！繼續完善你的品牌頁面。",
@@ -1067,16 +1086,27 @@
       "metaTitle": "編輯品牌",
       "pageHeading": "編輯 {name}",
       "pageSubheading": "更新您的品牌頁面資訊",
+      "onboardingReviewTitle": "新手任務檢視",
+      "onboardingReviewDescription": "請檢視此區段的資料。若有修改請儲存；若內容已正確，可直接確認。",
+      "onboardingConfirm": "內容皆正確",
+      "onboardingBack": "返回檢查清單",
       "sectionBasicInfo": "基本資訊",
       "sectionMedia": "媒體素材",
       "sectionLinks": "連結",
       "sectionCustomerVoices": "顧客心聲",
       "sectionLocations": "零售據點",
       "fieldBrandName": "品牌名稱",
+      "fieldCategory": "分類",
       "fieldDescription": "品牌介紹",
+      "fieldProductTags": "產品標籤",
+      "fieldProductTagsPlaceholder": "新增具體的產品類型",
+      "removeProductTag": "移除標籤",
+      "productTagsMax": "最多 5 個標籤。請描述產品，而非宣傳用語。",
       "fieldBrandHighlights": "品牌亮點",
       "fieldHighlightsHint": "最多 300 字",
       "fieldFoundingYear": "創立年份",
+      "fieldPriceRange": "價格範圍",
+      "fieldPriceRangeUnset": "未設定",
       "fieldLogo": "品牌 Logo",
       "fieldHeroImage": "主視覺圖片",
       "fieldProductPhotos": "產品照片",
@@ -1545,13 +1575,6 @@
         "other": "其他"
       }
     }
-  },
-  "adminMode": {
-    "god": "管理者模式",
-    "viewer": "訪客檢視",
-    "enter": "切換為訪客檢視",
-    "exit": "離開訪客檢視",
-    "banner": "一般使用者檢視"
   },
   "saveBrand": {
     "save": "收藏",

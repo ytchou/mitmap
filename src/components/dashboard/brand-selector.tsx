@@ -1,8 +1,13 @@
 'use client'
 
-import { ChangeEvent } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select'
 
 type Brand = {
   brandId: string
@@ -35,25 +40,33 @@ export function BrandSelector({ brands, selectedSlug }: BrandSelectorProps) {
     )
   }
 
-  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const newSlug = event.target.value
+  const handleChange = (newSlug: string | null) => {
+    if (!newSlug) return
     router.replace(`${pathname}?brand=${newSlug}`)
   }
 
   return (
-    <label className="inline-flex flex-col gap-2">
-      <span className="sr-only">{t('label')}</span>
-      <select
-        className="min-h-12 rounded-lg border border-border bg-background px-3 py-2 font-heading text-[22px] font-bold leading-tight text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        value={currentSlug}
-        onChange={handleChange}
-      >
-        {brands.map((brand) => (
-          <option key={brand.brandId} value={brand.brandSlug}>
-            {brand.brandName}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="min-w-0">
+      <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
+        {t('title')}
+      </p>
+      <div className="mt-1.5">
+        <Select value={currentSlug} onValueChange={handleChange}>
+          <SelectTrigger
+            aria-label={t('label')}
+            className="h-12 min-w-[18rem] max-w-full rounded-xl border-border bg-background px-3 text-left font-heading text-lg font-bold text-foreground shadow-sm sm:min-w-[20rem]"
+          >
+            <span className="flex flex-1 text-left">{selectedBrand?.brandName}</span>
+          </SelectTrigger>
+          <SelectContent align="start" className="rounded-xl">
+            {brands.map((brand) => (
+              <SelectItem key={brand.brandId} value={brand.brandSlug}>
+                {brand.brandName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   )
 }

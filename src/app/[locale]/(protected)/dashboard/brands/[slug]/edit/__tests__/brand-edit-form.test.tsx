@@ -24,6 +24,7 @@ function makeBrand(overrides: Partial<Brand> = {}): Brand {
     description: 'Original description',
     heroImageUrl: null,
     status: 'approved',
+    productType: 'fashion',
     category: 'fashion',
     isVerified: false,
     isDemo: false,
@@ -56,6 +57,7 @@ describe('BrandEditForm — sections', () => {
   it('renders Basic Info section with existing fields', () => {
     render(<BrandEditForm brand={mockBrand} />)
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/category/i)).toHaveValue('fashion')
     expect(screen.getByLabelText(/founding year/i)).toBeInTheDocument()
   })
 

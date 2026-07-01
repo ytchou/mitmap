@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { isActingAsAdmin } from '@/lib/auth/admin-mode'
+import { getImpersonatedBrandSlug } from '@/lib/auth/impersonation'
 import { isOwnerOf } from '@/lib/services/brand-owners'
 import { createPendingEdit } from '@/lib/services/pending-edits'
 import { scanContent, shouldAutoApprove, saveModerationFlags } from '@/lib/services/moderation'
@@ -19,8 +20,13 @@ import {
 } from '@/lib/services/brands'
 import { deleteBrandImages } from '@/lib/services/image-upload'
 import { logAdminActionIfAdmin } from '@/lib/services/admin-audit'
+import {
+  isOnboardingStepKey,
+  setBrandOnboardingStepStatus,
+} from '@/lib/services/brand-onboarding'
 import type { Brand, CustomerVoice, OtherUrl, RetailLocation } from '@/lib/types'
 import type { ContentPayload, ModerationResult } from '@/lib/services/moderation'
+import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
 
 type ActionState = {
   success?: boolean
@@ -61,10 +67,45 @@ function parseProductTags(value: FormDataEntryValue | null): string[] {
     return []
   }
 
-  return value
+  const tags = value
     .split(',')
-    .map((tag) => tag.trim())
+    .map((tag) => tag.trim().replace(/\s+/g, ' '))
     .filter(Boolean)
+
+  const uniqueTags = tags.filter(
+    (tag, index) => tags.findIndex(
+      (candidate) => candidate.toLocaleLowerCase() === tag.toLocaleLowerCase()
+    ) === index
+  )
+
+  if (uniqueTags.length > 5 || uniqueTags.some((tag) => tag.length > 40)) {
+    throw new InvalidBrandEditFormError('Product tags must contain at most 5 tags of 40 characters or fewer')
+  }
+
+  return uniqueTags
+}
+
+async function completeOnboardingAfterOwnerSubmit(
+  formData: FormData,
+  brandId: string,
+  userId: string,
+  isOwner: boolean
+): Promise<void> {
+  const rawStep = formData.get('onboardingStep')
+  if (!isOwner || typeof rawStep !== 'string' || !isOnboardingStepKey(rawStep)) return
+
+  await setBrandOnboardingStepStatus({
+    brandId,
+    userId,
+    step: rawStep,
+    status: 'complete',
+  })
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/onboarding')
+}
+
+async function hasMatchingImpersonation(brandSlug: string): Promise<boolean> {
+  return (await getImpersonatedBrandSlug()) === brandSlug
 }
 
 function parseBrandEditForm(
@@ -77,6 +118,14 @@ function parseBrandEditForm(
   const threads = formData.get('socialThreads') as string | null
   const facebook = formData.get('socialFacebook') as string | null
   const heroImageUrl = parseOptionalString(formData.get('heroImageUrl'))
+  const productType = parseOptionalString(formData.get('productType'))
+
+  if (
+    productType !== null &&
+    !PRODUCT_TYPE_CATEGORIES.some((category) => category.slug === productType)
+  ) {
+    throw new InvalidBrandEditFormError('Invalid product type')
+  }
 
   // Extract new fields
   const foundingYearRaw = formData.get('foundingYear') as string | null
@@ -127,6 +176,7 @@ function parseBrandEditForm(
   const updateData: Partial<Brand> = {}
   if (name) updateData.name = name
   if (description !== null) updateData.description = description
+  if (formData.has('productType')) updateData.productType = productType
   if (foundingYear !== null && !isNaN(foundingYear)) updateData.foundingYear = foundingYear
   if (formData.has('purchaseWebsite')) updateData.purchaseWebsite = purchaseWebsite
   if (formData.has('purchasePinkoi')) updateData.purchasePinkoi = purchasePinkoi
@@ -260,7 +310,8 @@ export async function updateBrandAction(
 
     const brand = await getBrandBySlug(brandSlug)
     const owner = await isOwnerOf(user.id, brand.id)
-    const actingAdmin = !owner && (await isActingAsAdmin(user.email))
+    const configuredAdmin = await isActingAsAdmin(user.email)
+    const actingAdmin = !owner && configuredAdmin && (await hasMatchingImpersonation(brandSlug))
 
     if (!owner && !actingAdmin) {
       return { error: t('forbidden') }
@@ -273,23 +324,24 @@ export async function updateBrandAction(
       return { error: t('unknown') }
     }
 
-    const isAdmin = await isActingAsAdmin(user.email)
-    if (!isAdmin) {
+    if (!configuredAdmin) {
       const autoApprove = moderationResult.flags.length === 0
         ? await shouldAutoApprove(moderationResult, user.id)
         : false
 
       if (autoApprove) {
         await applyBrandUpdate(brand, updateData)
-        redirect(`/dashboard?brand=${brandSlug}`)
+        await completeOnboardingAfterOwnerSubmit(formData, brand.id, user.id, owner)
+      } else {
+        await createPendingEdit(brand.id, user.id, updateData as Record<string, unknown>)
+        await saveModerationFlagsQuietly(brand.id, user.id, moderationResult)
+        await completeOnboardingAfterOwnerSubmit(formData, brand.id, user.id, owner)
+        return { success: true, message: 'brandEditSubmittedForReview' }
       }
-
-      await createPendingEdit(brand.id, user.id, updateData as Record<string, unknown>)
-      await saveModerationFlagsQuietly(brand.id, user.id, moderationResult)
-      return { success: true, message: 'brandEditSubmittedForReview' }
     }
 
     await applyBrandUpdate(brand, updateData)
+    await completeOnboardingAfterOwnerSubmit(formData, brand.id, user.id, owner)
     await logAdminActionIfAdmin(actingAdmin, { id: user.id, email: user.email ?? null }, 'brand_edit', brandSlug, brand.id)
   } catch (err) {
     if (err instanceof InvalidBrandEditFormError) {
@@ -327,7 +379,8 @@ export async function saveDraftAction(
 
     const brand = await getBrandBySlug(brandSlug)
     const owner = await isOwnerOf(user.id, brand.id)
-    const actingAdmin = !owner && (await isActingAsAdmin(user.email))
+    const configuredAdmin = await isActingAsAdmin(user.email)
+    const actingAdmin = !owner && configuredAdmin && (await hasMatchingImpersonation(brandSlug))
 
     if (!owner && !actingAdmin) {
       return { error: t('forbidden') }
@@ -374,7 +427,8 @@ export async function publishDraftAction(
 
     const brand = await getBrandBySlug(brandSlug)
     const owner = await isOwnerOf(user.id, brand.id)
-    const actingAdmin = !owner && (await isActingAsAdmin(user.email))
+    const configuredAdmin = await isActingAsAdmin(user.email)
+    const actingAdmin = !owner && configuredAdmin && (await hasMatchingImpersonation(brandSlug))
 
     if (!owner && !actingAdmin) {
       return { error: t('forbidden') }
@@ -391,8 +445,7 @@ export async function publishDraftAction(
       return { error: t('unknown') }
     }
 
-    const isAdmin = await isActingAsAdmin(user.email)
-    if (!isAdmin) {
+    if (!configuredAdmin) {
       const autoApprove = moderationResult.flags.length === 0
         ? await shouldAutoApprove(moderationResult, user.id)
         : false
@@ -414,13 +467,12 @@ export async function publishDraftAction(
 
         revalidatePath('/[locale]/brands/[slug]', 'page')
         revalidatePath('/dashboard')
-        redirect(`/dashboard?brand=${brandSlug}`)
+      } else {
+        await createPendingEdit(brand.id, user.id, draftPartial)
+        await saveModerationFlagsQuietly(brand.id, user.id, moderationResult)
+        await discardDraft(brand.id)
+        return { success: true, message: 'brandEditSubmittedForReview' }
       }
-
-      await createPendingEdit(brand.id, user.id, draftPartial)
-      await saveModerationFlagsQuietly(brand.id, user.id, moderationResult)
-      await discardDraft(brand.id)
-      return { success: true, message: 'brandEditSubmittedForReview' }
     }
 
     const nextImageUrls = imageUrlsFromBrand({
@@ -472,7 +524,8 @@ export async function discardDraftAction(
 
     const brand = await getBrandBySlug(brandSlug)
     const owner = await isOwnerOf(user.id, brand.id)
-    const actingAdmin = !owner && (await isActingAsAdmin(user.email))
+    const configuredAdmin = await isActingAsAdmin(user.email)
+    const actingAdmin = !owner && configuredAdmin && (await hasMatchingImpersonation(brandSlug))
 
     if (!owner && !actingAdmin) {
       return { error: t('forbidden') }

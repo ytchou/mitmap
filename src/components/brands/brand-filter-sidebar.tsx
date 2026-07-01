@@ -39,6 +39,7 @@ type BrandFilterDrawerProps = BrandFilterSidebarProps & {
 }
 
 const verificationOptions: VerificationFilterValue[] = ['all', 'mit-verified', 'owned']
+const priceRangeOptions = [1, 2, 3] as const
 
 function parseCommaParam(value: string | null): string[] {
   return value
@@ -113,9 +114,14 @@ export function BrandFilterSidebar({
       ? searchParams.get('verification')
       : 'all'
   ) as VerificationFilterValue
+  const activePriceRanges = useMemo(
+    () => new Set(parseCommaParam(searchParams.get('price')).map(Number)),
+    [searchParams]
+  )
 
   const activeCount =
     activeCategories.size +
+    activePriceRanges.size +
     (activeVerification !== 'all' ? 1 : 0)
   const useZh = locale === 'zh-TW'
 
@@ -157,10 +163,25 @@ export function BrandFilterSidebar({
     )
   }
 
+  function togglePriceRange(value: number, checked: boolean) {
+    const next = new Set(activePriceRanges)
+    if (checked) next.add(value)
+    else next.delete(value)
+
+    router.replace(
+      updateParamUrl(pathname, searchParams, (params) => {
+        if (next.size > 0) params.set('price', Array.from(next).sort().join(','))
+        else params.delete('price')
+      }),
+      { scroll: false }
+    )
+  }
+
   function clearAll() {
     router.replace(
       updateParamUrl(pathname, searchParams, (params) => {
         params.delete('category')
+        params.delete('price')
         params.delete('verification')
       }),
       { scroll: false }
@@ -204,6 +225,34 @@ export function BrandFilterSidebar({
                   onCheckedChange={(value: boolean) => toggleCategory(category.slug, value)}
                   aria-label={categoryLabel(category)}
                 />
+              </Label>
+            )
+          })}
+        </div>
+      </FilterSection>
+
+      <Separator />
+
+      <FilterSection title={t('priceRange')}>
+        <div className="flex flex-wrap gap-2">
+          {priceRangeOptions.map((value) => {
+            const checked = activePriceRanges.has(value)
+            const label = '$'.repeat(value)
+            return (
+              <Label
+                key={value}
+                className={cn(
+                  'cursor-pointer rounded-full border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground',
+                  checked && 'border-primary bg-primary text-primary-foreground hover:text-primary-foreground'
+                )}
+              >
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(selected: boolean) => togglePriceRange(value, selected)}
+                  aria-label={label}
+                  className="sr-only"
+                />
+                <span>{label}</span>
               </Label>
             )
           })}
@@ -269,8 +318,10 @@ export function BrandFilterDrawer({
   const searchParams = useSearchParams()
   const activeCategories = parseCommaParam(searchParams.get('category'))
   const activeVerification = searchParams.get('verification')
+  const activePriceRanges = parseCommaParam(searchParams.get('price'))
   const activeCount =
     activeCategories.length +
+    activePriceRanges.length +
     (activeVerification === 'mit-verified' || activeVerification === 'owned' ? 1 : 0)
 
   return (
@@ -314,6 +365,7 @@ function MobileClearAll({ onClear }: { onClear: () => void }) {
     router.replace(
       updateParamUrl(pathname, searchParams, (params) => {
         params.delete('category')
+        params.delete('price')
         params.delete('verification')
       }),
       { scroll: false }
