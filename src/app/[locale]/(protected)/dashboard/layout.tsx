@@ -81,7 +81,6 @@ export default async function DashboardLayout({
           onboarding={welcomeBannerData ? (
             <WelcomeBanner
               completedCount={welcomeBannerData.completedCount}
-              isComplete={welcomeBannerData.isComplete}
               nextStep={welcomeBannerData.nextStep}
               slug={selectedBrand.brandSlug}
               steps={welcomeBannerData.steps}
