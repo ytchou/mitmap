@@ -76,12 +76,12 @@
     "tailwindcss": "^4",
     "tsx": "^4",
     "typescript": "^5",
-    "vite": ">=8.0.16",
+    "vite": ">=8.1.2",
     "vitest": "^4.1.9"
   },
   "pnpm": {
     "overrides": {
-      "vite": ">=8.0.16",
+      "vite": ">=8.1.2",
       "ws": ">=8.21.0",
       "undici": ">=7.28.0"
     }
