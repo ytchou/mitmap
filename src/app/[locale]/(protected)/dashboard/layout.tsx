@@ -3,11 +3,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { resolveDashboardBrand } from '@/lib/services/resolve-dashboard-brand'
-import { getImpersonationExpiresAt } from '@/lib/auth/impersonation'
 import { BrandSelector } from '@/components/dashboard/brand-selector'
-import { ImpersonationBanner } from '@/components/dashboard/impersonation-banner'
 import { DashboardTabNav } from '@/components/dashboard/dashboard-tab-nav'
 import { DashboardEmptyState } from '@/components/dashboard/dashboard-empty-state'
+import { DashboardContentLayout } from '@/components/dashboard/dashboard-content-layout'
 import { WelcomeBanner } from '@/components/dashboard/welcome-banner'
 import { EditReviewBanner } from '@/components/brands/edit-review-banner'
 import { getWelcomeBannerData } from './_lib/welcome-banner-data'
@@ -28,7 +27,6 @@ export default async function DashboardLayout({
   setRequestLocale(locale)
 
   const t = await getTranslations('dashboard.manage')
-  const tImpersonate = await getTranslations('impersonation')
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const supabase = await createClient()
   const {
@@ -45,8 +43,7 @@ export default async function DashboardLayout({
     return <DashboardEmptyState />
   }
 
-  const { brand: selectedBrand, allBrands, isImpersonating } = ctx
-  const impersonationExpiresAt = isImpersonating ? await getImpersonationExpiresAt() : null
+  const { brand: selectedBrand, allBrands } = ctx
 
   const [welcomeBannerData, latestReview] = user
     ? await Promise.all([
@@ -57,17 +54,6 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      {isImpersonating && impersonationExpiresAt && (
-        <ImpersonationBanner
-          brandName={selectedBrand.brandName}
-          expiresAt={impersonationExpiresAt}
-          labels={{
-            banner: tImpersonate('banner', { brandName: selectedBrand.brandName }),
-            exit: tImpersonate('exit'),
-            timeRemaining: tImpersonate('timeRemaining'),
-          }}
-        />
-      )}
       <header className="border-b border-border bg-card">
         <div className="flex h-[72px] items-center justify-between gap-6 px-5 lg:px-20">
           <BrandSelector
@@ -90,15 +76,18 @@ export default async function DashboardLayout({
       </div>
 
       <main className="px-5 py-8 lg:px-20">
-        <div className="space-y-6">
-          {welcomeBannerData ? (
+        <DashboardContentLayout
+          showOnboarding={Boolean(welcomeBannerData && !welcomeBannerData.isComplete)}
+          onboarding={welcomeBannerData ? (
             <WelcomeBanner
-              claimedAt={selectedBrand.claimedAt}
-              completionFraction={welcomeBannerData.completionFraction}
+              completedCount={welcomeBannerData.completedCount}
+              isComplete={welcomeBannerData.isComplete}
+              nextStep={welcomeBannerData.nextStep}
               slug={selectedBrand.brandSlug}
-              topAction={welcomeBannerData.topAction}
+              steps={welcomeBannerData.steps}
             />
           ) : null}
+        >
           {latestReview ? (
             <EditReviewBanner
               edit={latestReview}
@@ -106,7 +95,7 @@ export default async function DashboardLayout({
             />
           ) : null}
           {children}
-        </div>
+        </DashboardContentLayout>
       </main>
     </div>
   )

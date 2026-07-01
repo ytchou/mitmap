@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { readAdminModeCookie, type AdminMode } from "@/lib/auth/admin-mode";
 import { isActingAsAdmin } from "@/lib/auth/admin-mode";
-import { AdminModeBar } from "@/components/admin-mode/admin-mode-bar";
 import { AdminNav } from "@/components/admin/admin-nav";
 import type { NavItem } from "@/components/admin/admin-nav";
 import { getFlaggedContent } from "@/lib/services/moderation";
@@ -32,9 +29,8 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  const [cookieStore, messages, submissions, flaggedContent, edits, reports, feedbackItems] =
+  const [messages, submissions, flaggedContent, edits, reports, feedbackItems] =
     await Promise.all([
-      cookies(),
       getMessages(),
       getSubmissions(),
       getFlaggedContent({ status: "pending" }),
@@ -42,9 +38,6 @@ export default async function AdminLayout({
       getPendingReports(),
       getFeedbackItems({ status: "open" }),
     ]);
-
-  const adminBarMode: AdminMode =
-    (await readAdminModeCookie(cookieStore.get("fm_mode")?.value)) ?? "god";
 
   const navItems: NavItem[] = [
     { label: "總覽", href: "/admin" },
@@ -80,16 +73,6 @@ export default async function AdminLayout({
   return (
     <NextIntlClientProvider locale="zh-TW" messages={messages}>
       <div className="min-h-screen bg-background">
-        <AdminModeBar
-          mode={adminBarMode}
-          labels={{
-            god: "管理者模式",
-            viewer: "訪客檢視",
-            enter: "切換為訪客檢視",
-            exit: "離開訪客檢視",
-            banner: "一般使用者檢視",
-          }}
-        />
         <main className="mx-auto max-w-screen-2xl px-10 pb-8 pt-8">
           <h1 className="font-heading text-3xl font-bold tracking-tight">管理後台</h1>
           <AdminNav items={navItems} />

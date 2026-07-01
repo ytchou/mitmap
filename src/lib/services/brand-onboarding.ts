@@ -1,0 +1,103 @@
+import { createServiceClient } from '@/lib/supabase/server'
+
+export const ONBOARDING_STEPS = [
+  'basics',
+  'products',
+  'story_media',
+  'purchase',
+  'social_proof',
+] as const
+
+export type OnboardingStepKey = (typeof ONBOARDING_STEPS)[number]
+export type OnboardingStepStatus = 'not_started' | 'in_progress' | 'complete'
+
+export type OnboardingStep = {
+  key: OnboardingStepKey
+  status: OnboardingStepStatus
+}
+
+export type BrandOnboardingProgress = {
+  steps: OnboardingStep[]
+  completedCount: number
+  isComplete: boolean
+  nextStep: OnboardingStepKey | null
+}
+
+type ProgressRow = {
+  step_key: string
+  status: string
+}
+
+export function isOnboardingStepKey(value: string): value is OnboardingStepKey {
+  return ONBOARDING_STEPS.includes(value as OnboardingStepKey)
+}
+
+export function buildOnboardingProgress(rows: ProgressRow[]): BrandOnboardingProgress {
+  const statuses = new Map(
+    rows
+      .filter((row) => isOnboardingStepKey(row.step_key))
+      .map((row) => [row.step_key, row.status])
+  )
+  const steps = ONBOARDING_STEPS.map((key) => ({
+    key,
+    status: statuses.get(key) === 'complete'
+      ? 'complete' as const
+      : statuses.get(key) === 'in_progress'
+        ? 'in_progress' as const
+        : 'not_started' as const,
+  }))
+  const completedCount = steps.filter((step) => step.status === 'complete').length
+
+  return {
+    steps,
+    completedCount,
+    isComplete: completedCount === ONBOARDING_STEPS.length,
+    nextStep: steps.find((step) => step.status !== 'complete')?.key ?? null,
+  }
+}
+
+export async function getBrandOnboardingProgress(
+  brandId: string
+): Promise<BrandOnboardingProgress> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('brand_onboarding_steps')
+    .select('step_key, status')
+    .eq('brand_id', brandId)
+
+  if (error) {
+    if (error.code === '42P01' || error.code === 'PGRST205') {
+      return buildOnboardingProgress([])
+    }
+    throw error
+  }
+  return buildOnboardingProgress((data ?? []) as ProgressRow[])
+}
+
+export async function setBrandOnboardingStepStatus({
+  brandId,
+  userId,
+  step,
+  status,
+}: {
+  brandId: string
+  userId: string
+  step: OnboardingStepKey
+  status: Exclude<OnboardingStepStatus, 'not_started'>
+}): Promise<void> {
+  const now = new Date().toISOString()
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('brand_onboarding_steps')
+    .upsert({
+      brand_id: brandId,
+      step_key: step,
+      status,
+      started_at: now,
+      completed_at: status === 'complete' ? now : null,
+      completed_by_user_id: userId,
+      updated_at: now,
+    }, { onConflict: 'brand_id,step_key' })
+
+  if (error) throw error
+}

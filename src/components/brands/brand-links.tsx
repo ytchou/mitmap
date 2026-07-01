@@ -92,10 +92,10 @@ type LinkSectionProps = {
 }
 
 const chipClassName =
-  'inline-flex min-h-12 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+  'inline-flex min-h-12 min-w-32 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
 
 const disabledChipClassName =
-  'inline-flex min-h-12 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground opacity-45'
+  'inline-flex min-h-12 min-w-32 items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground opacity-45'
 
 function SectionLabel({
   children,

@@ -44,6 +44,12 @@ function parseCommaParam(value: string | string[] | undefined): string[] {
   )
 }
 
+function parsePriceRanges(value: string | string[] | undefined): (1 | 2 | 3)[] {
+  return parseCommaParam(value)
+    .map(Number)
+    .filter((price): price is 1 | 2 | 3 => price === 1 || price === 2 || price === 3)
+}
+
 function appendCategoryQuery(url: string, categorySlug: string): string {
   return `${url}${url.includes('?') ? '&' : '?'}category=${encodeURIComponent(categorySlug)}`
 }
@@ -119,12 +125,14 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
   const search =
     typeof sp.search === 'string' ? sp.search.trim() : ''
   const categoryFilter = parseCommaParam(sp.category)
+  const priceRanges = parsePriceRanges(sp.price)
   const verificationFilter = parseVerificationParam(sp.verification)
 
   const { brands, totalCount } = await getBrands({
     status: 'approved',
     search: search || undefined,
     category: categoryFilter.length > 0 ? categoryFilter : undefined,
+    priceRanges: priceRanges.length > 0 ? priceRanges : undefined,
     verificationFilter,
     sort,
     limit: DEFAULT_PAGE_SIZE,
@@ -142,6 +150,7 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
       status: 'approved',
       search: search || undefined,
       category: categoryFilter.length > 0 ? categoryFilter : undefined,
+      priceRanges: priceRanges.length > 0 ? priceRanges : undefined,
       verificationFilter,
       sort,
       limit: DEFAULT_PAGE_SIZE,
@@ -152,7 +161,7 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
 
   // Fetch empty-state fallback data when search yields zero results
   const hasActiveFilters =
-    categoryFilter.length > 0 || verificationFilter !== 'all'
+    categoryFilter.length > 0 || priceRanges.length > 0 || verificationFilter !== 'all'
   let emptyStateData: {
     categories: { productType: string; count: number }[]
     featured: { id: string; name: string; slug: string; heroImageUrl: string | null; category: string }[]
@@ -170,6 +179,7 @@ export default async function BrandsPage({ params, searchParams }: BrandsPagePro
   if (search) paginationParams.search = search
   if (sort !== 'name') paginationParams.sort = sort
   if (categoryFilter.length > 0) paginationParams.category = categoryFilter.join(',')
+  if (priceRanges.length > 0) paginationParams.price = priceRanges.join(',')
   if (verificationFilter !== 'all') paginationParams.verification = verificationFilter
 
   let categoryItemListJsonLd = null

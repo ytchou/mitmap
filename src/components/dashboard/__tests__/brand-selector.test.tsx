@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+import * as React from 'react'
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import en from '@/../messages/en.json'
 import { BrandSelector } from '../brand-selector'
@@ -11,6 +12,51 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('brand=brand-a'),
   usePathname: () => '/dashboard',
 }))
+
+vi.mock('@/components/ui/select', () => {
+  const Select = ({
+    value,
+    onValueChange,
+    children,
+  }: {
+    value: string
+    onValueChange: (value: string) => void
+    children: React.ReactNode
+  }) => {
+    const childArray = React.Children.toArray(children)
+    const trigger = childArray[0] as React.ReactElement<{
+      'aria-label'?: string
+      className?: string
+    }>
+    const content = childArray[1] as React.ReactElement<{
+      children: React.ReactNode
+    }>
+
+    return (
+      <select
+        aria-label={trigger.props['aria-label']}
+        className={trigger.props.className}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+      >
+        {content.props.children}
+      </select>
+    )
+  }
+
+  return {
+    Select,
+    SelectTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    SelectItem: ({
+      value,
+      children,
+    }: {
+      value: string
+      children: React.ReactNode
+    }) => <option value={value}>{children}</option>,
+  }
+})
 
 const brands = [
   {
@@ -55,6 +101,24 @@ describe('BrandSelector', () => {
         <BrandSelector brands={brands} selectedSlug="brand-a" />
       </NextIntlClientProvider>
     )
-    expect(screen.getByRole('combobox')).toBeInTheDocument()
+    expect(screen.getByText('Viewing as')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Shown when this account can manage 2 brands.')
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Select brand' })).toBeInTheDocument()
+  })
+
+  it('updates the query string when a different brand is selected', async () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <BrandSelector brands={brands} selectedSlug="brand-a" />
+      </NextIntlClientProvider>
+    )
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Select brand' }), {
+      target: { value: 'brand-b' },
+    })
+
+    expect(mockReplace).toHaveBeenCalledWith('/dashboard?brand=brand-b')
   })
 })

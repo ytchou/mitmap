@@ -1,16 +1,19 @@
 import type { Metadata } from 'next'
-import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
-import { AdminModeBar } from '@/components/admin-mode/admin-mode-bar'
+import { ImpersonationBanner } from '@/components/dashboard/impersonation-banner'
 import { SyncHtmlLang } from '@/components/i18n/sync-html-lang'
 import { Footer } from '@/components/navigation/footer'
 import { MainNav } from '@/components/navigation/main-nav'
 import { routing } from '@/i18n/routing'
-import { readAdminModeCookie, type AdminMode } from '@/lib/auth/admin-mode'
+import {
+  getImpersonatedBrandSlug,
+  getImpersonationExpiresAt,
+} from '@/lib/auth/impersonation'
 import { buildAlternates } from '@/lib/seo/alternates'
 import type { Locale } from '@/lib/seo/alternates'
+import { getBrandBySlugForAdmin } from '@/lib/services/brand-owners'
 import { PRODUCT_TYPE_CATEGORIES } from '@/lib/taxonomy/ontology'
 
 export function generateStaticParams() {
@@ -49,30 +52,35 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   }
 
   setRequestLocale(locale)
-  const [messages, tAdmin] = await Promise.all([
+  const [messages, impersonatedBrandSlug, impersonationExpiresAt] = await Promise.all([
     getMessages(),
-    getTranslations('adminMode'),
+    getImpersonatedBrandSlug(),
+    getImpersonationExpiresAt(),
   ])
-  const cookieStore = await cookies()
-  const adminBarMode: AdminMode | null =
-    await readAdminModeCookie(cookieStore.get('fm_mode')?.value)
+  const impersonatedBrand = impersonatedBrandSlug
+    ? await getBrandBySlugForAdmin(impersonatedBrandSlug)
+    : null
+  const tImpersonate = impersonatedBrand
+    ? await getTranslations('impersonation')
+    : null
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <SyncHtmlLang />
+      {impersonatedBrand && impersonationExpiresAt && tImpersonate ? (
+        <ImpersonationBanner
+          brandName={impersonatedBrand.brandName}
+          expiresAt={impersonationExpiresAt}
+          labels={{
+            banner: tImpersonate('banner', {
+              brandName: impersonatedBrand.brandName,
+            }),
+            exit: tImpersonate('exit'),
+            timeRemaining: tImpersonate.raw('timeRemaining'),
+          }}
+        />
+      ) : null}
       <div className="relative z-50">
-        {adminBarMode ? (
-          <AdminModeBar
-            mode={adminBarMode}
-            labels={{
-              god: tAdmin('god'),
-              viewer: tAdmin('viewer'),
-              enter: tAdmin('enter'),
-              exit: tAdmin('exit'),
-              banner: tAdmin('banner'),
-            }}
-          />
-        ) : null}
         <MainNav categories={[...PRODUCT_TYPE_CATEGORIES]} />
       </div>
       <div className="flex-1">{children}</div>

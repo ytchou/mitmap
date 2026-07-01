@@ -76,7 +76,7 @@ type CuratedBrand = Partial<Brand> &
     | 'foundingYear'
   > & { productType: string }
 
-type BrandWriteInput = Partial<Brand> & { productType?: string }
+type BrandWriteInput = Partial<Brand> & { productType?: string | null }
 
 /** Shape returned by: brand_owners(user_id) */
 type BrandOwnerRef = { user_id: string }
@@ -328,6 +328,7 @@ export function curatedSubmissionToBrand(input: CuratedSubmissionInput): Curated
 const BRAND_DRAFT_EDITABLE_KEYS = [
   'name',
   'description',
+  'productType',
   'foundingYear',
   'socialInstagram',
   'socialThreads',
@@ -433,6 +434,14 @@ export function draftSnapshotToDomain(
       case 'description':
         partial.description = snapshot.description as Brand['description']
         break
+      case 'productType': {
+        const productType = snapshot.productType as Brand['productType']
+        partial.productType = productType
+        partial.category = productType
+          ? deriveCategoryFromProductType(productType) ?? productType
+          : null
+        break
+      }
       case 'foundingYear':
         partial.foundingYear = snapshot.foundingYear as Brand['foundingYear']
         break
@@ -509,6 +518,7 @@ export function brandToDomain(row: BrandRowWithJoins): Brand {
     // status is text in the DB — cast to BrandStatus at the boundary
     status: row.status as Brand['status'],
     product_type: row.product_type ?? null,
+    productType: row.product_type ?? null,
     category: deriveCategoryFromProductType(row.product_type ?? '') ?? row.product_type ?? null,
     isVerified: owners.length > 0,
     mitStatus: (row.mit_status as Brand['mitStatus']) ?? 'unverified',
@@ -658,7 +668,20 @@ export async function getBrands(
       return { brands: [], totalCount: 0 }
     }
 
-    const searchResults: SearchResult[] = (rpcData ?? []).map((row) => ({
+    let matchedRows = rpcData ?? []
+    if (filters.priceRanges?.length && matchedRows.length > 0) {
+      const { data: priceMatches, error: priceError } = await supabase
+        .from('brands')
+        .select('id')
+        .in('id', matchedRows.map((row) => row.id))
+        .in('price_range', filters.priceRanges)
+
+      if (priceError) throw priceError
+      const matchingIds = new Set((priceMatches ?? []).map((row) => row.id))
+      matchedRows = matchedRows.filter((row) => matchingIds.has(row.id))
+    }
+
+    const searchResults: SearchResult[] = matchedRows.map((row) => ({
       id: row.id,
       name: row.name,
       slug: row.slug,
@@ -745,6 +768,9 @@ export async function getBrands(
   }
   if (filters?.category && filters.category.length > 0) {
     query = query.in('product_type', filters.category)
+  }
+  if (filters?.priceRanges && filters.priceRanges.length > 0) {
+    query = query.in('price_range', filters.priceRanges)
   }
 
   // Sorting

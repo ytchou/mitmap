@@ -28,6 +28,14 @@ vi.mock('@/components/dashboard/dashboard-tab-nav', () => ({
 vi.mock('@/components/dashboard/dashboard-empty-state', () => ({
   DashboardEmptyState: () => <div data-testid="empty-state" />,
 }))
+vi.mock('@/components/dashboard/welcome-banner', () => ({
+  WelcomeBanner: () => <div data-testid="welcome-banner" />,
+}))
+vi.mock('@/components/dashboard/dashboard-content-layout', () => ({
+  DashboardContentLayout: ({ children, onboarding }: { children: ReactNode; onboarding: ReactNode }) => (
+    <div>{onboarding}{children}</div>
+  ),
+}))
 
 import { getUserBrands } from '@/lib/services/brand-owners'
 import DashboardLayout from '../layout'
@@ -44,6 +52,7 @@ describe('DashboardLayout', () => {
     }))
     expect(screen.getByTestId('brand-selector')).toBeInTheDocument()
     expect(screen.getByTestId('tab-nav')).toBeInTheDocument()
+    expect(screen.getByTestId('welcome-banner')).toBeInTheDocument()
     expect(screen.getByText('child content')).toBeInTheDocument()
   })
 

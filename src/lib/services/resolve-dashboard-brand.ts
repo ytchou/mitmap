@@ -17,19 +17,27 @@ export const resolveDashboardBrand = cache(async (
   const ownedBrands = await getUserBrands(userId)
 
   const impersonatedSlug = await getImpersonatedBrandSlug()
-  const effectiveSlug = impersonatedSlug ?? requestedSlug
+  const hasValidImpersonation = impersonatedSlug
+    ? await isActingAsAdmin(email)
+    : false
+  const activeImpersonatedSlug = hasValidImpersonation
+    ? impersonatedSlug
+    : null
+  const requestedOwnedBrand = requestedSlug
+    ? ownedBrands.find((brand) => brand.brandSlug === requestedSlug)
+    : undefined
+  const impersonatedOwnedBrand = activeImpersonatedSlug
+    ? ownedBrands.find((brand) => brand.brandSlug === activeImpersonatedSlug)
+    : undefined
+  const effectiveSlug = activeImpersonatedSlug ?? requestedOwnedBrand?.brandSlug
 
   let allBrands = [...ownedBrands]
-  let isImpersonating = false
+  const isImpersonating = activeImpersonatedSlug !== null
 
-  if (effectiveSlug && !ownedBrands.some((b) => b.brandSlug === effectiveSlug)) {
-    const acting = await isActingAsAdmin(email)
-    if (acting) {
-      const adminBrand = await getBrandBySlugForAdmin(effectiveSlug)
-      if (adminBrand) {
-        allBrands = [adminBrand, ...ownedBrands]
-        isImpersonating = !!impersonatedSlug
-      }
+  if (activeImpersonatedSlug && !impersonatedOwnedBrand) {
+    const adminBrand = await getBrandBySlugForAdmin(activeImpersonatedSlug)
+    if (adminBrand) {
+      allBrands = [adminBrand, ...ownedBrands]
     }
   }
 

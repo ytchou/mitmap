@@ -77,6 +77,8 @@ function DropdownMenuItem({
   className,
   inset,
   variant = "default",
+  render,
+  nativeButton,
   ...props
 }: MenuPrimitive.Item.Props & {
   inset?: boolean
@@ -84,7 +86,6 @@ function DropdownMenuItem({
 }) {
   return (
     <MenuPrimitive.Item
-      nativeButton={!props.render || (React.isValidElement(props.render) && props.render.type === 'button')}
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
@@ -93,6 +94,11 @@ function DropdownMenuItem({
         className
       )}
       {...props}
+      render={render}
+      nativeButton={
+        nativeButton ??
+        (React.isValidElement(render) && render.type === "button")
+      }
     />
   )
 }

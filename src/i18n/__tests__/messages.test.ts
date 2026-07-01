@@ -2,6 +2,13 @@ import { describe, it, expect } from 'vitest'
 import zhTW from '../../../messages/zh-TW.json'
 import en from '../../../messages/en.json'
 
+describe('brand filter messages', () => {
+  it('includes the price range label in both locales', () => {
+    expect(zhTW.brands.filters.priceRange).toBe('價格區間')
+    expect(en.brands.filters.priceRange).toBe('Price range')
+  })
+})
+
 function keys(obj: Record<string, unknown>, prefix = ''): string[] {
   return Object.entries(obj).flatMap(([k, v]) =>
     v && typeof v === 'object'

@@ -11,13 +11,17 @@ import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/forms/image-upload-field";
 import { DynamicArrayField } from "@/components/forms/dynamic-array-field";
 import { ProductPhotosField } from "@/components/forms/product-photos-field";
+import { ProductTagField } from "@/components/forms/product-tag-field";
+import type { OnboardingStepKey } from "@/lib/services/brand-onboarding";
+import { PRODUCT_TYPE_CATEGORIES } from "@/lib/taxonomy/ontology";
 import type { Brand, CustomerVoice, OtherUrl } from "@/lib/types";
 
 type BrandEditFormProps = {
   brand: Brand;
+  onboardingStep?: OnboardingStepKey;
 };
 
-export function BrandEditForm({ brand }: BrandEditFormProps) {
+export function BrandEditForm({ brand, onboardingStep }: BrandEditFormProps) {
   const [socialInstagram, setSocialInstagram] = useState(brand.socialInstagram ?? "");
   const [socialThreads, setSocialThreads] = useState(brand.socialThreads ?? "");
   const [socialFacebook, setSocialFacebook] = useState(brand.socialFacebook ?? "");
@@ -54,6 +58,9 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
 
       <form className="space-y-10">
         <input type="hidden" name="brandSlug" value={brand.slug} />
+        {onboardingStep ? (
+          <input type="hidden" name="onboardingStep" value={onboardingStep} />
+        ) : null}
 
         {/* Basic Info */}
         <section id="basic-info" className="space-y-4">
@@ -79,7 +86,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
             <textarea
               id="description"
               name="description"
-              className="flex min-h-[120px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-h-[120px] w-full scroll-mt-8 rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               defaultValue={brand.description ?? ""}
             />
             {fieldErrors.description && (
@@ -87,6 +94,23 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
                 {fieldErrors.description}
               </p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="productType">{t("fieldCategory")}</Label>
+            <select
+              id="productType"
+              name="productType"
+              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              defaultValue={brand.productType ?? ""}
+            >
+              <option value="">—</option>
+              {PRODUCT_TYPE_CATEGORIES.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.nameZh} ({category.name})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">
@@ -109,16 +133,17 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div id="product-tags" className="space-y-2 scroll-mt-8">
             <Label htmlFor="productTags">{tx("fieldProductTags", "Product Tags")}</Label>
-            <Input
-              id="productTags"
-              name="productTags"
+            <ProductTagField
+              initialTags={brand.productTags}
+              inputLabel={tx("fieldProductTags", "Product Tags")}
               placeholder={tx(
                 "fieldProductTagsPlaceholder",
-                "Comma-separated specific product types"
+                "Add a specific product type"
               )}
-              defaultValue={brand.productTags.join(", ")}
+              removeLabel={tx("removeProductTag", "Remove tag")}
+              maxLabel={tx("productTagsMax", "Up to 5 product tags")}
             />
             {fieldErrors.productTags && (
               <p className="text-xs font-semibold text-foreground">
@@ -142,7 +167,7 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
         </section>
 
         {/* Media */}
-        <section id="media" className="space-y-4">
+        <section id="media" className="space-y-4 scroll-mt-8">
           <h2 className="font-heading text-base font-bold text-foreground border-b border-border pb-2">
             {t("sectionMedia")}
           </h2>
@@ -165,12 +190,12 @@ export function BrandEditForm({ brand }: BrandEditFormProps) {
         </section>
 
         {/* Links */}
-        <section id="links" className="space-y-4">
+        <section id="purchase" className="space-y-4 scroll-mt-8">
           <h2 className="font-heading text-base font-bold text-foreground border-b border-border pb-2">
             {t("sectionLinks")}
           </h2>
 
-          <div className="space-y-4 rounded-lg border border-border bg-background p-4">
+          <div id="social-proof" className="scroll-mt-8 space-y-4 rounded-lg border border-border bg-background p-4">
             <div className="inline-flex min-h-12 items-center rounded-lg bg-primary px-4 text-[11px] font-semibold uppercase tracking-wide text-primary-foreground">
               {tx("socialLinksLabel", "Social links")}
             </div>
