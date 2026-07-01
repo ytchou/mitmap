@@ -87,15 +87,31 @@ export async function setBrandOnboardingStepStatus({
 }): Promise<void> {
   const now = new Date().toISOString()
   const supabase = createServiceClient()
+
+  // Check for existing row to prevent timestamp destruction and status regressions
+  const { data: existing, error: fetchError } = await supabase
+    .from('brand_onboarding_steps')
+    .select('status, started_at')
+    .eq('brand_id', brandId)
+    .eq('step_key', step)
+    .maybeSingle()
+
+  if (fetchError) throw fetchError
+
+  // Bug 2: Never regress from 'complete' to a lower status
+  if (existing?.status === 'complete') {
+    return
+  }
+
   const { error } = await supabase
     .from('brand_onboarding_steps')
     .upsert({
       brand_id: brandId,
       step_key: step,
       status,
-      started_at: now,
+      started_at: existing?.started_at ?? now, // Bug 1: only set on first insert
       completed_at: status === 'complete' ? now : null,
-      completed_by_user_id: userId,
+      completed_by_user_id: status === 'complete' ? userId : null, // Bug 3: only set on complete
       updated_at: now,
     }, { onConflict: 'brand_id,step_key' })
 
