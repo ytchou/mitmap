@@ -232,9 +232,9 @@ test.describe('Dashboard — legacy brand route redirect', () => {
       { timeout: 60_000 }
     );
 
-    // The brand panel must be rendered at the final URL — brand name in h1
-    await expect(userPage.locator('h1').filter({ hasText: brandName })).toBeVisible({
-      timeout: 60_000,
-    });
+    // The brand panel must be rendered at the final URL — brand name in h1 inside the profile panel
+    await expect(
+      userPage.locator('[data-testid="brand-profile"]').locator('h1').filter({ hasText: brandName })
+    ).toBeVisible({ timeout: 60_000 });
   });
 });
