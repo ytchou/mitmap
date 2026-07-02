@@ -102,10 +102,10 @@ const zhT = (key: string): string => {
   return map[key] ?? key
 }
 
-export const brandInfoSchema = getBrandInfoSchema(zhT)
-export const linksSchema = getLinksSchema(zhT)
-export const reviewSchema = getReviewSchema(zhT)
-export const botDetectionSchema = getBotDetectionSchema(zhT)
+const brandInfoSchema = getBrandInfoSchema(zhT)
+const linksSchema = getLinksSchema(zhT)
+const reviewSchema = getReviewSchema(zhT)
+const botDetectionSchema = getBotDetectionSchema(zhT)
 
 const sourceAttributionEnum = z.enum(SOURCE_ATTRIBUTION_VALUES)
 
